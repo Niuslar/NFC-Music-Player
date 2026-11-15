@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="248mm" height="89mm" viewBox="0 0 248 89">
+<title>NFC Player: side section through the Pi, splitter and DAC stack, seen from the left. Millimetres.</title>
+<rect width="248" height="89" fill="#ffffff"/>
+
+<rect x="60" y="12" width="4" height="59" rx="0" fill="#e2e3df" stroke="#a9b1ad" stroke-width="0.3" />
+<rect x="64" y="68" width="121" height="3" rx="0" fill="#e2e3df" stroke="#a9b1ad" stroke-width="0.3" />
+<rect x="185" y="39" width="3" height="32" rx="0" fill="#e2e3df" stroke="#a9b1ad" stroke-width="0.3" />
+<rect x="185" y="12" width="3" height="8" rx="0" fill="#e2e3df" stroke="#a9b1ad" stroke-width="0.3" />
+<rect x="64.2" y="12" width="120.6" height="3" rx="0" fill="#e2e3df" stroke="#a9b1ad" stroke-width="0.3" />
+<rect x="78" y="15" width="61" height="4" rx="0" fill="#e2e3df" stroke="#a9b1ad" stroke-width="0.3" />
+<rect x="123" y="63" width="5" height="5" rx="0" fill="#c9c9c4" stroke="#222826" stroke-width="0.3" />
+<rect x="146" y="63" width="5" height="5" rx="0" fill="#c9c9c4" stroke="#222826" stroke-width="0.3" />
+<rect x="122" y="61.4" width="30" height="1.6" rx="0" fill="#2f7a4a" stroke="#222826" stroke-width="0.3" />
+<rect x="123" y="50.4" width="5" height="11" rx="0" fill="#1c1c1e" stroke="#222826" stroke-width="0.3" />
+<rect x="100" y="48.8" width="30" height="1.6" rx="0" fill="#6b4c95" stroke="#222826" stroke-width="0.3" />
+<rect x="102" y="40.4" width="5" height="8.4" rx="0" fill="#1c1c1e" stroke="#222826" stroke-width="0.3" />
+<rect x="123" y="37.8" width="5" height="11" rx="0" fill="#1c1c1e" stroke="#222826" stroke-width="0.3" />
+<rect x="122" y="36.2" width="56.5" height="1.6" rx="0" fill="#1d5a35" stroke="#222826" stroke-width="0.3" />
+<rect x="166.5" y="23.7" width="14.5" height="12.5" rx="0" fill="#1c1c1e" stroke="#222826" stroke-width="0.3" />
+<rect x="67" y="24" width="1.6" height="35" rx="0" fill="#1f2f6e" stroke="#222826" stroke-width="0.3" />
+<rect x="64.1" y="24" width="2.9" height="35" rx="0" fill="#16252b" stroke="#222826" stroke-width="0.3" />
+<line x1="176" y1="13.5" x2="193.2" y2="12.5" stroke="#a9b1ad" stroke-width="0.18" />
+<circle cx="176" cy="13.5" r="0.45" fill="#5f6b66" stroke="none" stroke-width="0.3"/>
+<text x="194" y="13.5" font-size="2.9" text-anchor="start" fill="#222826" font-weight="400" style="font-family:system-ui,-apple-system,'Segoe UI',sans-serif">Lid, 3 thick</text>
+<line x1="137" y1="19" x2="193.2" y2="18" stroke="#a9b1ad" stroke-width="0.18" />
+<circle cx="137" cy="19" r="0.45" fill="#5f6b66" stroke="none" stroke-width="0.3"/>
+<text x="194" y="19" font-size="2.9" text-anchor="start" fill="#222826" font-weight="400" style="font-family:system-ui,-apple-system,'Segoe UI',sans-serif">Card tray, down to 52</text>
+<line x1="179.5" y1="29.8" x2="193.2" y2="28.8" stroke="#a9b1ad" stroke-width="0.18" />
+<circle cx="179.5" cy="29.8" r="0.45" fill="#5f6b66" stroke="none" stroke-width="0.3"/>
+<text x="194" y="29.8" font-size="2.9" text-anchor="start" fill="#222826" font-weight="400" style="font-family:system-ui,-apple-system,'Segoe UI',sans-serif">DAC sockets, at the rear window</text>
+<line x1="158.5" y1="37" x2="193.2" y2="36" stroke="#a9b1ad" stroke-width="0.18" />
+<circle cx="158.5" cy="37" r="0.45" fill="#5f6b66" stroke="none" stroke-width="0.3"/>
+<text x="194" y="37" font-size="2.9" text-anchor="start" fill="#222826" font-weight="400" style="font-family:system-ui,-apple-system,'Segoe UI',sans-serif">DAC board, underside at 33.2</text>
+<line x1="150" y1="62.2" x2="193.2" y2="61.2" stroke="#a9b1ad" stroke-width="0.18" />
+<circle cx="150" cy="62.2" r="0.45" fill="#5f6b66" stroke="none" stroke-width="0.3"/>
+<text x="194" y="62.2" font-size="2.9" text-anchor="start" fill="#222826" font-weight="400" style="font-family:system-ui,-apple-system,'Segoe UI',sans-serif">Pi, underside at 8</text>
+<line x1="148.5" y1="65.5" x2="193.2" y2="65.8" stroke="#a9b1ad" stroke-width="0.18" />
+<circle cx="148.5" cy="65.5" r="0.45" fill="#5f6b66" stroke="none" stroke-width="0.3"/>
+<text x="194" y="66.8" font-size="2.9" text-anchor="start" fill="#222826" font-weight="400" style="font-family:system-ui,-apple-system,'Segoe UI',sans-serif">Standoffs, 5 tall</text>
+<line x1="163" y1="69.5" x2="193.2" y2="70.4" stroke="#a9b1ad" stroke-width="0.18" />
+<circle cx="163" cy="69.5" r="0.45" fill="#5f6b66" stroke="none" stroke-width="0.3"/>
+<text x="194" y="71.4" font-size="2.9" text-anchor="start" fill="#222826" font-weight="400" style="font-family:system-ui,-apple-system,'Segoe UI',sans-serif">Floor, 3 thick</text>
+<line x1="67.8" y1="29.5" x2="54.8" y2="28.5" stroke="#a9b1ad" stroke-width="0.18" />
+<circle cx="67.8" cy="29.5" r="0.45" fill="#5f6b66" stroke="none" stroke-width="0.3"/>
+<text x="54" y="29.5" font-size="2.9" text-anchor="end" fill="#222826" font-weight="400" style="font-family:system-ui,-apple-system,'Segoe UI',sans-serif">Screen board</text>
+<line x1="104.5" y1="44.4" x2="54.8" y2="43.4" stroke="#a9b1ad" stroke-width="0.18" />
+<circle cx="104.5" cy="44.4" r="0.45" fill="#5f6b66" stroke="none" stroke-width="0.3"/>
+<text x="54" y="44.4" font-size="2.9" text-anchor="end" fill="#222826" font-weight="400" style="font-family:system-ui,-apple-system,'Segoe UI',sans-serif">Splitter's spare header</text>
+<line x1="101" y1="49.6" x2="54.8" y2="48.6" stroke="#a9b1ad" stroke-width="0.18" />
+<circle cx="101" cy="49.6" r="0.45" fill="#5f6b66" stroke="none" stroke-width="0.3"/>
+<text x="54" y="49.6" font-size="2.9" text-anchor="end" fill="#222826" font-weight="400" style="font-family:system-ui,-apple-system,'Segoe UI',sans-serif">Splitter, underside at 20.6</text>
+<line x1="125.5" y1="57" x2="54.8" y2="56" stroke="#a9b1ad" stroke-width="0.18" />
+<circle cx="125.5" cy="57" r="0.45" fill="#5f6b66" stroke="none" stroke-width="0.3"/>
+<text x="54" y="57" font-size="2.9" text-anchor="end" fill="#222826" font-weight="400" style="font-family:system-ui,-apple-system,'Segoe UI',sans-serif">40-pin header</text>
+<text x="60" y="80" font-size="3" text-anchor="start" fill="#5f6b66" font-weight="600" style="font-family:system-ui,-apple-system,'Segoe UI',sans-serif">Front</text>
+<text x="188" y="80" font-size="3" text-anchor="end" fill="#5f6b66" font-weight="600" style="font-family:system-ui,-apple-system,'Segoe UI',sans-serif">Rear</text>
+<text x="124" y="80" font-size="2.6" text-anchor="middle" fill="#5f6b66" font-weight="400" style="font-family:system-ui,-apple-system,'Segoe UI',sans-serif">Header heights are nominal (11 mm per stacked header). Measure yours.</text>
+</svg>
