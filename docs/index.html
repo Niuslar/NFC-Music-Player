@@ -78,6 +78,7 @@
   <a href="#music">6. Add music</a>
   <a href="#use">7. Use it</a>
   <a href="#web">8. Web remote</a>
+  <a href="#backup">Backups and updates</a>
   <a href="#trouble">Troubleshooting</a>
   <a href="#reference">Reference</a>
 </nav>
@@ -492,6 +493,50 @@
   <p><strong>There is no password.</strong> Anyone on your Wi-Fi can open the page, change what is playing, relink the card in the slot, and add or delete music. That is fine on a home network you trust; do not use it on shared or public Wi-Fi. To turn the page off, change <code>--web-port 80</code> to <code>--web-port 0</code> in the service (see <a href="#reference">Reference</a>).</p>
   <p>The page cannot rename or move music. Do that over USB.</p>
 </div>
+
+<h2 id="backup">Backups and updates</h2>
+<p>The music is one large file on the SD card (<code>/srv/nfc-player/music.img</code>), on the same card as the operating system. Ordinary updates leave it alone. A few things put it at risk, so back up before them.</p>
+<div class="table-wrap"><table>
+  <tr><th>What you do</th><th>Music safe?</th></tr>
+  <tr><td>Update the software with <code>apt</code></td><td>Yes</td></tr>
+  <tr><td>Update the player with <code>deploy.sh</code></td><td>Yes</td></tr>
+  <tr><td>Run <code>setup.sh</code> again</td><td>Yes. It only creates the music drive if there is none.</td></tr>
+  <tr><td>Reflash the SD card</td><td><strong>No.</strong> Everything on the card is erased.</td></tr>
+  <tr><td>Lose power during an update, or the card fails</td><td><strong>Not guaranteed.</strong> The card's filesystem can be damaged.</td></tr>
+</table></div>
+
+<h3>Update the operating system</h3>
+<p>On the Pi, over SSH:</p>
+<pre><code>sudo apt update &amp;&amp; sudo apt upgrade</code></pre>
+<ul>
+  <li>If it asks about <code>/etc/mpd.conf</code>, keep your current version. Setup wrote that file, and replacing it would point MPD away from the DAC and the music.</li>
+  <li>If it updates the kernel, reboot afterwards with <code>sudo reboot</code> and check the player comes back.</li>
+  <li>Use a steady power supply, and do not unplug the Pi while it is upgrading.</li>
+</ul>
+<p>Do not upgrade from one Raspberry Pi OS release to the next in place. Back up, reflash and restore instead (below); it is more reliable.</p>
+
+<h3>Back up</h3>
+<p>Two things are worth keeping: the music, and <code>state.json</code>, which records which card plays which album and where each one stopped. Run these in the Mac's Terminal app:</p>
+<pre><code>mkdir -p ~/nfc-player-backup &amp;&amp; rsync -a nfcplayer@nfcplayer.local:/mnt/music/ ~/nfc-player-backup/music/</code></pre>
+<pre><code>scp nfcplayer@nfcplayer.local:/var/lib/nfc-player/state.json ~/nfc-player-backup/</code></pre>
+<p>Over Wi-Fi the first command is slow for a large collection. For a big library, connect the Pi to the Mac by USB instead, accept the transfer on the player, and copy the contents of <code>MUSIC</code> in Finder.</p>
+<p>Your cards are not in the backup, but they do not need to be: each card only carries an ID, and <code>state.json</code> holds what that ID plays.</p>
+
+<h3>Reflash and restore</h3>
+<ol>
+  <li>Back up as above and check <code>~/nfc-player-backup</code> has your albums.</li>
+  <li>Flash the card again (<a href="#flash">step 1</a>), boot it (<a href="#boot">step 2</a>), fit the DAC if it is not already on, and install (<a href="#install">step 4</a>). Setup creates a new, empty music drive.</li>
+  <li>Put the card links back, from the Mac:
+    <pre><code>scp ~/nfc-player-backup/state.json nfcplayer@nfcplayer.local:/tmp/state.json &amp;&amp; ssh -t nfcplayer@nfcplayer.local 'sudo systemctl stop nfc-player &amp;&amp; sudo cp /tmp/state.json /var/lib/nfc-player/state.json &amp;&amp; sudo chown nfcplayer /var/lib/nfc-player/state.json &amp;&amp; sudo systemctl start nfc-player'</code></pre>
+    Use your own Pi username in place of <code>nfcplayer</code> in the <code>chown</code> if you chose a different one.
+  </li>
+  <li>Copy the music back by USB (<a href="#music">step 6</a>), dragging the contents of <code>~/nfc-player-backup/music</code> onto <code>MUSIC</code>. The web page can also do it but is slow for more than an album or two.</li>
+  <li>Open the web page and check the albums are listed and a card plays.</li>
+</ol>
+<div class="note"><p>Restoring <code>state.json</code> only helps if the albums are back under the same folder names, because cards are linked by folder path. If you rename albums, relink those cards.</p></div>
+
+<h3>Wear and spare cards</h3>
+<p>Playing music reads the card and rarely writes to it, so wear is low. Uploads and deletes write, as does saving card positions. A good A2-rated card should last years in this use. Keeping the backup above is the real protection; a spare card with the OS already flashed makes a failure a ten-minute swap.</p>
 
 <h2 id="trouble">Troubleshooting</h2>
 <div class="table-wrap"><table>
