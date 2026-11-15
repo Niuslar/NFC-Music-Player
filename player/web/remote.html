@@ -1,0 +1,344 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>NFC Player</title>
+<style>
+  :root { color-scheme: dark; --bg: #121214; --panel: #1d1d20; --ink: #f0eee8; --dim: #9a978f; --line: #303035; --accent: #e8a33d; --bad: #f0776f; }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--ink); font: 16px/1.45 -apple-system, "Segoe UI", system-ui, sans-serif; }
+  main { max-width: 560px; margin: 0 auto; padding: 16px 16px 64px; }
+  h2 { font-size: 13px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--dim); margin: 32px 0 10px; font-weight: 600; }
+  .panel { background: var(--panel); border-radius: 16px; padding: 16px; }
+  .now { display: flex; gap: 16px; align-items: center; }
+  .cover { width: 96px; height: 96px; border-radius: 10px; background: #2c2c31 center/cover; flex: none; display: grid; place-items: center; color: var(--dim); font-size: 36px; font-weight: 600; }
+  .meta { min-width: 0; }
+  .meta div { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  #track { font-size: 19px; font-weight: 600; }
+  #album, #source { color: var(--dim); font-size: 14px; }
+  .bar { height: 5px; background: var(--line); border-radius: 3px; margin: 16px 0 6px; overflow: hidden; }
+  .bar i { display: block; height: 100%; width: 0; background: var(--accent); }
+  .times { display: flex; justify-content: space-between; color: var(--dim); font-size: 13px; font-variant-numeric: tabular-nums; }
+  .transport { display: flex; justify-content: center; gap: 14px; margin: 12px 0 4px; }
+  button { font: inherit; color: inherit; border: 0; cursor: pointer; }
+  .transport button { width: 60px; height: 60px; border-radius: 50%; background: #2c2c31; font-size: 20px; }
+  .transport button.main { background: var(--accent); color: #1a1407; }
+  .transport button:disabled { opacity: 0.35; cursor: default; }
+  .volume { display: flex; align-items: center; gap: 12px; margin-top: 12px; color: var(--dim); font-size: 14px; }
+  .volume input { flex: 1; accent-color: var(--accent); height: 28px; }
+  .volume output { width: 2.5ch; text-align: right; font-variant-numeric: tabular-nums; color: var(--ink); }
+  .banner { background: #3a2c12; color: #f3d59b; border-radius: 10px; padding: 10px 14px; margin-bottom: 12px; font-size: 14px; }
+  input[type=search], input[type=text] { width: 100%; padding: 10px 12px; border-radius: 10px; border: 1px solid var(--line); background: var(--panel); color: var(--ink); font: inherit; }
+  ul { list-style: none; margin: 10px 0 0; padding: 0; }
+  .albums li { display: flex; align-items: center; gap: 12px; padding: 8px; border-radius: 10px; cursor: pointer; }
+  .albums li:hover, .albums li:focus-visible { background: var(--panel); outline: none; }
+  .albums li.current .t { color: var(--accent); }
+  .albums .thumb { width: 44px; height: 44px; border-radius: 6px; background: #2c2c31 center/cover; flex: none; }
+  .albums .t { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .albums .a { color: var(--dim); font-size: 13px; }
+  .albums .txt { min-width: 0; }
+  .empty { color: var(--dim); padding: 8px; }
+  .pick { display: flex; gap: 10px; flex-wrap: wrap; margin: 12px 0; }
+  .pick label, .pick button { background: #2c2c31; padding: 10px 14px; border-radius: 10px; cursor: pointer; }
+  .pick input { display: none; }
+  .hint { color: var(--dim); font-size: 14px; margin: 8px 0; }
+  .card { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-top: 12px; font-size: 14px; }
+  .card b { font-weight: 600; }
+  .card span { min-width: 0; }
+  .small { background: #2c2c31; padding: 6px 12px; border-radius: 8px; font-size: 13px; flex: none; white-space: nowrap; }
+  .small:hover { background: #3a3a40; }
+  .albums .acts { margin-left: auto; display: flex; gap: 8px; align-items: center; flex: none; }
+  .albums li.files { display: block; cursor: default; background: var(--panel); padding: 10px 12px; margin: 2px 0 8px; font-size: 14px; }
+  .files .f { display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 5px 0; border-bottom: 1px solid var(--line); }
+  .files .f span:first-child { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .files .size { color: var(--dim); font-variant-numeric: tabular-nums; flex: none; margin-left: auto; }
+  .files .all { margin-top: 10px; display: flex; justify-content: flex-end; }
+  .danger { color: var(--bad); }
+  #uploads li { display: flex; justify-content: space-between; gap: 12px; font-size: 14px; padding: 4px 0; border-bottom: 1px solid var(--line); }
+  #uploads .n { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
+  #uploads .s { color: var(--dim); flex: none; font-variant-numeric: tabular-nums; }
+  #uploads .s.bad { color: var(--bad); }
+  #uploads .s.ok { color: var(--accent); }
+</style>
+</head>
+<body>
+<main>
+  <div class="banner" id="banner" hidden></div>
+  <div class="panel">
+    <div class="now">
+      <div class="cover" id="cover"></div>
+      <div class="meta">
+        <div id="track">Nothing playing</div>
+        <div id="album"></div>
+        <div id="source"></div>
+      </div>
+    </div>
+    <div class="bar"><i id="progress"></i></div>
+    <div class="times"><span id="elapsed">0:00</span><span id="count"></span><span id="duration">0:00</span></div>
+    <div class="transport">
+      <button id="prev" aria-label="Previous track">⏮</button>
+      <button id="toggle" class="main" aria-label="Play or pause">▶</button>
+      <button id="next" aria-label="Next track">⏭</button>
+    </div>
+    <div class="volume">
+      <span>Volume</span>
+      <input id="volume" type="range" min="0" max="100" step="1" aria-label="Volume">
+      <output id="volumeOut">–</output>
+    </div>
+  </div>
+
+  <div class="panel card" id="cardPanel" hidden>
+    <span id="cardText"></span>
+    <button class="small" id="unlink" hidden>Unlink card</button>
+  </div>
+
+  <h2>Albums</h2>
+  <input type="search" id="search" placeholder="Search albums and artists" aria-label="Search albums">
+  <ul class="albums" id="albums"></ul>
+
+  <h2>Add music</h2>
+  <div class="panel">
+    <p class="hint" style="margin-top:0">Choose an album folder to copy it as it is. To put it under an artist, or when choosing loose files, type the folder first, for example <em>Nina Simone</em> or <em>Nina Simone/Pastel Blues</em>.</p>
+    <input type="text" id="dest" placeholder="Put inside (optional for folders)" aria-label="Destination folder">
+    <div class="pick">
+      <label>Choose folder<input type="file" id="folder" webkitdirectory multiple></label>
+      <label>Choose files<input type="file" id="files" multiple accept="audio/*,image/jpeg,image/png,.flac,.opus,.ogg,.m4a,.aiff,.aif"></label>
+    </div>
+    <p class="hint" id="space"></p>
+    <ul id="uploads"></ul>
+  </div>
+</main>
+
+<script>
+const $ = (id) => document.getElementById(id);
+const HEADERS = { "X-Requested-With": "nfc-player" };
+const EXT = [".flac", ".mp3", ".m4a", ".ogg", ".opus", ".wav", ".aiff", ".aif", ".jpg", ".jpeg", ".png"];
+const clock = (s) => `${Math.floor(s / 60)}:${String(Math.floor(s % 60)).padStart(2, "0")}`;
+const coverUrl = (path) => `/api/cover?album=${encodeURIComponent(path)}`;
+let state = {}, albums = [], draggingVolume = false, lastAlbumCount = -1, lastCardKey = "", openAlbum = null;
+
+function command(action, value) {
+  return fetch("/api/command", { method: "POST", headers: { ...HEADERS, "Content-Type": "application/json" }, body: JSON.stringify({ action, value }) })
+    .then(() => setTimeout(refresh, 150));
+}
+
+function showState() {
+  const a = state.album, transfer = state.mode === "transfer";
+  $("banner").hidden = !transfer;
+  if (transfer) $("banner").textContent = "The music drive is connected to a computer over USB. Playback and uploads are paused until it is ejected.";
+  $("track").textContent = a ? (state.state === "stop" ? "Finished" : state.track || a.title) : "Nothing playing";
+  $("album").textContent = a ? [a.title, a.artist].filter(Boolean).join(" · ") : (state.card ? "The card in the slot is not linked" : "Insert a card or pick an album below");
+  $("source").textContent = a ? (state.remote ? "Started from this page" : "Playing from the card") : "";
+  const cover = $("cover");
+  const wanted = a ? coverUrl(a.path) : "";
+  if (cover.dataset.url !== wanted) {
+    cover.dataset.url = wanted;
+    cover.style.backgroundImage = "";
+    cover.textContent = a ? (a.title[0] || "?").toUpperCase() : "";
+    if (a) { const img = new Image(); img.onload = () => { if (cover.dataset.url === wanted) { cover.style.backgroundImage = `url("${wanted}")`; cover.textContent = ""; } }; img.src = wanted; }
+  }
+  $("progress").style.width = state.duration ? `${Math.min(100, 100 * state.elapsed / state.duration)}%` : "0";
+  $("elapsed").textContent = clock(state.elapsed || 0);
+  $("duration").textContent = clock(state.duration || 0);
+  $("count").textContent = a && state.state !== "stop" ? `${state.track_index + 1} / ${state.track_count}` : "";
+  $("toggle").textContent = state.state === "play" ? "⏸" : "▶";
+  for (const id of ["prev", "toggle", "next"]) $(id).disabled = !a || transfer;
+  if (!draggingVolume) { $("volume").value = state.volume; $("volumeOut").textContent = state.volume; }
+  $("space").textContent = state.free_bytes != null ? `${(state.free_bytes / 1e9).toFixed(1)} GB free on the music drive.` : "";
+  document.querySelectorAll(".albums li").forEach((li) => li.classList.toggle("current", !!a && li.dataset.path === a.path));
+  const ca = state.card_album;
+  $("cardPanel").hidden = !state.card || transfer;
+  $("cardText").textContent = !state.card ? "" : ca
+    ? (ca.title ? `Card in the slot is linked to ${ca.title}.` : "Card in the slot is linked to an album that is no longer on the drive.")
+    : "Card in the slot is not linked. Press Link card next to an album.";
+  $("unlink").hidden = !ca;
+  const cardKey = `${state.card}|${ca ? ca.path : ""}|${transfer}`;
+  if (cardKey !== lastCardKey) { lastCardKey = cardKey; showAlbums(); }
+  if (state.albums !== lastAlbumCount) { lastAlbumCount = state.albums; loadAlbums(); }
+}
+
+async function refresh() {
+  try { state = await (await fetch("/api/state")).json(); showState(); } catch (e) {}
+}
+
+async function loadAlbums() {
+  try { albums = await (await fetch("/api/albums")).json(); showAlbums(); } catch (e) {}
+}
+
+function showAlbums() {
+  const q = $("search").value.trim().toLowerCase();
+  const list = $("albums");
+  list.textContent = "";
+  const shown = albums.filter((a) => !q || `${a.title} ${a.artist}`.toLowerCase().includes(q));
+  if (!shown.length) {
+    const li = document.createElement("li");
+    li.className = "empty";
+    li.textContent = albums.length ? "No albums match." : "No music yet. Add some below.";
+    list.appendChild(li);
+    return;
+  }
+  for (const a of shown) {
+    const li = document.createElement("li");
+    li.tabIndex = 0;
+    li.dataset.path = a.path;
+    if (state.album && state.album.path === a.path) li.className = "current";
+    const thumb = document.createElement("div");
+    thumb.className = "thumb";
+    thumb.style.backgroundImage = `url("${coverUrl(a.path)}")`;
+    const txt = document.createElement("div");
+    txt.className = "txt";
+    const t = document.createElement("div"); t.className = "t"; t.textContent = a.title;
+    const s = document.createElement("div"); s.className = "a"; s.textContent = [a.artist, `${a.tracks} tracks`].filter(Boolean).join(" · ");
+    txt.append(t, s);
+    const acts = document.createElement("div");
+    acts.className = "acts";
+    li.append(thumb, txt, acts);
+    const linked = state.card_album && state.card_album.path === a.path;
+    if (state.card && state.mode !== "transfer" && !linked) {
+      const b = document.createElement("button");
+      b.className = "small";
+      b.textContent = "Link card";
+      b.addEventListener("click", (e) => { e.stopPropagation(); command("link_card", a.path); });
+      acts.appendChild(b);
+    } else if (linked) {
+      const tag = document.createElement("span");
+      tag.className = "a";
+      tag.textContent = "Card";
+      acts.appendChild(tag);
+    }
+    const manage = document.createElement("button");
+    manage.className = "small";
+    manage.textContent = openAlbum === a.path ? "Close" : "Files";
+    manage.setAttribute("aria-label", `Manage files in ${a.title}`);
+    manage.addEventListener("click", (e) => { e.stopPropagation(); openAlbum = openAlbum === a.path ? null : a.path; showAlbums(); });
+    acts.appendChild(manage);
+    const play = () => command("play_album", a.path);
+    li.addEventListener("click", play);
+    li.addEventListener("keydown", (e) => { if (e.key === "Enter" && e.target === li) play(); });
+    list.appendChild(li);
+    if (openAlbum === a.path) {
+      const box = document.createElement("li");
+      box.className = "files";
+      list.appendChild(box);
+      showFiles(a, box);
+    }
+  }
+}
+
+async function remove(album, file) {
+  try {
+    const r = await fetch("/api/delete", { method: "POST", headers: { ...HEADERS, "Content-Type": "application/json" }, body: JSON.stringify({ album, file }) });
+    if (r.ok) return true;
+    alert((await r.json()).error || "Delete failed");
+  } catch (e) { alert("Delete failed: connection lost"); }
+  return false;
+}
+
+function albumGone(a) {
+  albums = albums.filter((x) => x.path !== a.path);
+  openAlbum = null;
+  showAlbums();
+  setTimeout(loadAlbums, 7000);  // the player rescans a few seconds after the last change
+}
+
+async function showFiles(a, box) {
+  box.textContent = "Loading…";
+  let files;
+  try {
+    const r = await fetch(`/api/files?album=${encodeURIComponent(a.path)}`);
+    if (!r.ok) throw 0;
+    files = await r.json();
+  } catch (e) { box.textContent = "Could not list this album's files."; return; }
+  box.textContent = "";
+  const tracks = files.filter((f) => f.track).length;
+  for (const f of files) {
+    const row = document.createElement("div");
+    row.className = "f";
+    const name = document.createElement("span"); name.textContent = f.name;
+    const size = document.createElement("span"); size.className = "size"; size.textContent = `${(f.size / 1e6).toFixed(1)} MB`;
+    const del = document.createElement("button"); del.className = "small danger"; del.textContent = "Delete";
+    del.addEventListener("click", async () => {
+      const last = f.track && tracks === 1;
+      const question = last ? `Delete "${f.name}"? It is the last track, so the whole album will be removed. This cannot be undone.` : `Delete "${f.name}"? This cannot be undone.`;
+      if (!confirm(question) || !(await remove(a.path, f.name))) return;
+      if (last) albumGone(a); else { a.tracks -= f.track ? 1 : 0; showAlbums(); }
+    });
+    row.append(name, size, del);
+    box.appendChild(row);
+  }
+  const all = document.createElement("div");
+  all.className = "all";
+  const delAll = document.createElement("button"); delAll.className = "small danger"; delAll.textContent = "Delete whole album";
+  delAll.addEventListener("click", async () => {
+    if (confirm(`Delete "${a.title}" and all ${files.length} of its files? This cannot be undone.`) && (await remove(a.path, null))) albumGone(a);
+  });
+  all.appendChild(delAll);
+  box.appendChild(all);
+}
+
+$("search").addEventListener("input", showAlbums);
+$("unlink").addEventListener("click", () => command("unlink_card"));
+$("toggle").addEventListener("click", () => command("toggle"));
+$("prev").addEventListener("click", () => command("prev"));
+$("next").addEventListener("click", () => command("next"));
+let volumeTimer = null;
+$("volume").addEventListener("input", (e) => {
+  draggingVolume = true;
+  $("volumeOut").textContent = e.target.value;
+  clearTimeout(volumeTimer);
+  volumeTimer = setTimeout(() => command("volume", +e.target.value), 80);
+});
+$("volume").addEventListener("change", () => setTimeout(() => (draggingVolume = false), 600));
+
+// ---- uploads: one file per request, in order ----
+const queue = [];
+let uploading = false;
+
+function addFiles(fileList) {
+  const dest = $("dest").value.trim().replace(/^\/+|\/+$/g, "");
+  for (const file of fileList) {
+    const inner = file.webkitRelativePath || file.name;
+    const name = inner.split("/").pop();
+    const path = [dest, inner].filter(Boolean).join("/");
+    const li = document.createElement("li");
+    const n = document.createElement("span"); n.className = "n"; n.textContent = path;
+    const s = document.createElement("span"); s.className = "s";
+    li.append(n, s);
+    $("uploads").prepend(li);
+    const ext = name.includes(".") ? name.slice(name.lastIndexOf(".")).toLowerCase() : "";
+    if (name.startsWith(".") || !EXT.includes(ext)) { s.textContent = "skipped (not music)"; continue; }
+    if (!path.includes("/")) { s.textContent = "needs a folder: fill in “Put inside”"; s.classList.add("bad"); continue; }
+    s.textContent = "waiting";
+    queue.push({ file, path, s });
+  }
+  pump();
+}
+
+function pump() {
+  if (uploading || !queue.length) return;
+  uploading = true;
+  const { file, path, s } = queue.shift();
+  const xhr = new XMLHttpRequest();
+  xhr.open("PUT", `/api/upload?path=${encodeURIComponent(path)}`);
+  xhr.setRequestHeader("X-Requested-With", "nfc-player");
+  xhr.upload.onprogress = (e) => { if (e.lengthComputable) s.textContent = `${Math.round(100 * e.loaded / e.total)}%`; };
+  const done = (ok, text) => { s.textContent = text; s.classList.add(ok ? "ok" : "bad"); uploading = false; pump(); if (!queue.length) setTimeout(loadAlbums, 7000); };
+  xhr.onload = () => {
+    if (xhr.status === 200) return done(true, "done");
+    let msg = `failed (${xhr.status})`;
+    try { msg = JSON.parse(xhr.responseText).error || msg; } catch (e) {}
+    done(false, msg);
+  };
+  xhr.onerror = () => done(false, "connection lost");
+  xhr.send(file);
+}
+
+for (const id of ["folder", "files"]) $(id).addEventListener("change", (e) => { addFiles(e.target.files); e.target.value = ""; });
+window.addEventListener("beforeunload", (e) => { if (uploading || queue.length) e.preventDefault(); });
+
+refresh();
+setInterval(refresh, 1000);
+</script>
+</body>
+</html>

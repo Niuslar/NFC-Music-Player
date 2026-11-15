@@ -1,0 +1,12 @@
+[Unit]
+Description=NFC player music drive (USB gadget and mount)
+Before=mpd.service nfc-player.service
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+ExecStart=/usr/local/sbin/nfc-player-usb mount
+ExecStart=/usr/local/sbin/nfc-player-usb setup
+
+[Install]
+WantedBy=multi-user.target

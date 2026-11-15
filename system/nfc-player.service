@@ -1,0 +1,18 @@
+[Unit]
+Description=NFC album player
+After=mpd.service nfc-player-usb.service
+Wants=mpd.service nfc-player-usb.service
+
+[Service]
+User=@USER@
+WorkingDirectory=@APP_DIR@
+Environment=PYTHONUNBUFFERED=1
+# Add options here, e.g. --encoder-reverse, --rotate 180, --encoder em14
+# --web-port 80 serves the web remote at http://nfcplayer.local ; --web-port 0 turns it off
+ExecStart=/usr/bin/python3 -m player.main --music /mnt/music --state /var/lib/nfc-player/state.json --playback mpd --web-port 80
+AmbientCapabilities=CAP_NET_BIND_SERVICE
+Restart=always
+RestartSec=2
+
+[Install]
+WantedBy=multi-user.target

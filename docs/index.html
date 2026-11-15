@@ -1,0 +1,577 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>NFC Album Player — build guide</title>
+<style>
+  :root {
+    --bg: #faf9f6; --panel: #ffffff; --ink: #1d1c1a; --dim: #66635d; --line: #e2dfd8; --accent: #b86e12;
+    --code-bg: #f1eee8; --warn-bg: #fdf3e0; --warn-line: #e8b860; --ok-bg: #e9f5ee; --ok-line: #7dbf98;
+    --c-display: #2f6fde; --c-nfc: #0d9a6c; --c-knob: #d98a0b; --c-buttons: #9146d8; --c-dac: #8b93a1;
+    --c-shared: #0891a8; --c-power: #d8443c; --c-gnd: #5b6472; --pin-idle: #d5d2cb;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #151517; --panel: #1e1e21; --ink: #ecebe6; --dim: #a09d96; --line: #333338; --accent: #e8a33d;
+      --code-bg: #26262a; --warn-bg: #2e2616; --warn-line: #7a5d1f; --ok-bg: #17271f; --ok-line: #2f6b4b;
+      --c-display: #6ea0f5; --c-nfc: #3fc79a; --c-knob: #f0b041; --c-buttons: #b98af0; --c-dac: #9aa2b0;
+      --c-shared: #45c3d8; --c-power: #f0776f; --c-gnd: #97a0ae; --pin-idle: #3a3a40;
+    }
+  }
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; scroll-padding-top: 16px; }
+  body { margin: 0; background: var(--bg); color: var(--ink); font: 16px/1.6 -apple-system, "Segoe UI", system-ui, sans-serif; }
+  .layout { display: grid; grid-template-columns: 230px minmax(0, 780px); gap: 48px; max-width: 1120px; margin: 0 auto; padding: 40px 20px 96px; }
+  nav { position: sticky; top: 24px; align-self: start; font-size: 14px; }
+  nav strong { display: block; margin-bottom: 8px; }
+  nav a { display: block; color: var(--dim); text-decoration: none; padding: 3px 0; }
+  nav a:hover { color: var(--accent); }
+  nav .sub { padding-left: 14px; }
+  @media (max-width: 860px) { .layout { grid-template-columns: minmax(0, 1fr); gap: 0; } nav { position: static; margin-bottom: 24px; } }
+  h1 { font-size: 34px; line-height: 1.15; margin: 0 0 8px; letter-spacing: -0.02em; }
+  h2 { font-size: 24px; margin: 56px 0 12px; padding-top: 20px; border-top: 1px solid var(--line); letter-spacing: -0.01em; }
+  h3 { font-size: 18px; margin: 30px 0 8px; }
+  .lede { color: var(--dim); font-size: 18px; margin: 0 0 24px; }
+  .step { color: var(--accent); font-size: 13px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; display: block; }
+  a { color: var(--accent); }
+  p, li { max-width: 70ch; }
+  li { margin: 4px 0; }
+  code { font: 14px/1.5 ui-monospace, "SF Mono", Menlo, monospace; background: var(--code-bg); padding: 1px 5px; border-radius: 4px; }
+  pre { position: relative; background: var(--code-bg); border-radius: 8px; padding: 12px 14px; overflow-x: auto; margin: 12px 0; }
+  pre code { background: none; padding: 0; }
+  pre button { position: absolute; top: 6px; right: 6px; font: 12px system-ui; border: 1px solid var(--line); background: var(--panel); color: var(--dim); border-radius: 5px; padding: 2px 8px; cursor: pointer; }
+  .table-wrap { overflow-x: auto; margin: 12px 0; }
+  table { border-collapse: collapse; width: 100%; font-size: 15px; }
+  th, td { text-align: left; padding: 7px 10px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  th { font-size: 13px; color: var(--dim); font-weight: 600; white-space: nowrap; }
+  td.num { white-space: nowrap; font-variant-numeric: tabular-nums; }
+  .note, .ok { border-radius: 8px; padding: 12px 16px; margin: 16px 0; border: 1px solid; }
+  .note { background: var(--warn-bg); border-color: var(--warn-line); }
+  .ok { background: var(--ok-bg); border-color: var(--ok-line); }
+  .note p, .ok p { margin: 4px 0; }
+  figure { margin: 20px 0; background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 14px; overflow-x: auto; }
+  figcaption { color: var(--dim); font-size: 14px; margin-top: 8px; }
+  svg { display: block; max-width: 100%; height: auto; }
+  svg text { font-family: -apple-system, "Segoe UI", system-ui, sans-serif; fill: var(--ink); }
+  .legend { display: flex; flex-wrap: wrap; gap: 6px 16px; font-size: 14px; margin: 10px 0 0; padding: 0; list-style: none; color: var(--dim); }
+  .legend i { display: inline-block; width: 11px; height: 11px; border-radius: 50%; margin-right: 6px; vertical-align: -1px; }
+  .tag { display: inline-block; font-size: 12px; font-weight: 600; padding: 1px 7px; border-radius: 10px; border: 1px solid var(--line); color: var(--dim); white-space: nowrap; }
+</style>
+</head>
+<body>
+<div class="layout">
+<nav>
+  <strong>Build guide</strong>
+  <a href="#overview">Overview</a>
+  <a href="#parts">Parts</a>
+  <a href="#tools">Tools and software</a>
+  <a href="#flash">1. Flash the SD card</a>
+  <a href="#boot">2. First boot</a>
+  <a href="#dac">3. Fit the DAC</a>
+  <a href="#install">4. Install the player</a>
+  <a href="#wiring">5. Wire and test</a>
+  <a class="sub" href="#w-display">Display</a>
+  <a class="sub" href="#w-nfc">NFC reader</a>
+  <a class="sub" href="#w-knob">Knob</a>
+  <a class="sub" href="#w-buttons">Buttons</a>
+  <a href="#music">6. Add music</a>
+  <a href="#use">7. Use it</a>
+  <a href="#web">8. Web remote</a>
+  <a href="#trouble">Troubleshooting</a>
+  <a href="#reference">Reference</a>
+</nav>
+<main>
+
+<h1>NFC Album Player</h1>
+<p class="lede">Put a card in, the album plays. This guide takes you from a bag of parts to a working player on the bench. The case comes later.</p>
+
+<div class="note">
+  <p><strong>What has and hasn't been tested.</strong> The player logic, screens and MPD playback are tested on the Mac. The web remote is tested on the Mac against the simulator. Everything that touches the Pi's hardware (display, NFC reader, knob, USB drive mode, switching the music drive to writable for uploads, the setup script) was written without the hardware and has never run on a real Pi. Each wiring step below ends with a check command, so a fault shows up one part at a time.</p>
+</div>
+
+<h2 id="overview">Overview</h2>
+<ul>
+  <li><strong>Raspberry Pi Zero 2 W</strong> runs Raspberry Pi OS Lite, MPD (the music player) and the player program.</li>
+  <li><strong>Raspberry Pi DAC Pro</strong> sits on the Pi's header and provides the 3.5 mm and RCA outputs.</li>
+  <li><strong>Display and NFC reader</strong> share the Pi's SPI bus, each with its own chip-select pin.</li>
+  <li><strong>Knob and four buttons</strong> connect to plain GPIO pins.</li>
+  <li><strong>Music</strong> lives in one large file on the SD card. Plug the Pi's USB port into the Mac and that file appears as a drive called <code>MUSIC</code>.</li>
+  <li><strong>A web page</strong> served by the Pi at <code>http://nfcplayer.local</code> controls playback and takes uploads from any phone or computer on the same Wi-Fi.</li>
+</ul>
+
+<h2 id="parts">Parts</h2>
+<div class="table-wrap">
+<table>
+  <tr><th>Part</th><th>What to get</th><th>Approx.</th><th>Notes</th></tr>
+  <tr><td>Computer</td><td>Raspberry Pi Zero 2 W</td><td class="num">owned</td><td>Needs a 2×20 pin header. Solder one on if yours has none (the "WH" version has it fitted).</td></tr>
+  <tr><td>DAC</td><td>Raspberry Pi DAC Pro</td><td class="num">£24</td><td>3.5 mm and RCA out. Balanced output is on headers P7/P9 for a later 4.4 mm socket.</td></tr>
+  <tr><td>GPIO splitter</td><td>A board that turns one 40-pin header into two or three (e.g. Pimoroni Mini Black HAT Hack3r, or a generic "GPIO 1 to 2 expansion board")</td><td class="num">£6–10</td><td>The DAC covers the whole header, so this is how the other parts reach the pins. <strong>This replaces the "stacking header" in the original plan, which would not have worked:</strong> a HAT's socket is closed on top.</td></tr>
+  <tr><td>SD card</td><td>256 GB microSD, A2 rated</td><td class="num">£20</td><td>About 700 FLAC albums. 512 GB also works.</td></tr>
+  <tr><td>Display</td><td>Waveshare 2inch LCD Module (ST7789, 240×320, SPI)</td><td class="num">£12</td><td>Other ST7789 240×320 boards should work with the same wiring.</td></tr>
+  <tr><td>NFC reader</td><td>PN532 NFC module V3 (the red Elechouse-style board)</td><td class="num">£8</td><td>Has two small switches to choose SPI mode.</td></tr>
+  <tr><td>NFC cards</td><td>NTAG215 blank PVC cards</td><td class="num">£8</td><td>NTAG213/216 and MIFARE Classic cards also work. Only the card's ID is read.</td></tr>
+  <tr><td>Knob encoder</td><td>24-click rotary encoder with push switch, from a known maker: The Pi Hut "Rotary Encoder + Extras", or a Bourns PEC11R or Alps EC11</td><td class="num">£4</td><td>Clicks as it turns. Normal-pitch pins that fit a breadboard. Avoid unbranded multi-packs; they feel loose and wear quickly.</td></tr>
+  <tr><td>Knob</td><td>Solid aluminium, 30–38 mm, with a set screw, to fit a 6 mm shaft</td><td class="num">£8</td><td>Most of the quality feel comes from this: weight, diameter and no wobble. Check your encoder's shaft (6 mm D-shaped or knurled) before buying.</td></tr>
+  <tr><td>Buttons</td><td>4 push buttons. Any tactile switch for testing; Kailh Choc switches with keycaps for the final build</td><td class="num">£8</td><td>Previous, play/pause, next, back.</td></tr>
+  <tr><td>Bench bits</td><td>Breadboard, jumper wires (male–female and male–male)</td><td class="num">£8</td><td></td></tr>
+  <tr><td>USB cable</td><td>Micro-USB to USB-C (or to USB-A) <em>data</em> cable</td><td class="num">£5</td><td>Powers the Pi from the Mac and carries the music. Charge-only cables will not work.</td></tr>
+</table>
+</div>
+<p>Optional later upgrade: a Bourns EM14 optical encoder turns smoothly with no clicks. It costs about £27, comes from DigiKey, Mouser or Farnell, and needs extra parts; see the note at the end of the knob section.</p>
+<p>For the case stage later: a panel-mount USB-C socket, a panel-mount 4.4 mm socket and two 3-pin headers for the DAC's balanced output.</p>
+
+<h2 id="tools">Tools and software</h2>
+<h3>Tools</h3>
+<ul>
+  <li>Soldering iron and solder (Pi header and reader pins if not fitted).</li>
+  <li>Multimeter, useful for finding pin 1 on the splitter and checking connections.</li>
+</ul>
+<h3>On the Mac</h3>
+<ul>
+  <li><strong>Raspberry Pi Imager</strong>, free from <a href="https://www.raspberrypi.com/software/">raspberrypi.com/software</a>, to write the SD card.</li>
+  <li><strong>Terminal</strong> (built in), for SSH and copying the code.</li>
+  <li><strong>This project folder</strong>, <code>~/Projects/nfc-player</code>.</li>
+</ul>
+<h3>On the Pi (installed for you by the setup script)</h3>
+<ul>
+  <li><strong>Raspberry Pi OS Lite, 64-bit</strong>: the operating system, without a desktop.</li>
+  <li><strong>MPD</strong>: decodes the music and sends it to the DAC.</li>
+  <li><strong>Python 3</strong> with Pillow, NumPy, spidev, gpiozero, lgpio and python-mpd2.</li>
+  <li><strong>exfatprogs</strong>: creates and checks the music drive.</li>
+</ul>
+
+<h2 id="flash"><span class="step">Step 1</span>Flash the SD card</h2>
+<ol>
+  <li>Put the microSD card in the Mac and open Raspberry Pi Imager.</li>
+  <li>Device: <strong>Raspberry Pi Zero 2 W</strong>.</li>
+  <li>Operating system: <strong>Raspberry Pi OS (other) → Raspberry Pi OS Lite (64-bit)</strong>.</li>
+  <li>Storage: your SD card.</li>
+  <li>When asked about customisation, edit the settings:
+    <ul>
+      <li>Hostname: <code>nfcplayer</code></li>
+      <li>Username and password: your choice. Using the same username as on your Mac saves typing later.</li>
+      <li>Wi-Fi: your network name and password. The Zero 2 W only does 2.4 GHz.</li>
+      <li>Services: enable <strong>SSH</strong> with password authentication.</li>
+    </ul>
+  </li>
+  <li>Write the card. Menus differ slightly between Imager versions, but these are the settings that matter.</li>
+</ol>
+<p>Wi-Fi is used for setup, updates and the web remote. The player works without it; only the web page needs it.</p>
+
+<h2 id="boot"><span class="step">Step 2</span>First boot</h2>
+<ol>
+  <li>Put the card in the Pi. Leave everything else disconnected for now.</li>
+  <li>Plug the micro-USB cable into the Pi port marked <strong>USB</strong> (the one nearer the middle of the board, not <strong>PWR IN</strong>) and the other end into the Mac. That one cable powers the Pi and will later carry music.</li>
+  <li>Wait about two minutes for the first boot, then connect:</li>
+</ol>
+<pre><code>ssh nfcplayer.local</code></pre>
+<p>If your Pi username differs from your Mac's, use <code>ssh yourname@nfcplayer.local</code>, and add <code>yourname@</code> the same way in later commands.</p>
+
+<h2 id="dac"><span class="step">Step 3</span>Fit the DAC</h2>
+<ol>
+  <li>Shut the Pi down with <code>sudo poweroff</code>, wait for the green light to stop, and unplug it. Do this before every wiring change.</li>
+  <li>Plug the GPIO splitter onto the Pi's header, and the DAC Pro onto one of the splitter's headers. Check that pin 1 lines up on every board.</li>
+  <li>The splitter's free header is where the display, reader, knob and buttons connect in step 5.</li>
+  <li>Connect the DAC's 3.5 mm or RCA output to your speaker or amplifier, with its volume low.</li>
+</ol>
+<div class="note"><p>The DAC uses GPIO 2, 3, 18, 19, 20 and 21 and the two ID pins (physical pins 27 and 28). Never connect anything else to those.</p></div>
+
+<h2 id="install"><span class="step">Step 4</span>Install the player</h2>
+<p>On the Mac, copy the project to the Pi:</p>
+<pre><code>cd ~/Projects/nfc-player && ./deploy.sh</code></pre>
+<p>If it reports that <code>rsync</code> is missing on the Pi, install it with <code>ssh nfcplayer.local 'sudo apt-get install -y rsync'</code> and run it again.</p>
+<p>Then on the Pi (over SSH), run the setup script:</p>
+<pre><code>cd ~/nfc-player && sudo system/setup.sh</code></pre>
+<p>It installs the software, turns on SPI and USB device mode, creates the music drive using all free space except 3 GB, and installs three services. To choose the drive size yourself, use <code>sudo MUSIC_GB=100 system/setup.sh</code> the first time.</p>
+<p>It will ask for a reboot:</p>
+<pre><code>sudo reboot</code></pre>
+<p>After the reboot the player starts by itself and the <a href="#web">web remote</a> is available. If the DAC was not attached, setup says so and configures silent playback, so everything except sound can be tried straight away.</p>
+<p>Once the DAC is fitted, run setup again so it can find it:</p>
+<pre><code>cd ~/nfc-player && sudo system/setup.sh</code></pre>
+<p>It should print <code>Sound card: …</code> and <code>All set</code>. If it still says no DAC was found, add the line <code>dtoverlay=rpi-dacpro</code> to the end of <code>/boot/firmware/config.txt</code>, reboot and run it again.</p>
+<p>Check the DAC is listed:</p>
+<pre><code>aplay -l</code></pre>
+
+<h2 id="wiring"><span class="step">Step 5</span>Wire and test</h2>
+<p>Add one part at a time, in this order, and run its check before moving on. Power off before each change. Stop the player while testing so the pins are free:</p>
+<pre><code>sudo systemctl stop nfc-player</code></pre>
+
+<figure>
+<svg viewBox="0 0 760 553" role="img" aria-label="Raspberry Pi 40-pin header with each used pin labelled">
+<rect x="341" y="24" width="78" height="515" rx="8" fill="none" style="stroke:var(--line)" stroke-width="1.5"/>
+<text x="380" y="14" text-anchor="middle" font-size="12" style="fill:var(--dim)">SD card end</text>
+<text x="380" y="551" text-anchor="middle" font-size="12" style="fill:var(--dim)">Camera connector end</text>
+<rect x="353" y="34" width="20" height="20" rx="3" style="fill:var(--c-display)"/>
+<text x="363" y="47.5" text-anchor="middle" font-size="10" font-weight="600" style="fill:#fff">1</text>
+<line x1="351" y1="44" x2="337" y2="44" style="stroke:var(--c-display)" stroke-width="1.5"/>
+<text x="333" y="48.5" text-anchor="end" font-size="13" xml:space="preserve"><tspan style="fill:var(--c-display)" font-weight="600">Display VCC</tspan><tspan style="fill:var(--dim)">  ·  3.3 V</tspan></text>
+<circle cx="397" cy="44" r="10" style="fill:var(--c-knob)"/>
+<text x="397" y="47.5" text-anchor="middle" font-size="10" font-weight="600" style="fill:#fff">2</text>
+<line x1="409" y1="44" x2="423" y2="44" style="stroke:var(--c-knob)" stroke-width="1.5"/>
+<text x="427" y="48.5" text-anchor="start" font-size="13" xml:space="preserve"><tspan style="fill:var(--dim)">5 V  ·  </tspan><tspan style="fill:var(--c-knob)" font-weight="600">Not used (5 V, EM14 knob only)</tspan></text>
+<circle cx="363" cy="69" r="10" style="fill:var(--c-dac)"/>
+<text x="363" y="72.5" text-anchor="middle" font-size="10" font-weight="600" style="fill:#fff">3</text>
+<line x1="351" y1="69" x2="337" y2="69" style="stroke:var(--c-dac)" stroke-width="1.5"/>
+<text x="333" y="73.5" text-anchor="end" font-size="13" xml:space="preserve"><tspan style="fill:var(--c-dac)" font-weight="600">DAC</tspan><tspan style="fill:var(--dim)">  ·  GPIO 2</tspan></text>
+<circle cx="397" cy="69" r="10" style="fill:var(--pin-idle)"/>
+<text x="397" y="72.5" text-anchor="middle" font-size="10" font-weight="600" style="fill:var(--dim)">4</text>
+<circle cx="363" cy="94" r="10" style="fill:var(--c-dac)"/>
+<text x="363" y="97.5" text-anchor="middle" font-size="10" font-weight="600" style="fill:#fff">5</text>
+<line x1="351" y1="94" x2="337" y2="94" style="stroke:var(--c-dac)" stroke-width="1.5"/>
+<text x="333" y="98.5" text-anchor="end" font-size="13" xml:space="preserve"><tspan style="fill:var(--c-dac)" font-weight="600">DAC</tspan><tspan style="fill:var(--dim)">  ·  GPIO 3</tspan></text>
+<circle cx="397" cy="94" r="10" style="fill:var(--c-knob)"/>
+<text x="397" y="97.5" text-anchor="middle" font-size="10" font-weight="600" style="fill:#fff">6</text>
+<line x1="409" y1="94" x2="423" y2="94" style="stroke:var(--c-knob)" stroke-width="1.5"/>
+<text x="427" y="98.5" text-anchor="start" font-size="13" xml:space="preserve"><tspan style="fill:var(--dim)">Ground  ·  </tspan><tspan style="fill:var(--c-knob)" font-weight="600">Knob common</tspan></text>
+<circle cx="363" cy="119" r="10" style="fill:var(--c-buttons)"/>
+<text x="363" y="122.5" text-anchor="middle" font-size="10" font-weight="600" style="fill:#fff">7</text>
+<line x1="351" y1="119" x2="337" y2="119" style="stroke:var(--c-buttons)" stroke-width="1.5"/>
+<text x="333" y="123.5" text-anchor="end" font-size="13" xml:space="preserve"><tspan style="fill:var(--c-buttons)" font-weight="600">Button: previous</tspan><tspan style="fill:var(--dim)">  ·  GPIO 4</tspan></text>
+<circle cx="397" cy="119" r="10" style="fill:var(--pin-idle)"/>
+<text x="397" y="122.5" text-anchor="middle" font-size="10" font-weight="600" style="fill:var(--dim)">8</text>
+<circle cx="363" cy="144" r="10" style="fill:var(--c-display)"/>
+<text x="363" y="147.5" text-anchor="middle" font-size="10" font-weight="600" style="fill:#fff">9</text>
+<line x1="351" y1="144" x2="337" y2="144" style="stroke:var(--c-display)" stroke-width="1.5"/>
+<text x="333" y="148.5" text-anchor="end" font-size="13" xml:space="preserve"><tspan style="fill:var(--c-display)" font-weight="600">Display GND</tspan><tspan style="fill:var(--dim)">  ·  Ground</tspan></text>
+<circle cx="397" cy="144" r="10" style="fill:var(--pin-idle)"/>
+<text x="397" y="147.5" text-anchor="middle" font-size="10" font-weight="600" style="fill:var(--dim)">10</text>
+<circle cx="363" cy="169" r="10" style="fill:var(--c-buttons)"/>
+<text x="363" y="172.5" text-anchor="middle" font-size="10" font-weight="600" style="fill:#fff">11</text>
+<line x1="351" y1="169" x2="337" y2="169" style="stroke:var(--c-buttons)" stroke-width="1.5"/>
+<text x="333" y="173.5" text-anchor="end" font-size="13" xml:space="preserve"><tspan style="fill:var(--c-buttons)" font-weight="600">Button: play / pause</tspan><tspan style="fill:var(--dim)">  ·  GPIO 17</tspan></text>
+<circle cx="397" cy="169" r="10" style="fill:var(--c-dac)"/>
+<text x="397" y="172.5" text-anchor="middle" font-size="10" font-weight="600" style="fill:#fff">12</text>
+<line x1="409" y1="169" x2="423" y2="169" style="stroke:var(--c-dac)" stroke-width="1.5"/>
+<text x="427" y="173.5" text-anchor="start" font-size="13" xml:space="preserve"><tspan style="fill:var(--dim)">GPIO 18  ·  </tspan><tspan style="fill:var(--c-dac)" font-weight="600">DAC</tspan></text>
+<circle cx="363" cy="194" r="10" style="fill:var(--c-display)"/>
+<text x="363" y="197.5" text-anchor="middle" font-size="10" font-weight="600" style="fill:#fff">13</text>
+<line x1="351" y1="194" x2="337" y2="194" style="stroke:var(--c-display)" stroke-width="1.5"/>
+<text x="333" y="198.5" text-anchor="end" font-size="13" xml:space="preserve"><tspan style="fill:var(--c-display)" font-weight="600">Display RST</tspan><tspan style="fill:var(--dim)">  ·  GPIO 27</tspan></text>
+<circle cx="397" cy="194" r="10" style="fill:var(--c-buttons)"/>
+<text x="397" y="197.5" text-anchor="middle" font-size="10" font-weight="600" style="fill:#fff">14</text>
+<line x1="409" y1="194" x2="423" y2="194" style="stroke:var(--c-buttons)" stroke-width="1.5"/>
+<text x="427" y="198.5" text-anchor="start" font-size="13" xml:space="preserve"><tspan style="fill:var(--dim)">Ground  ·  </tspan><tspan style="fill:var(--c-buttons)" font-weight="600">Buttons, common side</tspan></text>
+<circle cx="363" cy="219" r="10" style="fill:var(--pin-idle)"/>
+<text x="363" y="222.5" text-anchor="middle" font-size="10" font-weight="600" style="fill:var(--dim)">15</text>
+<circle cx="397" cy="219" r="10" style="fill:var(--pin-idle)"/>
+<text x="397" y="222.5" text-anchor="middle" font-size="10" font-weight="600" style="fill:var(--dim)">16</text>
+<circle cx="363" cy="244" r="10" style="fill:var(--c-nfc)"/>
+<text x="363" y="247.5" text-anchor="middle" font-size="10" font-weight="600" style="fill:#fff">17</text>
+<line x1="351" y1="244" x2="337" y2="244" style="stroke:var(--c-nfc)" stroke-width="1.5"/>
+<text x="333" y="248.5" text-anchor="end" font-size="13" xml:space="preserve"><tspan style="fill:var(--c-nfc)" font-weight="600">Reader VCC</tspan><tspan style="fill:var(--dim)">  ·  3.3 V</tspan></text>
+<circle cx="397" cy="244" r="10" style="fill:var(--pin-idle)"/>
+<text x="397" y="247.5" text-anchor="middle" font-size="10" font-weight="600" style="fill:var(--dim)">18</text>
+<circle cx="363" cy="269" r="10" style="fill:var(--c-shared)"/>
+<text x="363" y="272.5" text-anchor="middle" font-size="10" font-weight="600" style="fill:#fff">19</text>
+<line x1="351" y1="269" x2="337" y2="269" style="stroke:var(--c-shared)" stroke-width="1.5"/>
+<text x="333" y="273.5" text-anchor="end" font-size="13" xml:space="preserve"><tspan style="fill:var(--c-shared)" font-weight="600">Display DIN + Reader MOSI</tspan><tspan style="fill:var(--dim)">  ·  GPIO 10</tspan></text>
+<circle cx="397" cy="269" r="10" style="fill:var(--c-nfc)"/>
+<text x="397" y="272.5" text-anchor="middle" font-size="10" font-weight="600" style="fill:#fff">20</text>
+<line x1="409" y1="269" x2="423" y2="269" style="stroke:var(--c-nfc)" stroke-width="1.5"/>
+<text x="427" y="273.5" text-anchor="start" font-size="13" xml:space="preserve"><tspan style="fill:var(--dim)">Ground  ·  </tspan><tspan style="fill:var(--c-nfc)" font-weight="600">Reader GND</tspan></text>
+<circle cx="363" cy="294" r="10" style="fill:var(--c-nfc)"/>
+<text x="363" y="297.5" text-anchor="middle" font-size="10" font-weight="600" style="fill:#fff">21</text>
+<line x1="351" y1="294" x2="337" y2="294" style="stroke:var(--c-nfc)" stroke-width="1.5"/>
+<text x="333" y="298.5" text-anchor="end" font-size="13" xml:space="preserve"><tspan style="fill:var(--c-nfc)" font-weight="600">Reader MISO</tspan><tspan style="fill:var(--dim)">  ·  GPIO 9</tspan></text>
+<circle cx="397" cy="294" r="10" style="fill:var(--c-display)"/>
+<text x="397" y="297.5" text-anchor="middle" font-size="10" font-weight="600" style="fill:#fff">22</text>
+<line x1="409" y1="294" x2="423" y2="294" style="stroke:var(--c-display)" stroke-width="1.5"/>
+<text x="427" y="298.5" text-anchor="start" font-size="13" xml:space="preserve"><tspan style="fill:var(--dim)">GPIO 25  ·  </tspan><tspan style="fill:var(--c-display)" font-weight="600">Display DC</tspan></text>
+<circle cx="363" cy="319" r="10" style="fill:var(--c-shared)"/>
+<text x="363" y="322.5" text-anchor="middle" font-size="10" font-weight="600" style="fill:#fff">23</text>
+<line x1="351" y1="319" x2="337" y2="319" style="stroke:var(--c-shared)" stroke-width="1.5"/>
+<text x="333" y="323.5" text-anchor="end" font-size="13" xml:space="preserve"><tspan style="fill:var(--c-shared)" font-weight="600">Display CLK + Reader SCK</tspan><tspan style="fill:var(--dim)">  ·  GPIO 11</tspan></text>
+<circle cx="397" cy="319" r="10" style="fill:var(--c-display)"/>
+<text x="397" y="322.5" text-anchor="middle" font-size="10" font-weight="600" style="fill:#fff">24</text>
+<line x1="409" y1="319" x2="423" y2="319" style="stroke:var(--c-display)" stroke-width="1.5"/>
+<text x="427" y="323.5" text-anchor="start" font-size="13" xml:space="preserve"><tspan style="fill:var(--dim)">GPIO 8  ·  </tspan><tspan style="fill:var(--c-display)" font-weight="600">Display CS</tspan></text>
+<circle cx="363" cy="344" r="10" style="fill:var(--pin-idle)"/>
+<text x="363" y="347.5" text-anchor="middle" font-size="10" font-weight="600" style="fill:var(--dim)">25</text>
+<circle cx="397" cy="344" r="10" style="fill:var(--c-nfc)"/>
+<text x="397" y="347.5" text-anchor="middle" font-size="10" font-weight="600" style="fill:#fff">26</text>
+<line x1="409" y1="344" x2="423" y2="344" style="stroke:var(--c-nfc)" stroke-width="1.5"/>
+<text x="427" y="348.5" text-anchor="start" font-size="13" xml:space="preserve"><tspan style="fill:var(--dim)">GPIO 7  ·  </tspan><tspan style="fill:var(--c-nfc)" font-weight="600">Reader SS</tspan></text>
+<circle cx="363" cy="369" r="10" style="fill:var(--c-dac)"/>
+<text x="363" y="372.5" text-anchor="middle" font-size="10" font-weight="600" style="fill:#fff">27</text>
+<line x1="351" y1="369" x2="337" y2="369" style="stroke:var(--c-dac)" stroke-width="1.5"/>
+<text x="333" y="373.5" text-anchor="end" font-size="13" xml:space="preserve"><tspan style="fill:var(--c-dac)" font-weight="600">DAC</tspan><tspan style="fill:var(--dim)">  ·  ID</tspan></text>
+<circle cx="397" cy="369" r="10" style="fill:var(--c-dac)"/>
+<text x="397" y="372.5" text-anchor="middle" font-size="10" font-weight="600" style="fill:#fff">28</text>
+<line x1="409" y1="369" x2="423" y2="369" style="stroke:var(--c-dac)" stroke-width="1.5"/>
+<text x="427" y="373.5" text-anchor="start" font-size="13" xml:space="preserve"><tspan style="fill:var(--dim)">ID  ·  </tspan><tspan style="fill:var(--c-dac)" font-weight="600">DAC</tspan></text>
+<circle cx="363" cy="394" r="10" style="fill:var(--c-knob)"/>
+<text x="363" y="397.5" text-anchor="middle" font-size="10" font-weight="600" style="fill:#fff">29</text>
+<line x1="351" y1="394" x2="337" y2="394" style="stroke:var(--c-knob)" stroke-width="1.5"/>
+<text x="333" y="398.5" text-anchor="end" font-size="13" xml:space="preserve"><tspan style="fill:var(--c-knob)" font-weight="600">Knob A</tspan><tspan style="fill:var(--dim)">  ·  GPIO 5</tspan></text>
+<circle cx="397" cy="394" r="10" style="fill:var(--pin-idle)"/>
+<text x="397" y="397.5" text-anchor="middle" font-size="10" font-weight="600" style="fill:var(--dim)">30</text>
+<circle cx="363" cy="419" r="10" style="fill:var(--c-knob)"/>
+<text x="363" y="422.5" text-anchor="middle" font-size="10" font-weight="600" style="fill:#fff">31</text>
+<line x1="351" y1="419" x2="337" y2="419" style="stroke:var(--c-knob)" stroke-width="1.5"/>
+<text x="333" y="423.5" text-anchor="end" font-size="13" xml:space="preserve"><tspan style="fill:var(--c-knob)" font-weight="600">Knob B</tspan><tspan style="fill:var(--dim)">  ·  GPIO 6</tspan></text>
+<circle cx="397" cy="419" r="10" style="fill:var(--c-buttons)"/>
+<text x="397" y="422.5" text-anchor="middle" font-size="10" font-weight="600" style="fill:#fff">32</text>
+<line x1="409" y1="419" x2="423" y2="419" style="stroke:var(--c-buttons)" stroke-width="1.5"/>
+<text x="427" y="423.5" text-anchor="start" font-size="13" xml:space="preserve"><tspan style="fill:var(--dim)">GPIO 12  ·  </tspan><tspan style="fill:var(--c-buttons)" font-weight="600">Button: back</tspan></text>
+<circle cx="363" cy="444" r="10" style="fill:var(--c-display)"/>
+<text x="363" y="447.5" text-anchor="middle" font-size="10" font-weight="600" style="fill:#fff">33</text>
+<line x1="351" y1="444" x2="337" y2="444" style="stroke:var(--c-display)" stroke-width="1.5"/>
+<text x="333" y="448.5" text-anchor="end" font-size="13" xml:space="preserve"><tspan style="fill:var(--c-display)" font-weight="600">Display BL</tspan><tspan style="fill:var(--dim)">  ·  GPIO 13</tspan></text>
+<circle cx="397" cy="444" r="10" style="fill:var(--c-knob)"/>
+<text x="397" y="447.5" text-anchor="middle" font-size="10" font-weight="600" style="fill:#fff">34</text>
+<line x1="409" y1="444" x2="423" y2="444" style="stroke:var(--c-knob)" stroke-width="1.5"/>
+<text x="427" y="448.5" text-anchor="start" font-size="13" xml:space="preserve"><tspan style="fill:var(--dim)">Ground  ·  </tspan><tspan style="fill:var(--c-knob)" font-weight="600">Knob switch, other pin</tspan></text>
+<circle cx="363" cy="469" r="10" style="fill:var(--c-dac)"/>
+<text x="363" y="472.5" text-anchor="middle" font-size="10" font-weight="600" style="fill:#fff">35</text>
+<line x1="351" y1="469" x2="337" y2="469" style="stroke:var(--c-dac)" stroke-width="1.5"/>
+<text x="333" y="473.5" text-anchor="end" font-size="13" xml:space="preserve"><tspan style="fill:var(--c-dac)" font-weight="600">DAC</tspan><tspan style="fill:var(--dim)">  ·  GPIO 19</tspan></text>
+<circle cx="397" cy="469" r="10" style="fill:var(--c-buttons)"/>
+<text x="397" y="472.5" text-anchor="middle" font-size="10" font-weight="600" style="fill:#fff">36</text>
+<line x1="409" y1="469" x2="423" y2="469" style="stroke:var(--c-buttons)" stroke-width="1.5"/>
+<text x="427" y="473.5" text-anchor="start" font-size="13" xml:space="preserve"><tspan style="fill:var(--dim)">GPIO 16  ·  </tspan><tspan style="fill:var(--c-buttons)" font-weight="600">Button: next</tspan></text>
+<circle cx="363" cy="494" r="10" style="fill:var(--c-knob)"/>
+<text x="363" y="497.5" text-anchor="middle" font-size="10" font-weight="600" style="fill:#fff">37</text>
+<line x1="351" y1="494" x2="337" y2="494" style="stroke:var(--c-knob)" stroke-width="1.5"/>
+<text x="333" y="498.5" text-anchor="end" font-size="13" xml:space="preserve"><tspan style="fill:var(--c-knob)" font-weight="600">Knob switch</tspan><tspan style="fill:var(--dim)">  ·  GPIO 26</tspan></text>
+<circle cx="397" cy="494" r="10" style="fill:var(--c-dac)"/>
+<text x="397" y="497.5" text-anchor="middle" font-size="10" font-weight="600" style="fill:#fff">38</text>
+<line x1="409" y1="494" x2="423" y2="494" style="stroke:var(--c-dac)" stroke-width="1.5"/>
+<text x="427" y="498.5" text-anchor="start" font-size="13" xml:space="preserve"><tspan style="fill:var(--dim)">GPIO 20  ·  </tspan><tspan style="fill:var(--c-dac)" font-weight="600">DAC</tspan></text>
+<circle cx="363" cy="519" r="10" style="fill:var(--pin-idle)"/>
+<text x="363" y="522.5" text-anchor="middle" font-size="10" font-weight="600" style="fill:var(--dim)">39</text>
+<circle cx="397" cy="519" r="10" style="fill:var(--c-dac)"/>
+<text x="397" y="522.5" text-anchor="middle" font-size="10" font-weight="600" style="fill:#fff">40</text>
+<line x1="409" y1="519" x2="423" y2="519" style="stroke:var(--c-dac)" stroke-width="1.5"/>
+<text x="427" y="523.5" text-anchor="start" font-size="13" xml:space="preserve"><tspan style="fill:var(--dim)">GPIO 21  ·  </tspan><tspan style="fill:var(--c-dac)" font-weight="600">DAC</tspan></text>
+</svg>
+<ul class="legend">
+  <li><i style="background:var(--c-display)"></i>Display</li>
+  <li><i style="background:var(--c-nfc)"></i>NFC reader</li>
+  <li><i style="background:var(--c-shared)"></i>Shared by display and reader</li>
+  <li><i style="background:var(--c-knob)"></i>Knob</li>
+  <li><i style="background:var(--c-buttons)"></i>Buttons</li>
+  <li><i style="background:var(--c-dac)"></i>Used by the DAC, leave alone</li>
+</ul>
+<figcaption>The Pi's 40-pin header seen from above, with the SD card slot at the top. Pin 1 is the square pad nearest the SD card. Numbers inside the dots are physical pin numbers; "GPIO n" is what the software uses.</figcaption>
+</figure>
+
+<h3 id="w-display">Display</h3>
+<div class="table-wrap"><table>
+  <tr><th>Display pin</th><th>Pi pin</th><th>Pi name</th></tr>
+  <tr><td>VCC</td><td class="num">1</td><td>3.3 V</td></tr>
+  <tr><td>GND</td><td class="num">9</td><td>Ground</td></tr>
+  <tr><td>DIN</td><td class="num">19</td><td>GPIO 10 (MOSI)</td></tr>
+  <tr><td>CLK</td><td class="num">23</td><td>GPIO 11 (SCLK)</td></tr>
+  <tr><td>CS</td><td class="num">24</td><td>GPIO 8 (CE0)</td></tr>
+  <tr><td>DC</td><td class="num">22</td><td>GPIO 25</td></tr>
+  <tr><td>RST</td><td class="num">13</td><td>GPIO 27</td></tr>
+  <tr><td>BL</td><td class="num">33</td><td>GPIO 13</td></tr>
+</table></div>
+<pre><code>cd ~/nfc-player && python3 -m player.hw.check display</code></pre>
+<p>You should see red, green, blue and white bars above two lines of text for ten seconds. If it is upside down, add <code>--rotate</code> to that command to confirm, then add <code>--rotate 180</code> to the service (see <a href="#reference">Reference</a>).</p>
+
+<h3 id="w-nfc">NFC reader</h3>
+<p>First set the module's two small switches for SPI: <strong>switch 1 off, switch 2 on</strong>. Use the 8-pin row labelled SCK, MISO, MOSI, SS.</p>
+<div class="table-wrap"><table>
+  <tr><th>PN532 pin</th><th>Pi pin</th><th>Pi name</th></tr>
+  <tr><td>VCC</td><td class="num">17</td><td>3.3 V</td></tr>
+  <tr><td>GND</td><td class="num">20</td><td>Ground</td></tr>
+  <tr><td>SCK</td><td class="num">23</td><td>GPIO 11 (SCLK), shared with the display</td></tr>
+  <tr><td>MOSI</td><td class="num">19</td><td>GPIO 10 (MOSI), shared with the display</td></tr>
+  <tr><td>MISO</td><td class="num">21</td><td>GPIO 9 (MISO)</td></tr>
+  <tr><td>SS</td><td class="num">26</td><td>GPIO 7 (CE1)</td></tr>
+  <tr><td>IRQ, RSTO</td><td class="num">–</td><td>Not connected</td></tr>
+</table></div>
+<p>Pins 19 and 23 each take two wires (display and reader). Join them on a breadboard row.</p>
+<pre><code>cd ~/nfc-player && python3 -m player.hw.check nfc</code></pre>
+<p>It should print the reader's firmware version, then a card ID each time you hold a card to the antenna and <code>card removed</code> when you take it away.</p>
+
+<h3 id="w-knob">Knob</h3>
+<p>The encoder has three pins on one side (A, common, B, with common in the middle) and two on the other (the push switch). It only ever connects pins to ground, so it needs no power and no resistors.</p>
+<div class="table-wrap"><table>
+  <tr><th>Encoder pin</th><th>Pi pin</th><th>Pi name</th></tr>
+  <tr><td>A (outer pin, three-pin side)</td><td class="num">29</td><td>GPIO 5</td></tr>
+  <tr><td>C, common (middle pin)</td><td class="num">6</td><td>Ground</td></tr>
+  <tr><td>B (other outer pin)</td><td class="num">31</td><td>GPIO 6</td></tr>
+  <tr><td>Switch, one pin</td><td class="num">37</td><td>GPIO 26</td></tr>
+  <tr><td>Switch, other pin</td><td class="num">34</td><td>Ground</td></tr>
+</table></div>
+<pre><code>cd ~/nfc-player && python3 -m player.hw.check inputs</code></pre>
+<p>Each click should print about <code>+11</code> clockwise or <code>-11</code> anticlockwise, and one full turn should add up to about 256. Pushing prints <code>knob</code>; holding for over half a second prints <code>knob_long</code>. If clockwise is negative, swap the A and B wires or add <code>--encoder-reverse</code> to the service.</p>
+<p>In use, each click changes the volume by 2 and moves one line in a list. Spinning quickly changes the volume faster.</p>
+<p>Fit the knob so it sits about 1 mm clear of the surface and tighten its set screw onto the flat of the shaft. A knob that rubs or wobbles is what makes a control feel cheap.</p>
+<div class="note">
+  <p><strong>Upgrading to the smooth Bourns EM14 later.</strong> Order <code>EM14A0D-C24-L064S</code> (¼" shaft, so a 6.35 mm knob) plus a 1.27 mm pitch adapter board, two 10 kΩ and two 20 kΩ resistors. Its six pins are marked <code>– A 1 2 + B</code>.</p>
+  <p>Wire <code>+</code> to pin 2 (5 V), <code>–</code> to pin 6, <code>1</code> to pin 37 and <code>2</code> to pin 34. A and B sit near 5 V, too much for the Pi, so each goes through a 10 kΩ resistor to its GPIO pin (A to pin 29, B to pin 31), with a 20 kΩ resistor from that GPIO pin to ground.</p>
+  <p>Before connecting pins 29 and 31, measure each divided signal while turning the knob: it must switch between about 0 V and 2.5–3.3 V, never above 3.4 V. Then test with <code>python3 -m player.hw.check inputs --em14</code> and add <code>--encoder em14</code> to the service.</p>
+</div>
+
+<h3 id="w-buttons">Buttons</h3>
+<p>Each button connects its GPIO pin to ground when pressed. One side of every button goes to ground (pin 14); the other side goes to its own pin:</p>
+<div class="table-wrap"><table>
+  <tr><th>Button</th><th>Pi pin</th><th>Pi name</th></tr>
+  <tr><td>Previous</td><td class="num">7</td><td>GPIO 4</td></tr>
+  <tr><td>Play / pause</td><td class="num">11</td><td>GPIO 17</td></tr>
+  <tr><td>Next</td><td class="num">36</td><td>GPIO 16</td></tr>
+  <tr><td>Back</td><td class="num">32</td><td>GPIO 12</td></tr>
+  <tr><td>Common side of all four</td><td class="num">14</td><td>Ground</td></tr>
+</table></div>
+<p>Run the same check as for the knob. Each press should print the button's name.</p>
+
+<h3>Start the player</h3>
+<pre><code>sudo systemctl start nfc-player</code></pre>
+<p>The display should show <strong>Place a card</strong>. To watch what the player is doing:</p>
+<pre><code>journalctl -u nfc-player -f</code></pre>
+
+<h2 id="music"><span class="step">Step 6</span>Add music</h2>
+<ol>
+  <li>With the Pi connected to the Mac by its <strong>USB</strong> port, the display shows <strong>Connected to a computer</strong>. Push the knob.</li>
+  <li>A drive called <code>MUSIC</code> appears in Finder. Copy albums onto it as <code>Artist/Album/tracks</code>, for example <code>Nina Simone/Pastel Blues/01 Be My Husband.flac</code>.</li>
+  <li>Put a <code>cover.jpg</code> in an album's folder to show its cover.</li>
+  <li>Eject <code>MUSIC</code> in Finder. The player takes the drive back, checks it and rescans. If the screen stays on <strong>Transfer mode</strong> after ejecting, hold the knob for a second.</li>
+</ol>
+<p>FLAC, MP3, AAC/M4A, Ogg, Opus, WAV and AIFF are recognised. The player cannot play while the Mac has the drive.</p>
+<p>You can also add music over Wi-Fi from the <a href="#web">web remote</a>. USB is much faster for a large collection; the web page suits an album or two.</p>
+<div class="note"><p>Always eject before unplugging. An unplug mid-copy is repaired on the next start, but the file being copied will be lost.</p></div>
+<p>To confirm sound reaches the DAC once there is music on the drive:</p>
+<pre><code>sudo systemctl stop nfc-player && cd ~/nfc-player && python3 -m player.hw.check audio; sudo systemctl start nfc-player</code></pre>
+
+<h2 id="use"><span class="step">Step 7</span>Use it</h2>
+<div class="table-wrap"><table>
+  <tr><th>You do</th><th>It does</th></tr>
+  <tr><td>Insert a new card</td><td>Shows the album list. Turn the knob to choose, push to link. The album starts. Cards can also be linked from the <a href="#web">web remote</a>.</td></tr>
+  <tr><td>Insert a linked card</td><td>Plays its album from where that card last stopped.</td></tr>
+  <tr><td>Remove the card</td><td>Pauses and remembers the position.</td></tr>
+  <tr><td>Turn the knob</td><td>Volume.</td></tr>
+  <tr><td>Push the knob, or play/pause</td><td>Pause and resume. After the album ends, plays it again.</td></tr>
+  <tr><td>Previous / next</td><td>Skip tracks. Previous restarts the track if more than 3 seconds in.</td></tr>
+  <tr><td>Hold the knob</td><td>Menu: link the card to another album, unlink it, or close.</td></tr>
+  <tr><td>Back</td><td>Leaves a menu or list.</td></tr>
+</table></div>
+
+<h2 id="web"><span class="step">Step 8</span>Web remote</h2>
+<p>On any phone or computer on the same Wi-Fi, open:</p>
+<pre><code>http://nfcplayer.local</code></pre>
+<p>Nothing needs installing; the player serves the page itself.</p>
+<h3>Control</h3>
+<ul>
+  <li>The top panel shows what is playing, with previous, play/pause, next and a volume slider. It follows the knob and buttons, and they follow it.</li>
+  <li>Tap any album in the list to play it, with or without a card in the slot.</li>
+  <li>The card still rules: inserting a linked card plays that card's album, and removing the card pauses whatever is playing.</li>
+  <li>An album started from the page does not change the place a card remembers. Put the card back in and it resumes where the card left off.</li>
+</ul>
+<h3>Link cards</h3>
+<ul>
+  <li>With a card in the slot, a line under the controls says whether it is linked, and each album gets a <strong>Link card</strong> button.</li>
+  <li>Press <strong>Link card</strong> next to an album. The card is linked and the album starts, exactly as if you had linked it with the knob.</li>
+  <li><strong>Unlink card</strong> removes the link. Linking a card that already has an album simply replaces it.</li>
+</ul>
+<p>This means the player is fully usable before the display, knob and buttons are fitted: with only the DAC and reader connected, load music over USB or the page, link cards from the page, and control playback from it.</p>
+<h3>Upload</h3>
+<ol>
+  <li>Under <strong>Add music</strong>, press <strong>Choose folder</strong> and pick an album folder. It is copied with its name, so <code>Pastel Blues</code> becomes an album called Pastel Blues.</li>
+  <li>To file it under an artist, type the artist in <strong>Put inside</strong> first, for example <code>Nina Simone</code>. Picking a whole artist folder that contains album folders also works.</li>
+  <li>On an iPhone, which cannot pick folders, use <strong>Choose files</strong> and type the full folder in <strong>Put inside</strong>, for example <code>Nina Simone/Pastel Blues</code>.</li>
+  <li>Keep the page open until every file says <strong>done</strong>. The album appears in the list a few seconds after the last file.</li>
+</ol>
+<p>Music keeps playing during an upload. Only music and cover image files are accepted; anything else is skipped. Uploads are refused while the drive is connected to a computer over USB, and USB transfer waits until uploads finish.</p>
+<h3>Delete</h3>
+<ol>
+  <li>Press <strong>Files</strong> next to an album to see what is in it, with each file's size.</li>
+  <li>Press <strong>Delete</strong> next to a file to remove just that track or cover, or <strong>Delete whole album</strong> to remove the folder.</li>
+  <li>Confirm when asked. Deleting cannot be undone; there is no bin.</li>
+</ol>
+<ul>
+  <li>Deleting an album's last track removes the album, including its cover.</li>
+  <li>An artist folder is removed once its last album is gone.</li>
+  <li>If the album is playing, it stops within a few seconds.</li>
+  <li>A card linked to a deleted album stays linked to nothing: the page says so, and you can link it to another album.</li>
+</ul>
+<div class="note">
+  <p><strong>There is no password.</strong> Anyone on your Wi-Fi can open the page, change what is playing, relink the card in the slot, and add or delete music. That is fine on a home network you trust; do not use it on shared or public Wi-Fi. To turn the page off, change <code>--web-port 80</code> to <code>--web-port 0</code> in the service (see <a href="#reference">Reference</a>).</p>
+  <p>The page cannot rename or move music. Do that over USB.</p>
+</div>
+
+<h2 id="trouble">Troubleshooting</h2>
+<div class="table-wrap"><table>
+  <tr><th>Symptom</th><th>Try</th></tr>
+  <tr><td><code>ssh nfcplayer.local</code> does not connect</td><td>Wait another minute. Check the Wi-Fi name and password set in Imager and that the network is 2.4 GHz. Find the Pi's address in your router and use that instead.</td></tr>
+  <tr><td>No DAC in <code>aplay -l</code></td><td>Reseat the DAC and splitter. Add <code>dtoverlay=rpi-dacpro</code> to the end of <code>/boot/firmware/config.txt</code>, reboot, run setup again.</td></tr>
+  <tr><td>Display stays dark</td><td>Recheck VCC, GND and BL. Check SPI is on: <code>ls /dev/spidev0.*</code> should list two devices.</td></tr>
+  <tr><td>Display lit but blank or garbled</td><td>Recheck DC, RST, DIN and CLK. Shorten the wires.</td></tr>
+  <tr><td>Display works alone but breaks when the reader is added</td><td>Check the reader's SS wire is on pin 26, not 24.</td></tr>
+  <tr><td>"PN532 not responding"</td><td>Check the two switches (1 off, 2 on), and that MISO and MOSI are not swapped.</td></tr>
+  <tr><td>Knob counts jump or go one way only</td><td>One of A or B is not reaching the Pi, or the common pin is not on ground. Recheck those three wires.</td></tr>
+  <tr><td>Mac never shows "Connected to a computer"</td><td>Use the <strong>USB</strong> port, not <strong>PWR IN</strong>, with a data cable. Run <code>python3 -m player.hw.check usb</code>: it should say <code>configured</code>.</td></tr>
+  <tr><td>"Something went wrong" on the display</td><td>The message below it is the cause. The full detail is in <code>journalctl -u nfc-player -n 50</code>.</td></tr>
+  <tr><td><code>http://nfcplayer.local</code> does not open</td><td>Check the phone is on the same Wi-Fi as the Pi, and type <code>http://</code> in full. Some Android phones cannot find <code>.local</code> names: run <code>hostname -I</code> on the Pi and use that address instead, for example <code>http://192.168.1.42</code>. Check <code>journalctl -u nfc-player -n 50</code> for "Web remote on port 80".</td></tr>
+  <tr><td>Upload fails with a message about the drive</td><td>The drive is in use over USB, or could not be made writable. Eject it on the Mac first. If it persists, run <code>sudo /usr/local/sbin/nfc-player-usb rw</code> on the Pi and read the error.</td></tr>
+  <tr><td>Uploads are slow</td><td>The Zero 2 W's Wi-Fi manages a few megabytes per second at best. Use USB for big batches.</td></tr>
+  <tr><td>Card does nothing</td><td>Run the NFC check to see whether the reader sees it. Some bank-style and hotel cards use other standards and will not read.</td></tr>
+</table></div>
+
+<h2 id="reference">Reference</h2>
+<h3>Player options</h3>
+<p>Options go on the <code>ExecStart</code> line of the service. Edit it, then reload:</p>
+<pre><code>sudo nano /etc/systemd/system/nfc-player.service</code></pre>
+<pre><code>sudo systemctl daemon-reload && sudo systemctl restart nfc-player</code></pre>
+<div class="table-wrap"><table>
+  <tr><th>Option</th><th>Effect</th></tr>
+  <tr><td><code>--rotate 180</code></td><td>Turns the picture upside down.</td></tr>
+  <tr><td><code>--encoder em14</code></td><td>Use the smooth Bourns EM14 instead of a clicky encoder.</td></tr>
+  <tr><td><code>--encoder-reverse</code></td><td>Swaps the knob's direction.</td></tr>
+  <tr><td><code>--web-port 80</code></td><td>Port for the web remote. <code>0</code> turns it off.</td></tr>
+</table></div>
+
+<h3>Updating the code</h3>
+<pre><code>cd ~/Projects/nfc-player && ./deploy.sh && ssh nfcplayer.local 'sudo systemctl restart nfc-player'</code></pre>
+
+<h3>Where things are</h3>
+<div class="table-wrap"><table>
+  <tr><th>On the Pi</th><th>What</th></tr>
+  <tr><td><code>~/nfc-player</code></td><td>The program.</td></tr>
+  <tr><td><code>/srv/nfc-player/music.img</code></td><td>The music drive (one big file).</td></tr>
+  <tr><td><code>/mnt/music</code></td><td>The same music as the player sees it, read-only.</td></tr>
+  <tr><td><code>/var/lib/nfc-player/state.json</code></td><td>Card links, resume positions, volume.</td></tr>
+  <tr><td><code>/etc/mpd.conf</code></td><td>MPD settings written by setup. The original is kept as <code>/etc/mpd.conf.dist</code>.</td></tr>
+  <tr><td><code>/boot/firmware/config.txt</code></td><td>Boot settings. Setup adds a block marked <code># nfc-player</code>.</td></tr>
+</table></div>
+
+<h3>In the project</h3>
+<div class="table-wrap"><table>
+  <tr><th>File</th><th>What</th></tr>
+  <tr><td><code>player/app.py</code></td><td>The player's behaviour.</td></tr>
+  <tr><td><code>player/ui/render.py</code></td><td>The screens.</td></tr>
+  <tr><td><code>player/main.py</code></td><td>Start-up and the pin numbers (<code>PINS</code>).</td></tr>
+  <tr><td><code>player/hw/</code></td><td>Drivers: <code>st7789.py</code>, <code>pn532.py</code>, <code>inputs.py</code>, <code>usb.py</code>, and <code>check.py</code> for the tests above.</td></tr>
+  <tr><td><code>player/web/</code></td><td>The web remote: <code>server.py</code> and the page, <code>remote.html</code>.</td></tr>
+  <tr><td><code>system/</code></td><td><code>setup.sh</code>, the USB helper and the service files.</td></tr>
+</table></div>
+<p>To try changes without the hardware, run the simulator on the Mac: <code>.venv/bin/python -m player.main --sim</code>, then open <code>http://localhost:8137</code>. The web remote runs alongside it at <code>http://localhost:8080</code>.</p>
+
+<h3>Sources</h3>
+<ul>
+  <li><a href="https://thepihut.com/products/rotary-encoder-extras">Rotary Encoder + Extras at The Pi Hut</a>.</li>
+  <li><a href="https://www.bourns.com/docs/Product-Datasheets/em14.pdf">Bourns EM14 datasheet</a> (pin marking, 5 V supply, part numbers), for the optional upgrade.</li>
+  <li><a href="https://thepihut.com/products/iqaudio-dac-pro">Raspberry Pi DAC Pro at The Pi Hut</a>.</li>
+  <li><a href="https://www.raspberrypi.com/software/operating-systems/">Raspberry Pi OS downloads</a>.</li>
+</ul>
+
+</main>
+</div>
+<script>
+document.querySelectorAll("pre").forEach((pre) => {
+  const b = document.createElement("button");
+  b.textContent = "Copy";
+  b.addEventListener("click", () => {
+    navigator.clipboard.writeText(pre.querySelector("code").textContent).then(() => {
+      b.textContent = "Copied";
+      setTimeout(() => (b.textContent = "Copy"), 1200);
+    });
+  });
+  pre.appendChild(b);
+});
+</script>
+</body>
+</html>

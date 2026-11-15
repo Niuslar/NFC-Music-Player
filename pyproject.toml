@@ -1,0 +1,12 @@
+[project]
+name = "nfc-player"
+version = "0.1.0"
+description = "NFC card album player for Raspberry Pi Zero 2 W"
+requires-python = ">=3.11"
+dependencies = ["pillow>=10.1", "numpy", "python-mpd2>=3.1"]
+
+[project.optional-dependencies]
+dev = ["pytest"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

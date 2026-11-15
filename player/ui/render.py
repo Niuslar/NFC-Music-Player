@@ -1,0 +1,163 @@
+"""Draws each screen as a 320x240 Pillow image. No hardware knowledge in here."""
+
+from functools import lru_cache
+from pathlib import Path
+
+from PIL import Image, ImageDraw, ImageFont
+
+W, H = 320, 240
+BG = (14, 14, 16)
+FG = (240, 238, 232)
+DIM = (150, 148, 142)
+FAINT = (58, 57, 60)
+ACCENT = (232, 163, 61)
+PAD = 16
+COVER = 124
+ROW_H = 38
+VISIBLE_ROWS = 5
+
+
+@lru_cache(maxsize=None)
+def font(size: int) -> ImageFont.FreeTypeFont:
+    return ImageFont.load_default(size=size)
+
+
+def _canvas() -> tuple[Image.Image, ImageDraw.ImageDraw]:
+    img = Image.new("RGB", (W, H), BG)
+    return img, ImageDraw.Draw(img)
+
+
+def _fit(text: str, f, width: int) -> str:
+    if f.getlength(text) <= width:
+        return text
+    while text and f.getlength(text + "…") > width:
+        text = text[:-1]
+    return text.rstrip() + "…"
+
+
+def _wrap(text: str, f, width: int, max_lines: int) -> list[str]:
+    lines: list[str] = []
+    for para in text.split("\n"):
+        line = ""
+        for word in para.split():
+            trial = f"{line} {word}".strip()
+            if f.getlength(trial) <= width or not line:
+                line = trial
+            else:
+                lines.append(line)
+                line = word
+        lines.append(line)
+    if len(lines) > max_lines:
+        lines = lines[:max_lines]
+        lines[-1] = _fit(lines[-1] + " …", f, width)
+    return [_fit(line, f, width) for line in lines]
+
+
+def _clock(seconds: float) -> str:
+    s = max(int(seconds), 0)
+    return f"{s // 60}:{s % 60:02d}"
+
+
+@lru_cache(maxsize=4)
+def _cover(path: Path | None, title: str) -> Image.Image:
+    if path is not None:
+        try:
+            img = Image.open(path).convert("RGB")
+            side = min(img.size)
+            left, top = (img.width - side) // 2, (img.height - side) // 2
+            return img.crop((left, top, left + side, top + side)).resize((COVER, COVER), Image.LANCZOS)
+        except OSError:
+            pass
+    img = Image.new("RGB", (COVER, COVER), FAINT)
+    d = ImageDraw.Draw(img)
+    d.text((COVER // 2, COVER // 2), (title[:1] or "?").upper(), font=font(56), fill=DIM, anchor="mm")
+    return img
+
+
+def forget_covers() -> None:
+    """Call after the library changes on disk."""
+    _cover.cache_clear()
+
+
+def message(title: str, body: str = "") -> Image.Image:
+    img, d = _canvas()
+    body_lines = _wrap(body, font(16), W - 2 * PAD, 5) if body else []
+    total = 30 + (12 + 22 * len(body_lines) if body_lines else 0)
+    y = (H - total) // 2
+    d.text((W // 2, y), _fit(title, font(24), W - 2 * PAD), font=font(24), fill=FG, anchor="mt")
+    y += 42
+    for line in body_lines:
+        d.text((W // 2, y), line, font=font(16), fill=DIM, anchor="mt")
+        y += 22
+    return img
+
+
+def list_screen(header: str, rows: list[tuple[str, str]], selected: int) -> Image.Image:
+    """rows are (title, subtitle); subtitle may be empty."""
+    img, d = _canvas()
+    d.text((PAD, 12), _fit(header, font(15), W - 2 * PAD), font=font(15), fill=DIM)
+    d.line((PAD, 38, W - PAD, 38), fill=FAINT)
+    top = min(max(selected - VISIBLE_ROWS // 2, 0), max(len(rows) - VISIBLE_ROWS, 0))
+    text_w = W - 2 * PAD - 20
+    for i, (title, sub) in enumerate(rows[top : top + VISIBLE_ROWS]):
+        y = 44 + i * ROW_H
+        is_sel = top + i == selected
+        if is_sel:
+            d.rounded_rectangle((PAD - 8, y, W - PAD - 2, y + ROW_H - 4), radius=8, fill=ACCENT)
+        main, minor = (BG, (70, 48, 14)) if is_sel else (FG, DIM)
+        if sub:
+            d.text((PAD, y + 2), _fit(title, font(16), text_w), font=font(16), fill=main)
+            d.text((PAD, y + 19), _fit(sub, font(12), text_w), font=font(12), fill=minor)
+        else:
+            d.text((PAD, y + (ROW_H - 4) // 2), _fit(title, font(17), text_w), font=font(17), fill=main, anchor="lm")
+    if len(rows) > VISIBLE_ROWS:  # scroll position marker
+        track_h = VISIBLE_ROWS * ROW_H - 4
+        bar_h = max(track_h * VISIBLE_ROWS // len(rows), 12)
+        bar_y = 44 + (track_h - bar_h) * top // (len(rows) - VISIBLE_ROWS)
+        d.rounded_rectangle((W - 7, bar_y, W - 4, bar_y + bar_h), radius=2, fill=FAINT)
+    return img
+
+
+def now_playing(album, status, volume: int | None) -> Image.Image:
+    """volume is given only while the volume overlay should be visible."""
+    img, d = _canvas()
+    img.paste(_cover(album.cover, album.title), (PAD, PAD))
+    x = PAD + COVER + 14
+    col_w = W - PAD - x
+    finished = status.state == "stop"
+    title = "Finished" if finished else status.title
+    y = PAD + 2
+    for line in _wrap(title, font(20), col_w, 3):
+        d.text((x, y), line, font=font(20), fill=FG)
+        y += 25
+    y += 6
+    for line in _wrap(album.title, font(14), col_w, 2):
+        d.text((x, y), line, font=font(14), fill=DIM)
+        y += 18
+    if album.artist:
+        d.text((x, y), _fit(album.artist, font(14), col_w), font=font(14), fill=DIM)
+
+    bar_y = 176
+    if volume is not None:
+        d.text((PAD, bar_y - 26), "Volume", font=font(14), fill=DIM)
+        d.text((W - PAD, bar_y - 26), str(volume), font=font(14), fill=FG, anchor="ra")
+        frac, colour = volume / 100, FG
+    else:
+        frac = status.elapsed / status.duration if status.duration else 0
+        colour = ACCENT
+    d.rounded_rectangle((PAD, bar_y, W - PAD, bar_y + 5), radius=2, fill=FAINT)
+    fill_w = int((W - 2 * PAD) * min(max(frac, 0), 1))
+    if fill_w >= 4:
+        d.rounded_rectangle((PAD, bar_y, PAD + fill_w, bar_y + 5), radius=2, fill=colour)
+
+    y = bar_y + 18
+    if finished:
+        d.text((W // 2, y), "Push to play again", font=font(14), fill=DIM, anchor="mt")
+        return img
+    d.text((PAD, y), _clock(status.elapsed), font=font(14), fill=DIM)
+    d.text((W - PAD, y), _clock(status.duration), font=font(14), fill=DIM, anchor="ra")
+    if status.state == "pause":
+        d.text((W // 2, y), "Paused", font=font(14), fill=ACCENT, anchor="mt")
+    else:
+        d.text((W // 2, y), f"{status.track_index + 1} / {status.track_count}", font=font(14), fill=DIM, anchor="mt")
+    return img

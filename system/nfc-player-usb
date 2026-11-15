@@ -1,0 +1,98 @@
+#!/bin/sh
+# Root helper for the music drive. Installed to /usr/local/sbin by setup.sh.
+#
+#   setup    create the USB gadget (an empty removable drive) - run at boot
+#   mount    mount the music image read-only for the player   - run at boot
+#   release  unmount it and hand it to the connected computer
+#   reclaim  take it back, check it, mount it read-only again
+#   rw / ro  make the mounted drive writable for web uploads / read-only again
+#   status   print what the gadget is doing
+set -eu
+
+IMG=/srv/nfc-player/music.img
+MNT=/mnt/music
+OFFSET=1048576   # the exFAT partition starts 1 MiB into the image
+G=/sys/kernel/config/usb_gadget/nfcplayer
+LUN=$G/functions/mass_storage.usb0/lun.0
+
+OWNER=root
+[ -r /etc/nfc-player.conf ] && . /etc/nfc-player.conf   # sets OWNER to the player's user
+
+detach_loops() {
+  for dev in $(losetup -j "$IMG" | cut -d: -f1); do losetup -d "$dev" || true; done
+}
+
+do_mount() {
+  mountpoint -q "$MNT" && return 0
+  detach_loops
+  # The loop device itself stays writable so the mount can be switched to rw for uploads.
+  LOOP=$(losetup --find --show --offset $OFFSET "$IMG")
+  mount -o ro,noatime,uid="$(id -u "$OWNER")",gid="$(id -g "$OWNER")",umask=022 "$LOOP" "$MNT"
+}
+
+do_unmount() {
+  if mountpoint -q "$MNT"; then umount "$MNT"; fi
+  detach_loops
+}
+
+case "${1:-}" in
+  setup)
+    modprobe libcomposite
+    [ -e "$G/UDC" ] && [ -n "$(cat "$G/UDC")" ] && exit 0
+    mkdir -p "$G"
+    cd "$G"
+    echo 0x1d6b > idVendor    # Linux Foundation
+    echo 0x0104 > idProduct   # multifunction composite gadget
+    echo 0x0200 > bcdUSB
+    echo 0x0100 > bcdDevice
+    mkdir -p strings/0x409 configs/c.1/strings/0x409 functions/mass_storage.usb0
+    echo "nfcplayer0001" > strings/0x409/serialnumber
+    echo "NFC Player"    > strings/0x409/manufacturer
+    echo "NFC Player"    > strings/0x409/product
+    echo "Music drive"   > configs/c.1/strings/0x409/configuration
+    echo 250 > configs/c.1/MaxPower
+    echo 1 > "$LUN/removable"   # starts with no medium, like an empty card reader
+    echo 0 > "$LUN/ro"
+    echo 0 > "$LUN/cdrom"
+    [ -e configs/c.1/mass_storage.usb0 ] || ln -s functions/mass_storage.usb0 configs/c.1/
+    UDC=$(ls /sys/class/udc | head -n 1)
+    [ -n "$UDC" ] || { echo "No USB device controller. Is dtoverlay=dwc2,dr_mode=peripheral set?" >&2; exit 1; }
+    echo "$UDC" > UDC
+    ;;
+  mount)
+    do_mount
+    ;;
+  release)
+    do_unmount
+    echo "$IMG" > "$LUN/file"
+    ;;
+  reclaim)
+    if [ -n "$(cat "$LUN/file")" ]; then
+      echo 1 > "$LUN/forced_eject" 2>/dev/null || echo "" > "$LUN/file"
+    fi
+    sync
+    do_unmount
+    LOOP=$(losetup --find --show --offset $OFFSET "$IMG")
+    fsck.exfat -y "$LOOP" || true   # repairs what an unplug mid-copy may have left
+    losetup -d "$LOOP"
+    do_mount
+    ;;
+  rw)
+    mountpoint -q "$MNT" || { echo "The music drive is not mounted (in use over USB?)" >&2; exit 1; }
+    mount -o remount,rw "$MNT"
+    ;;
+  ro)
+    mountpoint -q "$MNT" || exit 0
+    sync
+    mount -o remount,ro "$MNT"
+    ;;
+  status)
+    for u in /sys/class/udc/*; do echo "controller $(basename "$u"): $(cat "$u/state")"; done
+    echo "drive given to computer: $(cat "$LUN/file" 2>/dev/null || echo '(gadget not set up)')"
+    mountpoint "$MNT" || true
+    ;;
+  *)
+    echo "usage: $0 setup|mount|release|reclaim|rw|ro|status" >&2
+    exit 2
+    ;;
+esac
