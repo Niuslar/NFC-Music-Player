@@ -241,6 +241,7 @@ def test_each_click_of_the_clicky_encoder_is_two_volume_steps_and_one_list_item(
 def test_mpd_without_a_volume_control_does_not_crash():
     from mpd import CommandError
 
+    from player.library import Track
     from player.playback import MpdPlayback
 
     class FakeClient:
@@ -263,6 +264,15 @@ def test_mpd_without_a_volume_control_does_not_crash():
         def add(self, path):
             pass
 
+        def command_list_ok_begin(self):
+            pass
+
+        def command_list_end(self):
+            pass
+
+        def status(self):
+            return {"playlistlength": "1"}
+
         def play(self, track):
             self.calls.append(("play", track))
 
@@ -272,5 +282,5 @@ def test_mpd_without_a_volume_control_does_not_crash():
     p.set_volume(35)
     assert client.calls == []
     client.mixer = True  # the DAC appears
-    p.play_album("Artist/Album")
+    p.play((Track("Artist/Album/01 Song.flac", "Song"),))
     assert client.calls == [("play", 0), ("setvol", 35)]

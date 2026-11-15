@@ -111,8 +111,12 @@ def test_page_state_albums_and_cover(site):
     status, body, _ = call("GET", "/api/state")
     state = json.loads(body)
     assert state["mode"] == "idle" and state["uploading"] is False and state["free_bytes"] > 0
-    albums = json.loads(call("GET", "/api/albums")[1])
-    assert len(albums) == 7 and {"path", "title", "artist", "tracks"} <= set(albums[0])
+    items = json.loads(call("GET", "/api/library")[1])
+    albums = [i for i in items if i["kind"] == "album"]
+    assert len(albums) == 7 and {"key", "title", "artist", "tracks", "files"} <= set(albums[0])
+    artists = {i["title"]: i for i in items if i["kind"] == "artist"}
+    assert artists["Ada Hollis"]["albums"] == 2 and artists["Ada Hollis"]["tracks"] == 7 and not artists["Ada Hollis"]["files"]
+    assert call("GET", "/api/cover?track=Ada%20Hollis/Paper%20Lanterns/01%20Lanterns.wav")[0] == 200
     status, body, headers = call("GET", "/api/cover?album=Ada%20Hollis/Paper%20Lanterns")
     assert status == 200 and headers["Content-Type"] == "image/jpeg" and body[:2] == b"\xff\xd8"
     assert call("GET", "/api/cover?album=nope")[0] == 404
@@ -268,7 +272,7 @@ def test_link_and_unlink_a_card_from_the_web(rig):
     send(ev.WebCommand("link_card", "Mika Tane/Small Hours"), advance=4.0)
     assert store.album_for(CARD) == "Mika Tane/Small Hours"
     assert app.mode is Mode.PLAYING and not app.remote and app.status.state == "play"
-    assert app.snapshot()["card_album"] == {"path": "Mika Tane/Small Hours", "title": "Small Hours"}
+    assert app.snapshot()["card_album"] == {"key": "Mika Tane/Small Hours", "title": "Small Hours", "kind": "album"}
     send(ev.CardRemoved(), ev.CardInserted(CARD))  # behaves like any linked card from now on
     assert app.status.elapsed == pytest.approx(4.0, abs=0.01)
     send(ev.WebCommand("unlink_card"))

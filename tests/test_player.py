@@ -61,7 +61,7 @@ def rig(music, tmp_path):
 def linked(rig, album_index=0):
     """Insert CARD and link it to an album through the UI."""
     app, send, *_ = rig
-    send(ev.CardInserted(CARD))
+    send(ev.CardInserted(CARD), ev.Press("knob"))  # the first screen asks what kind; Album is first
     per_item = round(COUNTS_PER_REV * 15 / 360) + 1
     for _ in range(album_index):
         send(ev.Rotate(per_item), advance=0.5)
@@ -139,7 +139,7 @@ def test_unknown_card_links_then_plays(rig):
     assert app.mode is Mode.LINKING
     album = linked(rig, album_index=2)
     assert app.mode is Mode.PLAYING
-    assert store.album_for(CARD) == album.path
+    assert store.album_for(CARD) == album.key
     assert app.status.state == "play" and app.status.title == album.tracks[0].title
 
 
@@ -161,7 +161,7 @@ def test_remove_pauses_and_reinsert_resumes_position(rig):
 def test_swapping_cards_without_removal(rig):
     app, send, clock, store, *_ = rig
     first = linked(rig)
-    store.link(OTHER, app.library.albums[3].path)
+    store.link(OTHER, app.library.albums[3].key)
     send(ev.CardInserted(OTHER), advance=1.0)
     assert app.album == app.library.albums[3]
     assert store.resume_point(CARD) == (0, pytest.approx(0, abs=0.01))
@@ -229,8 +229,12 @@ def test_menu_unlink_and_relink(rig):
 def test_relink_can_be_cancelled_without_interrupting(rig):
     app, send, *_ = rig
     album = linked(rig, album_index=1)
-    send(ev.Press("knob_long"), ev.Press("knob"))  # "Link to another album"
-    assert app.mode is Mode.LINKING and app.selected == 1
+    send(ev.Press("knob_long"), ev.Press("knob"))  # "Link to something else"
+    assert app.mode is Mode.LINKING and app.link_kind is None and app.selected == 0  # on Album, the kind playing
+    send(ev.Press("knob"))
+    assert app.link_kind == "album" and app.selected == 1  # on the album playing
+    send(ev.Press("back"))
+    assert app.mode is Mode.LINKING and app.link_kind is None
     send(ev.Press("back"))
     assert app.mode is Mode.PLAYING and app.album == album and app.status.state == "play"
 
@@ -280,10 +284,14 @@ def test_every_screen_renders(rig):
 
     shot()  # idle
     send(ev.CardInserted(CARD))
-    shot()  # linking
+    shot()  # linking: choose the kind
     send(ev.Press("back"))
     shot()  # unlinked
-    send(ev.Press("knob"), ev.Press("knob"))
+    send(ev.Press("knob"), ev.Rotate(11), ev.Press("knob"))
+    shot()  # linking: artists
+    send(ev.Press("back"), ev.Rotate(-11), ev.Press("knob"))
+    shot()  # linking: albums
+    send(ev.Press("knob"))
     shot()  # now playing
     send(ev.Rotate(20))
     shot()  # volume overlay
@@ -293,7 +301,7 @@ def test_every_screen_renders(rig):
     shot()  # usb offer
     send(ev.Press("knob"))
     shot()  # transfer
-    assert len(seen) == 8
+    assert len(seen) == 10
 
 
 def test_transfer_can_be_ended_by_holding_the_knob(rig):
@@ -322,3 +330,134 @@ def test_failed_release_leaves_player_usable_and_error_is_shown(rig):
     assert shown != app.render(clock.t + 60).tobytes()  # error screen times out
     send(ev.CardRemoved(), ev.CardInserted(CARD))
     assert app.mode is Mode.PLAYING
+
+
+# ---- tags, artists and lists ----------------------------------------------
+
+ITUNES = {  # a flat folder of bought songs: two albums and a single, in no useful filename order
+    "From iTunes/Heroes.wav": dict(title="Heroes", artist="David Bowie", album="Heroes", albumartist="David Bowie", track="3/10", date="1977"),
+    "From iTunes/Beauty and the Beast.wav": dict(title="Beauty and the Beast", artist="David Bowie", album="Heroes", albumartist="David Bowie", track="1", date="1977-10-14"),
+    "From iTunes/Sound and Vision.wav": dict(title="Sound and Vision", artist="David Bowie", album="Low", albumartist="David Bowie", track="4", date="1977-01-14"),
+    "From iTunes/Speed of Life.wav": dict(title="Speed of Life", artist="David Bowie", album="Low", albumartist="David Bowie", track="1", date="1977-01-14"),
+    "From iTunes/Sinnerman.wav": dict(title="Sinnerman", artist="Nina Simone", album="Pastel Blues", track="9"),
+    "Soundtrack/01 a.wav": dict(title="Opening", artist="One", album="The Film"),  # one album, several artists
+    "Soundtrack/02 b.wav": dict(title="Closing", artist="Two", album="The Film"),
+}
+
+
+@pytest.fixture
+def tagged(music, tmp_path):
+    from player.library import make_tags
+
+    root = tmp_path / "music"
+    tone = (music / "Mika Tane" / "Small Hours" / "01 0300.wav").read_bytes()  # 20 seconds
+    for rel in ITUNES:
+        (root / rel).parent.mkdir(parents=True, exist_ok=True)
+        (root / rel).write_bytes(tone)
+    (root / "Mika Tane" / "Small Hours").mkdir(parents=True)
+    (root / "Mika Tane" / "Small Hours" / "01 0300.wav").write_bytes(tone)  # untagged: the folder is the album
+    library = Library(root, tags=lambda: {p: make_tags(t) for p, t in ITUNES.items()}, art=lambda path: None)
+    clock = Clock()
+    store = Store(tmp_path / "state.json")
+    playback = FakePlayback(library, clock)
+    app = App(library, store, playback)
+
+    def send(*events, advance=0.0):
+        for e in events:
+            app.handle(e, clock.t)
+        clock.t += advance
+        app.tick(clock.t)
+
+    return app, send, library, store
+
+
+def test_flat_folder_splits_into_albums_by_tag(tagged):
+    app, send, library, store = tagged
+    assert [(a.artist, a.title) for a in library.albums] == [
+        ("David Bowie", "Heroes"),
+        ("David Bowie", "Low"),
+        ("Mika Tane", "Small Hours"),
+        ("Nina Simone", "Pastel Blues"),
+        ("Various Artists", "The Film"),
+    ]
+    heroes = library.albums[0]
+    assert [t.title for t in heroes.tracks] == ["Beauty and the Beast", "Heroes"]  # track number order
+    assert heroes.folder == "From iTunes" and not heroes.whole_folder and heroes.key != "From iTunes"
+    assert library.get("Soundtrack").title == "The Film"  # alone in its folder: the folder is still its key
+
+
+def test_a_list_is_a_folder_with_more_than_one_album(tagged):
+    app, send, library, store = tagged
+    assert [(l.key, l.albums, len(l.tracks)) for l in library.lists] == [("From iTunes", 3, 5)]
+    names = [t.path.split("/")[-1] for t in library.lists[0].tracks]
+    assert names == sorted(names, key=str.lower)  # played as the folder is, in filename order
+    assert library.get("Soundtrack").kind == "album" and library.get("Mika Tane/Small Hours").kind == "album"
+
+
+def test_artist_plays_every_album_in_year_order(tagged):
+    app, send, library, store = tagged
+    assert [a.title for a in library.artists] == ["David Bowie", "Mika Tane", "Nina Simone", "Various Artists"]
+    bowie = library.artists[0]
+    assert bowie.albums == 2 and bowie.folder is None
+    assert [t.title for t in bowie.tracks] == ["Beauty and the Beast", "Heroes", "Speed of Life", "Sound and Vision"]
+
+
+def test_card_links_to_a_list_from_the_device_and_resumes(tagged):
+    app, send, library, store = tagged
+    per_item = round(COUNTS_PER_REV * 15 / 360) + 1
+    send(ev.CardInserted(CARD))
+    send(ev.Rotate(per_item), advance=0.5)
+    send(ev.Rotate(per_item), advance=0.5)
+    send(ev.Press("knob"))
+    assert app.link_kind == "list"
+    send(ev.Press("knob"), advance=25.0)  # the first song is 20 seconds long
+    assert store.album_for(CARD) == "From iTunes" and app.album.kind == "list"
+    assert app.status.track_index == 1 and app.status.path == "From iTunes/Heroes.wav"
+    assert app.snapshot()["details"] == "David Bowie · From iTunes"
+    app.render(100.0)
+    send(ev.CardRemoved(), ev.CardInserted(CARD))
+    assert app.status.track_index == 1 and app.status.elapsed == pytest.approx(5.0, abs=0.01)
+
+
+def test_card_links_to_an_artist_from_the_web(tagged):
+    app, send, library, store = tagged
+    bowie = library.artists[0]
+    send(ev.CardInserted(CARD), ev.WebCommand("link_card", bowie.key))
+    assert store.album_for(CARD) == bowie.key and app.status.track_count == 4
+    snap = app.snapshot()
+    assert snap["card_album"]["kind"] == "artist" and snap["details"] == "Heroes · David Bowie"
+    json.dumps(snap)
+
+
+def test_folder_link_follows_the_folder_between_album_and_list(tagged):
+    app, send, library, store = tagged
+    store.link(CARD, "Soundtrack")  # an album today
+    extra = library.root / "Soundtrack" / "03 c.wav"
+    extra.write_bytes((library.root / "Soundtrack" / "01 a.wav").read_bytes())
+    ITUNES["Soundtrack/03 c.wav"] = dict(title="Bonus", artist="Three", album="Another Film")
+    try:
+        send(ev.LibraryChanged(), ev.CardInserted(CARD))
+        assert app.album.kind == "list" and len(app.album.tracks) == 3  # now two albums: the card plays the folder
+    finally:
+        del ITUNES["Soundtrack/03 c.wav"]
+
+
+def test_deleting_an_album_from_a_shared_folder_takes_only_its_tracks(tagged):
+    from player.web import server as web
+
+    class Writer:
+        def begin(self):
+            pass
+
+        def end(self):
+            pass
+
+    app, send, library, store = tagged
+    low = library.albums[1]
+    assert [f["name"] for f in web.list_files(library, low.key)] == ["Sound and Vision.wav", "Speed of Life.wav"]
+    with pytest.raises(web.UploadError):
+        web.delete_music(library, Writer(), low.key, "Heroes.wav")  # another album's file
+    with pytest.raises(web.UploadError):
+        web.list_files(library, library.artists[0].key)  # an artist has no folder
+    assert web.delete_music(library, Writer(), low.key) == 2
+    assert sorted(f.name for f in (library.root / "From iTunes").iterdir()) == ["Beauty and the Beast.wav", "Heroes.wav", "Sinnerman.wav"]

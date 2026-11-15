@@ -429,10 +429,18 @@
 <ol>
   <li>With the Pi connected to the Mac by its <strong>USB</strong> port, the display shows <strong>Connected to a computer</strong>. Push the knob.</li>
   <li>A drive called <code>MUSIC</code> appears in Finder. Copy albums onto it as <code>Artist/Album/tracks</code>, for example <code>Nina Simone/Pastel Blues/01 Be My Husband.flac</code>.</li>
-  <li>Put a <code>cover.jpg</code> in an album's folder to show its cover.</li>
+  <li>Put a <code>cover.jpg</code> in an album's folder to show its cover. Without one, the cover stored inside the tracks is used.</li>
   <li>Eject <code>MUSIC</code> in Finder. The player takes the drive back, checks it and rescans. If the screen stays on <strong>Transfer mode</strong> after ejecting, hold the knob for a second.</li>
 </ol>
 <p>FLAC, MP3, AAC/M4A, Ogg, Opus, WAV and AIFF are recognised. The player cannot play while the Mac has the drive.</p>
+<h3>Albums, artists and lists</h3>
+<p>A card can be linked to any of three things:</p>
+<ul>
+  <li><strong>Album.</strong> Albums come from the tags inside the files, so a flat folder of mixed songs, such as <code>From iTunes</code>, splits into its real albums and plays them in track order. Files without tags fall back to the folders: the folder is the album and the folder above it is the artist.</li>
+  <li><strong>Artist.</strong> Every album by that artist, oldest first.</li>
+  <li><strong>List.</strong> A folder whose songs come from more than one album, played as it is in file name order. A folder that holds a single album is not offered as a list.</li>
+</ul>
+<div class="note"><p>An album is always the songs of one album <em>within one folder</em>. The same album split across two folders shows up twice.</p></div>
 <p>You can also add music over Wi-Fi from the <a href="#web">web remote</a>. USB is much faster for a large collection; the web page suits an album or two.</p>
 <div class="note"><p>Always eject before unplugging. An unplug mid-copy is repaired on the next start, but the file being copied will be lost.</p></div>
 <p>To confirm sound reaches the DAC once there is music on the drive:</p>
@@ -441,13 +449,13 @@
 <h2 id="use"><span class="step">Step 7</span>Use it</h2>
 <div class="table-wrap"><table>
   <tr><th>You do</th><th>It does</th></tr>
-  <tr><td>Insert a new card</td><td>Shows the album list. Turn the knob to choose, push to link. The album starts. Cards can also be linked from the <a href="#web">web remote</a>.</td></tr>
-  <tr><td>Insert a linked card</td><td>Plays its album from where that card last stopped.</td></tr>
+  <tr><td>Insert a new card</td><td>Asks whether to link an album, an artist or a list, then shows that list. Turn the knob to choose, push to link. It starts playing. Cards can also be linked from the <a href="#web">web remote</a>.</td></tr>
+  <tr><td>Insert a linked card</td><td>Plays its album, artist or list from where that card last stopped.</td></tr>
   <tr><td>Remove the card</td><td>Pauses and remembers the position.</td></tr>
   <tr><td>Turn the knob</td><td>Volume.</td></tr>
   <tr><td>Push the knob, or play/pause</td><td>Pause and resume. After the album ends, plays it again.</td></tr>
   <tr><td>Previous / next</td><td>Skip tracks. Previous restarts the track if more than 3 seconds in.</td></tr>
-  <tr><td>Hold the knob</td><td>Menu: link the card to another album, unlink it, or close.</td></tr>
+  <tr><td>Hold the knob</td><td>Menu: link the card to something else, unlink it, or close.</td></tr>
   <tr><td>Back</td><td>Leaves a menu or list.</td></tr>
 </table></div>
 
@@ -458,14 +466,14 @@
 <h3>Control</h3>
 <ul>
   <li>The top panel shows what is playing, with previous, play/pause, next and a volume slider. It follows the knob and buttons, and they follow it.</li>
-  <li>Tap any album in the list to play it, with or without a card in the slot.</li>
+  <li>Switch between <strong>Albums</strong>, <strong>Artists</strong> and <strong>Lists</strong> above the search box. Tap any row to play it, with or without a card in the slot.</li>
   <li>The card still rules: inserting a linked card plays that card's album, and removing the card pauses whatever is playing.</li>
   <li>An album started from the page does not change the place a card remembers. Put the card back in and it resumes where the card left off.</li>
 </ul>
 <h3>Link cards</h3>
 <ul>
-  <li>With a card in the slot, a line under the controls says whether it is linked, and each album gets a <strong>Link card</strong> button.</li>
-  <li>Press <strong>Link card</strong> next to an album. The card is linked and the album starts, exactly as if you had linked it with the knob.</li>
+  <li>With a card in the slot, a line under the controls says whether it is linked, and each album, artist and list gets a <strong>Link card</strong> button.</li>
+  <li>Press <strong>Link card</strong> next to one. The card is linked and it starts playing, exactly as if you had linked it with the knob.</li>
   <li><strong>Unlink card</strong> removes the link. Linking a card that already has an album simply replaces it.</li>
 </ul>
 <p>This means the player is fully usable before the display, knob and buttons are fitted: with only the DAC and reader connected, load music over USB or the page, link cards from the page, and control playback from it.</p>
@@ -485,6 +493,7 @@
 </ol>
 <ul>
   <li>Deleting an album's last track removes the album, including its cover.</li>
+  <li>An album that shares its folder with other albums loses only its own tracks. Deleting a whole list removes the folder and every album in it. Artists have no <strong>Files</strong> button; delete their albums one by one.</li>
   <li>An artist folder is removed once its last album is gone.</li>
   <li>If the album is playing, it stops within a few seconds.</li>
   <li>A card linked to a deleted album stays linked to nothing: the page says so, and you can link it to another album.</li>
@@ -533,7 +542,7 @@
   <li>Copy the music back by USB (<a href="#music">step 6</a>), dragging the contents of <code>~/nfc-player-backup/music</code> onto <code>MUSIC</code>. The web page can also do it but is slow for more than an album or two.</li>
   <li>Open the web page and check the albums are listed and a card plays.</li>
 </ol>
-<div class="note"><p>Restoring <code>state.json</code> only helps if the albums are back under the same folder names, because cards are linked by folder path. If you rename albums, relink those cards.</p></div>
+<div class="note"><p>Restoring <code>state.json</code> only helps if the albums are back under the same folder names, because cards are linked by folder path, or by album and artist name for an album inside a shared folder. If you rename albums, relink those cards.</p></div>
 
 <h3>Wear and spare cards</h3>
 <p>Playing music reads the card and rarely writes to it, so wear is low. Uploads and deletes write, as does saving card positions. A good A2-rated card should last years in this use. Keeping the backup above is the real protection; a spare card with the OS already flashed makes a failure a ten-minute swap.</p>

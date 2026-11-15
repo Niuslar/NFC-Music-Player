@@ -24,11 +24,12 @@ class Store:
                 pass  # unreadable file: start empty rather than refuse to boot
 
     def album_for(self, uid: str) -> str | None:
+        """The library key the card is linked to: an album, an artist or a list."""
         card = self._cards.get(uid)
         return card["album"] if card else None
 
-    def link(self, uid: str, album_path: str) -> None:
-        self._cards[uid] = {"album": album_path}
+    def link(self, uid: str, key: str) -> None:
+        self._cards[uid] = {"album": key}  # the field keeps its old name so existing links still load
         self.save()
 
     def unlink(self, uid: str) -> None:

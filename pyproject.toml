@@ -6,7 +6,7 @@ requires-python = ">=3.11"
 dependencies = ["pillow>=10.1", "numpy", "python-mpd2>=3.1"]
 
 [project.optional-dependencies]
-dev = ["pytest"]
+dev = ["pytest", "mutagen"]  # mutagen: tags and embedded covers in the simulator when MPD is absent
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

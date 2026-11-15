@@ -216,7 +216,7 @@ def test_deleting_a_cards_album_leaves_the_card_marked_missing(rig):
     web.delete_music(library, Writer(), LANTERNS)
     send(ev.LibraryChanged())
     assert app.mode is Mode.UNLINKED and "missing" in app.note and playback.status().state == "stop"
-    assert app.snapshot()["card_album"] == {"path": LANTERNS, "title": None}
+    assert app.snapshot()["card_album"] == {"key": LANTERNS, "title": None, "kind": None}
     send(ev.WebCommand("link_card", "Mika Tane/Small Hours"))  # and it can be given a new album
     assert app.mode is Mode.PLAYING and store.album_for(CARD) == "Mika Tane/Small Hours"
 

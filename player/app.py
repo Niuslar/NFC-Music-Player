@@ -9,19 +9,25 @@ from enum import Enum, auto
 from . import events as ev
 from .cards import Store
 from .knob import list_scaler, volume_scaler
-from .library import Album, Library
+from .library import KINDS, Item, Library
 from .playback import Status
 from .ui import render
 
 VOLUME_OVERLAY_SECONDS = 1.5
-MENU_ITEMS = ("Link to another album", "Unlink this card", "Close")
+MISSING = "The music linked to this card is missing."
+MENU_ITEMS = ("Link to something else", "Unlink this card", "Close")
+KIND_NAMES = {"album": ("Album", "album"), "artist": ("Artist", "artist"), "list": ("List", "list")}
+
+
+def _count(n: int, noun: str) -> str:
+    return f"{n} {noun}{'' if n == 1 else 's'}"
 
 
 class Mode(Enum):
     IDLE = auto()  # no card in the slot
     PLAYING = auto()  # linked card in the slot (playing, paused or finished)
     UNLINKED = auto()  # card in the slot with nothing to play
-    LINKING = auto()  # choosing an album for the card
+    LINKING = auto()  # choosing what the card plays: first the kind, then the album, artist or list
     MENU = auto()
     TRANSFER = auto()  # music partition handed to the computer
 
@@ -44,7 +50,8 @@ class App:
         self.storage = storage or NullStorage()
         self.mode = Mode.IDLE
         self.card: str | None = None
-        self.album: Album | None = None  # album of the card in the slot, if linked and present
+        self.album: Item | None = None  # what is playing: an album, an artist or a list
+        self.link_kind: str | None = None  # while linking: the kind being browsed, None while choosing the kind
         self.status = Status()
         self.selected = 0
         self.note = ""
@@ -55,6 +62,8 @@ class App:
         self._volume_until = 0.0
         self._error = ""
         self._error_until = 0.0
+        self._art_from = None  # which file the cover on screen came from
+        self._art: bytes | None = None
         self._vol_knob = volume_scaler(volume_steps_per_rev)
         self._list_knob = list_scaler()
         playback.set_volume(store.volume)
@@ -102,7 +111,7 @@ class App:
         if self.mode is Mode.TRANSFER or self.usb_offer:
             return
         if self.mode in (Mode.LINKING, Mode.MENU):
-            count = len(self.library.albums) if self.mode is Mode.LINKING else len(MENU_ITEMS)
+            count = len(self._link_choices()) if self.mode is Mode.LINKING else len(MENU_ITEMS)
             steps = self._list_knob.feed(counts, now)
             self.selected = min(max(self.selected + steps, 0), count - 1)
             return
@@ -128,7 +137,7 @@ class App:
             album = self.library.get(str(value))
             if self.card and album is not None:
                 if album == self.album and self.status.state != "stop":
-                    self.store.link(self.card, album.path)  # already playing it: adopt without restarting
+                    self.store.link(self.card, album.key)  # already playing it: adopt without restarting
                     self.remote = False
                 else:
                     self._link(album)
@@ -143,7 +152,7 @@ class App:
             elif action == "prev":
                 self.playback.prev()
 
-    def _play_remote(self, album: Album) -> None:
+    def _play_remote(self, album: Item) -> None:
         if self.album is not None and self.card and not self.remote:
             st = self.playback.status()  # keep the card's own place before taking over
             if st.state != "stop":
@@ -153,22 +162,23 @@ class App:
         self._play(album)
 
     def _refresh_library(self) -> None:
-        self.library.rescan()
-        render.forget_covers()
-        self.playback.rescan()
-        self.selected = min(self.selected, max(len(self.library.albums) - 1, 0))
+        self._rescan()
+        if self.link_kind and not self.library.of(self.link_kind):
+            self.link_kind = None
+        if self.mode is Mode.LINKING:
+            self.selected = min(self.selected, max(len(self._link_choices()) - 1, 0))
         if self.album is None:
             return
-        fresh = self.library.get(self.album.path)
+        fresh = self.library.get(self.album.key)
         if fresh is not None:
-            self.album = fresh  # same album, possibly with tracks added or removed
+            self.album = fresh  # same thing, possibly with tracks added or removed
             return
-        # The album being played was deleted.
+        # What was playing has been deleted.
         from_card = self.card is not None and not self.remote
         self.playback.stop()
         self.album, self.status, self.remote = None, Status(), False
         if from_card:
-            self.mode, self.note = Mode.UNLINKED, "The album linked to this card is missing."
+            self.mode, self.note = Mode.UNLINKED, MISSING
         else:
             self.mode = Mode.IDLE
 
@@ -200,8 +210,12 @@ class App:
             elif button in ("back", "knob_long"):
                 self.mode = Mode.PLAYING
         elif self.mode is Mode.LINKING:
-            if button == "knob":
-                self._link(self.library.albums[self.selected])
+            if button == "knob" and self.link_kind is None:
+                self._browse(self._kinds()[self.selected])
+            elif button == "knob":
+                self._link(self.library.of(self.link_kind)[self.selected])
+            elif button == "back" and self.link_kind is not None:
+                self._start_linking(self.link_kind)  # back to choosing the kind
             elif button == "back":
                 self.mode = Mode.PLAYING if self.album else Mode.UNLINKED
         elif self.mode is Mode.UNLINKED:
@@ -217,7 +231,7 @@ class App:
         elif state == "pause":
             self.playback.resume()
         else:
-            self.playback.play_album(self.album.path)
+            self.playback.play(self.album.tracks)
         self.status = self.playback.status()
 
     def _open_list(self, mode: Mode, selected: int) -> None:
@@ -232,7 +246,7 @@ class App:
             return
         album = self.library.get(path)
         if album is None:
-            self.mode, self.note = Mode.UNLINKED, "The album linked to this card is missing."
+            self.mode, self.note = Mode.UNLINKED, MISSING
             return
         track, elapsed = self.store.resume_point(self.card)
         if track >= len(album.tracks):
@@ -240,9 +254,9 @@ class App:
         self.remote = False
         self._play(album, track, elapsed)
 
-    def _play(self, album: Album, track: int = 0, elapsed: float = 0.0) -> None:
+    def _play(self, album: Item, track: int = 0, elapsed: float = 0.0) -> None:
         self.album = album
-        self.playback.play_album(album.path, track, elapsed)
+        self.playback.play(album.tracks, track, elapsed)
         self.status = self.playback.status()
         self.mode = Mode.PLAYING
 
@@ -264,15 +278,30 @@ class App:
         self.remote = False
         self.mode = Mode.IDLE
 
-    def _start_linking(self) -> None:
+    def _kinds(self) -> list[str]:
+        """The kinds of thing there is at least one of."""
+        return [k for k in KINDS if self.library.of(k)]
+
+    def _link_choices(self) -> list:
+        return self._kinds() if self.link_kind is None else self.library.of(self.link_kind)
+
+    def _start_linking(self, kind: str | None = None) -> None:
+        """Opens the first linking screen, with kind (or what is playing now) preselected."""
         if not self.library.albums:
             self.mode, self.note = Mode.UNLINKED, "No music yet. Connect to a computer to add some."
             return
-        current = self.library.albums.index(self.album) if self.album in self.library.albums else 0
-        self._open_list(Mode.LINKING, current)
+        kinds = self._kinds()
+        kind = kind or (self.album.kind if self.album else None)
+        self.link_kind = None
+        self._open_list(Mode.LINKING, kinds.index(kind) if kind in kinds else 0)
 
-    def _link(self, album: Album) -> None:
-        self.store.link(self.card, album.path)
+    def _browse(self, kind: str) -> None:
+        items = self.library.of(kind)
+        self.link_kind = kind
+        self._open_list(Mode.LINKING, items.index(self.album) if self.album in items else 0)
+
+    def _link(self, album: Item) -> None:
+        self.store.link(self.card, album.key)
         self.remote = False
         self._play(album)
 
@@ -302,11 +331,37 @@ class App:
     def _end_transfer(self) -> None:
         self.mode = Mode.IDLE  # set first so a failure below cannot leave us stuck in transfer
         self.storage.reclaim()
-        self.library.rescan()
-        render.forget_covers()
-        self.playback.rescan()
+        self._rescan()
         if self.card is not None:
             self._enter_card()
+
+    def _rescan(self) -> None:
+        self.playback.rescan()  # first: on the Pi the library reads its tags from MPD's database
+        self.library.rescan()
+        render.forget_covers()
+        self._art_from = None
+
+    def _track(self):
+        """The track playing now, or the first one when nothing is."""
+        album = self.album
+        return self.library.track(self.status.path) or (album.tracks[0] if album and album.tracks else None)
+
+    def _details(self) -> tuple[str, str]:
+        """The two lines under the track title."""
+        album, track = self.album, self._track()
+        if album.kind == "list" and track:
+            return track.artist or track.album, album.title
+        if album.kind == "artist" and track:
+            return track.album, album.title
+        return album.title, album.artist
+
+    def _cover(self) -> bytes | None:
+        track = self._track()
+        source = self.library.art_source(track) if track else None
+        if source != self._art_from:
+            self._art_from = source
+            self._art = self.library.art(track) if track else None
+        return self._art
 
     def show_error(self, text: str, now: float, seconds: float = 6.0) -> None:
         self._error, self._error_until = text, now + seconds
@@ -316,7 +371,7 @@ class App:
         if path is None:
             return None
         album = self.library.get(path)
-        return {"path": path, "title": album.title if album else None}
+        return {"key": path, "title": album.title if album else None, "kind": album.kind if album else None}
 
     def snapshot(self) -> dict:
         """What the web remote shows. Plain data, safe to hand to another thread."""
@@ -327,14 +382,17 @@ class App:
             "card_album": self._card_album(),
             "remote": self.remote,
             "volume": self.store.volume,
-            "album": {"path": album.path, "title": album.title, "artist": album.artist} if album else None,
+            "album": {"key": album.key, "title": album.title, "artist": album.artist, "kind": album.kind} if album else None,
+            "details": " · ".join(filter(None, self._details())) if album else "",
             "state": st.state if album else "stop",
             "track": st.title,
+            "track_path": st.path,
             "track_index": st.track_index,
             "track_count": st.track_count,
             "elapsed": round(st.elapsed, 1),
             "duration": round(st.duration, 1),
             "albums": len(self.library.albums),
+            "library": self.library.version,
         }
 
     # ---- drawing ------------------------------------------------------------
@@ -352,12 +410,22 @@ class App:
         if self.mode is Mode.IDLE:
             return render.message("Place a card", "to start playing")
         if self.mode is Mode.UNLINKED:
-            prompt = "Push the knob to choose an album." if self.library.albums else ""
+            prompt = "Push the knob to choose what it plays." if self.library.albums else ""
             return render.message("Card not linked", f"{self.note}\n{prompt}".strip())
+        if self.mode is Mode.LINKING and self.link_kind is None:
+            rows = [(KIND_NAMES[k][0], _count(len(self.library.of(k)), KIND_NAMES[k][1])) for k in self._kinds()]
+            return render.list_screen("Link this card to", rows, self.selected)
         if self.mode is Mode.LINKING:
-            rows = [(a.title, a.artist) for a in self.library.albums]
-            return render.list_screen("Choose an album for this card", rows, self.selected)
+            items = self.library.of(self.link_kind)
+            if self.link_kind == "album":
+                rows = [(a.title, a.artist) for a in items]
+            elif self.link_kind == "artist":
+                rows = [(a.title, f"{_count(a.albums, 'album')} · {_count(len(a.tracks), 'track')}") for a in items]
+            else:
+                rows = [(a.title, _count(len(a.tracks), "track")) for a in items]
+            article = "an" if self.link_kind[0] == "a" else "a"
+            return render.list_screen(f"Choose {article} {self.link_kind} for this card", rows, self.selected)
         if self.mode is Mode.MENU:
             return render.list_screen(self.album.title, [(item, "") for item in MENU_ITEMS], self.selected)
         volume = self.store.volume if now < self._volume_until else None
-        return render.now_playing(self.album, self.status, volume)
+        return render.now_playing(self.album.title, self._details(), self._cover(), self.status, volume)

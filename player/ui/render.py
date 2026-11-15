@@ -1,7 +1,7 @@
 """Draws each screen as a 320x240 Pillow image. No hardware knowledge in here."""
 
+import io
 from functools import lru_cache
-from pathlib import Path
 
 from PIL import Image, ImageDraw, ImageFont
 
@@ -59,14 +59,14 @@ def _clock(seconds: float) -> str:
 
 
 @lru_cache(maxsize=4)
-def _cover(path: Path | None, title: str) -> Image.Image:
-    if path is not None:
+def _cover(art: bytes | None, title: str) -> Image.Image:
+    if art:
         try:
-            img = Image.open(path).convert("RGB")
+            img = Image.open(io.BytesIO(art)).convert("RGB")
             side = min(img.size)
             left, top = (img.width - side) // 2, (img.height - side) // 2
             return img.crop((left, top, left + side, top + side)).resize((COVER, COVER), Image.LANCZOS)
-        except OSError:
+        except Exception:  # not an image Pillow can read: draw the placeholder
             pass
     img = Image.new("RGB", (COVER, COVER), FAINT)
     d = ImageDraw.Draw(img)
@@ -118,10 +118,13 @@ def list_screen(header: str, rows: list[tuple[str, str]], selected: int) -> Imag
     return img
 
 
-def now_playing(album, status, volume: int | None) -> Image.Image:
-    """volume is given only while the volume overlay should be visible."""
+def now_playing(name: str, details: tuple[str, str], art: bytes | None, status, volume: int | None) -> Image.Image:
+    """details are the two lines under the track title; art is the cover's image data.
+
+    volume is given only while the volume overlay should be visible.
+    """
     img, d = _canvas()
-    img.paste(_cover(album.cover, album.title), (PAD, PAD))
+    img.paste(_cover(art, name), (PAD, PAD))
     x = PAD + COVER + 14
     col_w = W - PAD - x
     finished = status.state == "stop"
@@ -131,11 +134,11 @@ def now_playing(album, status, volume: int | None) -> Image.Image:
         d.text((x, y), line, font=font(20), fill=FG)
         y += 25
     y += 6
-    for line in _wrap(album.title, font(14), col_w, 2):
+    for line in _wrap(details[0], font(14), col_w, 2):
         d.text((x, y), line, font=font(14), fill=DIM)
         y += 18
-    if album.artist:
-        d.text((x, y), _fit(album.artist, font(14), col_w), font=font(14), fill=DIM)
+    if details[1]:
+        d.text((x, y), _fit(details[1], font(14), col_w), font=font(14), fill=DIM)
 
     bar_y = 176
     if volume is not None:

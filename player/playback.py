@@ -1,10 +1,11 @@
 """Playback backends. The app only talks to the methods FakePlayback and MpdPlayback share."""
 
+import threading
 import time
 from dataclasses import dataclass
 from pathlib import PurePosixPath
 
-from .library import UNKNOWN_DURATION, Library, _track_title
+from .library import UNKNOWN_DURATION, Library, Tags, Track, _track_title, make_tags
 
 
 @dataclass(frozen=True)
@@ -15,6 +16,7 @@ class Status:
     title: str = ""
     elapsed: float = 0.0
     duration: float = 0.0
+    path: str = ""  # the playing track, relative to the music root
 
 
 class FakePlayback:
@@ -50,13 +52,12 @@ class FakePlayback:
             self._elapsed = elapsed - dur
             self._since = self.clock()
 
-    def play_album(self, album_path: str, track: int = 0, elapsed: float = 0.0) -> None:
-        album = self.library.get(album_path)
-        if album is None:
+    def play(self, tracks: tuple[Track, ...], track: int = 0, elapsed: float = 0.0) -> None:
+        if not tracks:
             self.stop()
             return
-        self._tracks = album.tracks
-        self._durations = [self.library.duration(t) or UNKNOWN_DURATION for t in album.tracks]
+        self._tracks = tuple(tracks)
+        self._durations = [self.library.duration(t) or UNKNOWN_DURATION for t in tracks]
         self._index = min(max(track, 0), len(self._tracks) - 1)
         self._elapsed, self._since, self._state = elapsed, self.clock(), "play"
 
@@ -104,6 +105,7 @@ class FakePlayback:
             title=self._tracks[self._index].title,
             elapsed=self._now_elapsed(),
             duration=self._durations[self._index],
+            path=self._tracks[self._index].path,
         )
 
 
@@ -117,31 +119,54 @@ class MpdPlayback:
         self._client = MPDClient()
         self._client.timeout = 5
         self._connected = False
+        self._lock = threading.RLock()  # the web remote's threads fetch covers through the same client
         self.volume = None
         self._volume_refused = False
 
     def _call(self, fn):
         from mpd import ConnectionError as MpdConnectionError
 
-        for attempt in (0, 1):
-            try:
-                if not self._connected:
-                    self._client.connect(self._host, self._port)
-                    self._connected = True
-                return fn(self._client)
-            except (MpdConnectionError, OSError):
-                self._connected = False
+        with self._lock:
+            for attempt in (0, 1):
                 try:
-                    self._client.disconnect()
-                except Exception:
-                    pass
-                if attempt:
-                    raise
+                    if not self._connected:
+                        self._client.connect(self._host, self._port)
+                        self._connected = True
+                    return fn(self._client)
+                except (MpdConnectionError, OSError):
+                    self._connected = False
+                    try:
+                        self._client.disconnect()
+                    except Exception:
+                        pass
+                    if attempt:
+                        raise
 
-    def play_album(self, album_path: str, track: int = 0, elapsed: float = 0.0) -> None:
-        def go(c):
+    def play(self, tracks: tuple[Track, ...], track: int = 0, elapsed: float = 0.0) -> None:
+        from mpd import CommandError
+
+        def queue_all(c):
             c.clear()
-            c.add(album_path)
+            c.command_list_ok_begin()
+            for t in tracks:
+                c.add(t.path)
+            c.command_list_end()
+
+        def queue_known(c):  # a file MPD cannot read refused the whole batch: add the rest one by one
+            c.clear()
+            for t in tracks:
+                try:
+                    c.add(t.path)
+                except CommandError:
+                    pass
+
+        def go(c):
+            try:
+                queue_all(c)
+            except CommandError:
+                queue_known(c)
+            if not int(c.status().get("playlistlength", 0)):
+                return
             if elapsed > 1:
                 c.seek(track, elapsed)  # starts playback at that point; seekcur fails before decoding begins
             else:
@@ -191,8 +216,23 @@ class MpdPlayback:
                 print(f"MPD would not set the volume ({e}); continuing without it", flush=True)
             self._volume_refused = True
 
+    def tags(self) -> dict[str, Tags]:
+        """Every track's tags, from MPD's database. Call after rescan()."""
+        songs = self._call(lambda c: c.listallinfo())
+        return {s["file"]: make_tags(s) for s in songs if "file" in s}
+
+    def art(self, path: str) -> bytes | None:
+        """The cover embedded in a track, if it has one."""
+        from mpd import CommandError
+
+        try:
+            picture = self._call(lambda c: c.readpicture(path))  # the client fetches every chunk itself
+        except CommandError:
+            return None
+        return (picture or {}).get("binary") or None
+
     def rescan(self, timeout: float = 120.0) -> None:
-        """Update MPD's database and wait for it, so albums can be queued straight after."""
+        """Update MPD's database and wait for it, so tracks can be queued straight after."""
         self._call(lambda c: c.update())
         deadline = time.monotonic() + timeout
         while "updating_db" in self._call(lambda c: c.status()) and time.monotonic() < deadline:
@@ -211,4 +251,5 @@ class MpdPlayback:
             title=title if isinstance(title, str) else title[0],
             elapsed=float(st.get("elapsed", 0)),
             duration=float(st.get("duration", 0)),
+            path=song.get("file", ""),
         )

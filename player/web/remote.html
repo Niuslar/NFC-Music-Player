@@ -39,6 +39,9 @@
   .albums .a { color: var(--dim); font-size: 13px; }
   .albums .txt { min-width: 0; }
   .empty { color: var(--dim); padding: 8px; }
+  .kinds { display: flex; gap: 8px; margin-bottom: 10px; }
+  .kinds button { background: var(--panel); color: var(--dim); padding: 8px 14px; border-radius: 10px; font-size: 14px; }
+  .kinds button[aria-pressed=true] { background: var(--accent); color: #1a1407; font-weight: 600; }
   .pick { display: flex; gap: 10px; flex-wrap: wrap; margin: 12px 0; }
   .pick label, .pick button { background: #2c2c31; padding: 10px 14px; border-radius: 10px; cursor: pointer; }
   .pick input { display: none; }
@@ -93,8 +96,13 @@
     <button class="small" id="unlink" hidden>Unlink card</button>
   </div>
 
-  <h2>Albums</h2>
-  <input type="search" id="search" placeholder="Search albums and artists" aria-label="Search albums">
+  <h2>Library</h2>
+  <div class="kinds" id="kinds">
+    <button data-kind="album" aria-pressed="true">Albums</button>
+    <button data-kind="artist" aria-pressed="false">Artists</button>
+    <button data-kind="list" aria-pressed="false">Lists</button>
+  </div>
+  <input type="search" id="search" placeholder="Search" aria-label="Search the library">
   <ul class="albums" id="albums"></ul>
 
   <h2>Add music</h2>
@@ -115,8 +123,11 @@ const $ = (id) => document.getElementById(id);
 const HEADERS = { "X-Requested-With": "nfc-player" };
 const EXT = [".flac", ".mp3", ".m4a", ".ogg", ".opus", ".wav", ".aiff", ".aif", ".jpg", ".jpeg", ".png"];
 const clock = (s) => `${Math.floor(s / 60)}:${String(Math.floor(s % 60)).padStart(2, "0")}`;
-const coverUrl = (path) => `/api/cover?album=${encodeURIComponent(path)}`;
-let state = {}, albums = [], draggingVolume = false, lastAlbumCount = -1, lastCardKey = "", openAlbum = null;
+const coverUrl = (key) => `/api/cover?album=${encodeURIComponent(key)}`;
+const trackCoverUrl = (path) => `/api/cover?track=${encodeURIComponent(path)}`;
+const count = (n, noun) => `${n} ${noun}${n === 1 ? "" : "s"}`;
+const NOUN = { album: "album", artist: "artist", list: "list" };
+let state = {}, albums = [], draggingVolume = false, lastLibrary = -1, lastCardKey = "", openAlbum = null, kind = "album";
 
 function command(action, value) {
   return fetch("/api/command", { method: "POST", headers: { ...HEADERS, "Content-Type": "application/json" }, body: JSON.stringify({ action, value }) })
@@ -128,10 +139,11 @@ function showState() {
   $("banner").hidden = !transfer;
   if (transfer) $("banner").textContent = "The music drive is connected to a computer over USB. Playback and uploads are paused until it is ejected.";
   $("track").textContent = a ? (state.state === "stop" ? "Finished" : state.track || a.title) : "Nothing playing";
-  $("album").textContent = a ? [a.title, a.artist].filter(Boolean).join(" · ") : (state.card ? "The card in the slot is not linked" : "Insert a card or pick an album below");
+  $("album").textContent = a ? state.details : (state.card ? "The card in the slot is not linked" : "Insert a card or pick something below");
   $("source").textContent = a ? (state.remote ? "Started from this page" : "Playing from the card") : "";
   const cover = $("cover");
-  const wanted = a ? coverUrl(a.path) : "";
+  // An artist or a list shows the cover of the track that is playing; an album has one cover.
+  const wanted = !a ? "" : (a.kind !== "album" && state.track_path) ? trackCoverUrl(state.track_path) : coverUrl(a.key);
   if (cover.dataset.url !== wanted) {
     cover.dataset.url = wanted;
     cover.style.backgroundImage = "";
@@ -146,16 +158,16 @@ function showState() {
   for (const id of ["prev", "toggle", "next"]) $(id).disabled = !a || transfer;
   if (!draggingVolume) { $("volume").value = state.volume; $("volumeOut").textContent = state.volume; }
   $("space").textContent = state.free_bytes != null ? `${(state.free_bytes / 1e9).toFixed(1)} GB free on the music drive.` : "";
-  document.querySelectorAll(".albums li").forEach((li) => li.classList.toggle("current", !!a && li.dataset.path === a.path));
+  document.querySelectorAll(".albums li").forEach((li) => li.classList.toggle("current", !!a && li.dataset.key === a.key));
   const ca = state.card_album;
   $("cardPanel").hidden = !state.card || transfer;
   $("cardText").textContent = !state.card ? "" : ca
-    ? (ca.title ? `Card in the slot is linked to ${ca.title}.` : "Card in the slot is linked to an album that is no longer on the drive.")
-    : "Card in the slot is not linked. Press Link card next to an album.";
+    ? (ca.title ? `Card in the slot is linked to the ${NOUN[ca.kind]} ${ca.title}.` : "Card in the slot is linked to music that is no longer on the drive.")
+    : "Card in the slot is not linked. Press Link card next to an album, artist or list.";
   $("unlink").hidden = !ca;
-  const cardKey = `${state.card}|${ca ? ca.path : ""}|${transfer}`;
+  const cardKey = `${state.card}|${ca ? ca.key : ""}|${transfer}`;
   if (cardKey !== lastCardKey) { lastCardKey = cardKey; showAlbums(); }
-  if (state.albums !== lastAlbumCount) { lastAlbumCount = state.albums; loadAlbums(); }
+  if (state.library !== lastLibrary) { lastLibrary = state.library; loadAlbums(); }
 }
 
 async function refresh() {
@@ -163,43 +175,46 @@ async function refresh() {
 }
 
 async function loadAlbums() {
-  try { albums = await (await fetch("/api/albums")).json(); showAlbums(); } catch (e) {}
+  try { albums = await (await fetch("/api/library")).json(); showAlbums(); } catch (e) {}
 }
 
 function showAlbums() {
   const q = $("search").value.trim().toLowerCase();
   const list = $("albums");
   list.textContent = "";
-  const shown = albums.filter((a) => !q || `${a.title} ${a.artist}`.toLowerCase().includes(q));
+  const ofKind = albums.filter((a) => a.kind === kind);
+  const shown = ofKind.filter((a) => !q || `${a.title} ${a.artist}`.toLowerCase().includes(q));
   if (!shown.length) {
     const li = document.createElement("li");
     li.className = "empty";
-    li.textContent = albums.length ? "No albums match." : "No music yet. Add some below.";
+    li.textContent = ofKind.length ? `No ${NOUN[kind]}s match.`
+      : !albums.length ? "No music yet. Add some below."
+      : kind === "list" ? "No lists yet. A folder that holds songs from more than one album shows up here." : `No ${NOUN[kind]}s yet.`;
     list.appendChild(li);
     return;
   }
   for (const a of shown) {
     const li = document.createElement("li");
     li.tabIndex = 0;
-    li.dataset.path = a.path;
-    if (state.album && state.album.path === a.path) li.className = "current";
+    li.dataset.key = a.key;
+    if (state.album && state.album.key === a.key) li.className = "current";
     const thumb = document.createElement("div");
     thumb.className = "thumb";
-    thumb.style.backgroundImage = `url("${coverUrl(a.path)}")`;
+    thumb.style.backgroundImage = `url("${coverUrl(a.key)}")`;
     const txt = document.createElement("div");
     txt.className = "txt";
     const t = document.createElement("div"); t.className = "t"; t.textContent = a.title;
-    const s = document.createElement("div"); s.className = "a"; s.textContent = [a.artist, `${a.tracks} tracks`].filter(Boolean).join(" · ");
+    const s = document.createElement("div"); s.className = "a"; s.textContent = [a.kind === "album" ? a.artist : count(a.albums, "album"), count(a.tracks, "track")].filter(Boolean).join(" · ");
     txt.append(t, s);
     const acts = document.createElement("div");
     acts.className = "acts";
     li.append(thumb, txt, acts);
-    const linked = state.card_album && state.card_album.path === a.path;
+    const linked = state.card_album && state.card_album.key === a.key;
     if (state.card && state.mode !== "transfer" && !linked) {
       const b = document.createElement("button");
       b.className = "small";
       b.textContent = "Link card";
-      b.addEventListener("click", (e) => { e.stopPropagation(); command("link_card", a.path); });
+      b.addEventListener("click", (e) => { e.stopPropagation(); command("link_card", a.key); });
       acts.appendChild(b);
     } else if (linked) {
       const tag = document.createElement("span");
@@ -207,17 +222,19 @@ function showAlbums() {
       tag.textContent = "Card";
       acts.appendChild(tag);
     }
-    const manage = document.createElement("button");
-    manage.className = "small";
-    manage.textContent = openAlbum === a.path ? "Close" : "Files";
-    manage.setAttribute("aria-label", `Manage files in ${a.title}`);
-    manage.addEventListener("click", (e) => { e.stopPropagation(); openAlbum = openAlbum === a.path ? null : a.path; showAlbums(); });
-    acts.appendChild(manage);
-    const play = () => command("play_album", a.path);
+    if (a.files) {  // an artist has no folder of its own to manage
+      const manage = document.createElement("button");
+      manage.className = "small";
+      manage.textContent = openAlbum === a.key ? "Close" : "Files";
+      manage.setAttribute("aria-label", `Manage files in ${a.title}`);
+      manage.addEventListener("click", (e) => { e.stopPropagation(); openAlbum = openAlbum === a.key ? null : a.key; showAlbums(); });
+      acts.appendChild(manage);
+    }
+    const play = () => command("play_album", a.key);
     li.addEventListener("click", play);
     li.addEventListener("keydown", (e) => { if (e.key === "Enter" && e.target === li) play(); });
     list.appendChild(li);
-    if (openAlbum === a.path) {
+    if (openAlbum === a.key) {
       const box = document.createElement("li");
       box.className = "files";
       list.appendChild(box);
@@ -236,7 +253,7 @@ async function remove(album, file) {
 }
 
 function albumGone(a) {
-  albums = albums.filter((x) => x.path !== a.path);
+  albums = albums.filter((x) => x.key !== a.key);
   openAlbum = null;
   showAlbums();
   setTimeout(loadAlbums, 7000);  // the player rescans a few seconds after the last change
@@ -246,10 +263,10 @@ async function showFiles(a, box) {
   box.textContent = "Loading…";
   let files;
   try {
-    const r = await fetch(`/api/files?album=${encodeURIComponent(a.path)}`);
+    const r = await fetch(`/api/files?album=${encodeURIComponent(a.key)}`);
     if (!r.ok) throw 0;
     files = await r.json();
-  } catch (e) { box.textContent = "Could not list this album's files."; return; }
+  } catch (e) { box.textContent = "Could not list these files."; return; }
   box.textContent = "";
   const tracks = files.filter((f) => f.track).length;
   for (const f of files) {
@@ -260,8 +277,8 @@ async function showFiles(a, box) {
     const del = document.createElement("button"); del.className = "small danger"; del.textContent = "Delete";
     del.addEventListener("click", async () => {
       const last = f.track && tracks === 1;
-      const question = last ? `Delete "${f.name}"? It is the last track, so the whole album will be removed. This cannot be undone.` : `Delete "${f.name}"? This cannot be undone.`;
-      if (!confirm(question) || !(await remove(a.path, f.name))) return;
+      const question = last ? `Delete "${f.name}"? It is the last track, so the whole ${NOUN[a.kind]} will be removed. This cannot be undone.` : `Delete "${f.name}"? This cannot be undone.`;
+      if (!confirm(question) || !(await remove(a.key, f.name))) return;
       if (last) albumGone(a); else { a.tracks -= f.track ? 1 : 0; showAlbums(); }
     });
     row.append(name, size, del);
@@ -269,15 +286,22 @@ async function showFiles(a, box) {
   }
   const all = document.createElement("div");
   all.className = "all";
-  const delAll = document.createElement("button"); delAll.className = "small danger"; delAll.textContent = "Delete whole album";
+  const delAll = document.createElement("button"); delAll.className = "small danger"; delAll.textContent = `Delete whole ${NOUN[a.kind]}`;
   delAll.addEventListener("click", async () => {
-    if (confirm(`Delete "${a.title}" and all ${files.length} of its files? This cannot be undone.`) && (await remove(a.path, null))) albumGone(a);
+    const what = a.kind === "list" ? `the list "${a.title}", every album in it,` : `"${a.title}"`;
+    if (confirm(`Delete ${what} and all ${files.length} of its files? This cannot be undone.`) && (await remove(a.key, null))) albumGone(a);
   });
   all.appendChild(delAll);
   box.appendChild(all);
 }
 
 $("search").addEventListener("input", showAlbums);
+for (const b of $("kinds").children) b.addEventListener("click", () => {
+  kind = b.dataset.kind;
+  openAlbum = null;
+  for (const other of $("kinds").children) other.setAttribute("aria-pressed", other === b);
+  showAlbums();
+});
 $("unlink").addEventListener("click", () => command("unlink_card"));
 $("toggle").addEventListener("click", () => command("toggle"));
 $("prev").addEventListener("click", () => command("prev"));

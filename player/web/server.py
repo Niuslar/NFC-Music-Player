@@ -65,14 +65,22 @@ def _music_files(folder: Path) -> list[Path]:
     )
 
 
+def _own_files(library: Library, album, folder: Path) -> list[Path]:
+    """The files that belong to an album or list: its whole folder, or just its tracks when the folder is shared."""
+    if album.whole_folder:
+        return _music_files(folder)
+    names = {Path(t.path).name for t in album.tracks}
+    return [f for f in _music_files(folder) if f.name in names]
+
+
 def list_files(library: Library, album_path: str) -> list[dict]:
     album = library.get(album_path)
-    if album is None:
+    if album is None or album.folder is None:
         raise UploadError(404, "No such album")
     try:
         return [
             {"name": f.name, "size": f.stat().st_size, "track": f.suffix.lower() in AUDIO_EXT}
-            for f in _music_files(library.root / album.path)
+            for f in _own_files(library, album, library.root / album.folder)
         ]
     except OSError:
         raise UploadError(404, "No such album")
@@ -81,20 +89,25 @@ def list_files(library: Library, album_path: str) -> list[dict]:
 def delete_music(library: Library, writer: "MusicWriter", album_path: str, name: str | None = None) -> int:
     """Deletes one file from an album, or the whole album when name is None. Returns files removed.
 
-    Only albums the library knows about can be touched, and only files directly inside them.
+    Only albums and lists the library knows about can be touched, and only files directly
+    inside their folder. An album that shares its folder with others loses only its own tracks.
     """
     album = library.get(album_path)
-    if album is None:
+    if album is None or album.folder is None:
         raise UploadError(404, "No such album")
     base = library.root.resolve()
-    folder = (base / album.path).resolve()
+    folder = (base / album.folder).resolve()
     if base not in folder.parents or not folder.is_dir():
         raise UploadError(404, "No such album")
-    if name is None:
+    if name is None and album.whole_folder:
         targets = [f for f in folder.iterdir() if f.is_file() or f.is_symlink()]
+    elif name is None:
+        targets = _own_files(library, album, folder)
     else:
         target = folder / str(name)
         if str(name) != target.name or target.name.startswith(".") or target.is_symlink() or not target.is_file():
+            raise UploadError(404, "No such file in that album")
+        if not album.whole_folder and target not in _own_files(library, album, folder):
             raise UploadError(404, "No such file in that album")
         targets = [target]
     writer.begin()
@@ -236,10 +249,21 @@ def start(event_queue, shared: Shared, library: Library, writer: MusicWriter, po
                 except OSError:
                     state["free_bytes"] = None
                 self._json(200, state)
-            elif url.path == "/api/albums":
+            elif url.path == "/api/library":
                 self._json(
                     200,
-                    [{"path": a.path, "title": a.title, "artist": a.artist, "tracks": len(a.tracks)} for a in library.albums],
+                    [
+                        {
+                            "key": a.key,
+                            "kind": a.kind,
+                            "title": a.title,
+                            "artist": a.artist,
+                            "tracks": len(a.tracks),
+                            "albums": a.albums,
+                            "files": a.folder is not None,
+                        }
+                        for a in library.albums + library.artists + library.lists
+                    ],
                 )
             elif url.path == "/api/files":
                 try:
@@ -247,26 +271,39 @@ def start(event_queue, shared: Shared, library: Library, writer: MusicWriter, po
                 except UploadError as e:
                     self._fail(e.status, str(e))
             elif url.path == "/api/cover":
-                self._cover(parse_qs(url.query).get("album", [""])[0])
+                query = parse_qs(url.query)
+                self._cover(query.get("album", [""])[0], query.get("track", [""])[0])
             else:
                 self._fail(404, "Not found")
 
-        def _cover(self, album_path: str) -> None:
-            album = library.get(album_path)
-            if album is None or album.cover is None:
+        def _cover(self, album_key: str, track_path: str) -> None:
+            """The cover of one track, or of an album, artist or list (its first track's)."""
+            album = library.get(album_key)
+            track = library.track(track_path) or (album.tracks[0] if album and album.tracks else None)
+            try:
+                if track is None:
+                    raise OSError
+                source = library.art_source(track)
+                key = f"{source}:{source.stat().st_mtime_ns}"
+                if key not in covers:
+                    from PIL import Image
+
+                    data = library.art(track)
+                    thumb = b""
+                    if data:
+                        img = Image.open(io.BytesIO(data)).convert("RGB")
+                        img.thumbnail((400, 400))
+                        buf = io.BytesIO()
+                        img.save(buf, "JPEG", quality=82)
+                        thumb = buf.getvalue()
+                    if len(covers) > 200:
+                        covers.clear()
+                    covers[key] = thumb  # empty when there is no cover, so we do not look again
+                if not covers[key]:
+                    raise OSError
+            except Exception:  # no such track, no cover, or not an image
                 self._fail(404, "No cover")
                 return
-            key = f"{album.cover}:{album.cover.stat().st_mtime_ns}"
-            if key not in covers:
-                from PIL import Image
-
-                img = Image.open(album.cover).convert("RGB")
-                img.thumbnail((400, 400))
-                buf = io.BytesIO()
-                img.save(buf, "JPEG", quality=82)
-                if len(covers) > 200:
-                    covers.clear()
-                covers[key] = buf.getvalue()
             self._send(200, covers[key], "image/jpeg", "max-age=300")
 
         def do_POST(self):

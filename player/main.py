@@ -14,7 +14,7 @@ from pathlib import Path
 from .app import App
 from .cards import Store
 from .events import LibraryChanged
-from .library import Library
+from .library import FileTags, Library
 from .playback import FakePlayback, MpdPlayback
 
 # GPIO numbers (BCM). The DAC HAT owns 2, 3, 18, 19, 20 and 21.
@@ -117,7 +117,6 @@ def main() -> None:
     args = p.parse_args()
 
     events: queue.Queue = queue.Queue()
-    library = Library(args.music)
     if args.playback == "mpd":
         playback = MpdPlayback(port=args.mpd_port)
         for attempt in range(30):  # MPD may still be starting at boot
@@ -128,7 +127,10 @@ def main() -> None:
                 if attempt == 29:
                     raise
                 time.sleep(1)
+        library = Library(args.music, tags=playback.tags, art=playback.art)  # MPD has already read every tag
     else:
+        files = FileTags(args.music)
+        library = Library(args.music, tags=files.tags, art=files.art)
         playback = FakePlayback(library)
 
     if args.sim:
@@ -144,7 +146,7 @@ def main() -> None:
 
     steps = 60 if args.sim else VOLUME_STEPS_PER_REV[args.encoder]
     app = App(library, Store(args.state), playback, storage, volume_steps_per_rev=steps)
-    print(f"{len(library.albums)} albums in {args.music}", flush=True)
+    print(f"{len(library.albums)} albums, {len(library.artists)} artists and {len(library.lists)} lists in {args.music}", flush=True)
 
     shared = None
     if args.web_port:

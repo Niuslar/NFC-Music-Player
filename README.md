@@ -8,7 +8,7 @@ A tabletop music player where each album is a card. Put a card in the slot and i
 
 ## What it does
 
-- **Cards are albums.** Blank NFC cards are linked to albums on the device itself. A card remembers where it stopped.
+- **Cards are albums.** Blank NFC cards are linked to albums on the device itself. A card remembers where it stopped. A card can also play a whole artist, or a list: a folder of songs from different albums.
 - **Hi-Fi output.** A Raspberry Pi DAC Pro provides 3.5 mm and RCA outputs, with a balanced output available for a 4.4 mm socket.
 - **Screen and controls.** A 2-inch display shows the cover, track and time. A clicky knob sets the volume and scrolls lists; four buttons do previous, play/pause, next and back.
 - **Music over USB.** Plug the player into a computer and its music appears as a drive called `MUSIC`.
@@ -45,6 +45,8 @@ python3 -m venv .venv
 .venv/bin/python -m player.demo_library demo/music
 .venv/bin/python -m player.main --sim
 ```
+
+Add `mutagen` to the `pip install` line if you point the simulator at your own tagged music with `--music`; without it, albums come from folder names only. On the Pi the tags come from MPD and nothing extra is needed.
 
 Then open `http://localhost:8137` for the simulated device and `http://localhost:8080` for the web remote. The demo library is generated sine tones, and the simulator is silent unless you run it against MPD (`system/mpd-dev.sh`, then add `--playback mpd`).
 
