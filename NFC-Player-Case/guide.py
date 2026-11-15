@@ -156,8 +156,10 @@ for (const fig of document.querySelectorAll('.pic')) {
 """
 
 
-def step(num, title, picture, caption, alt, body):
-    return f'<div class="step" id="step-{num}"><h3><span>{num}</span>{title}</h3>{body}{figure(picture, caption, alt) if picture else ""}</div>'
+def step(num, title, picture, caption, alt, body, more=()):
+    """more: further (picture, caption, alt) for the same step."""
+    figs = ([figure(picture, caption, alt)] if picture else []) + [figure(*m) for m in more]
+    return f'<div class="step" id="step-{num}"><h3><span>{num}</span>{title}</h3>{body}{"".join(figs)}</div>'
 
 
 def page():
@@ -170,7 +172,7 @@ def page():
 <p>Charcoal printed case with a brass face set inside a thin printed rim, a card that leans back in a slot, and a tray in the lid for five spare cards.</p>
 <p><strong>{n(c.W)} × {n(c.D)} × {n(c.H)} mm</strong> printed shell. Knob, keycaps, screw heads, feet and cards stand proud of it.</p></div>
 <img src="{jpeg(hero, 1400, 86)}" alt="Rendered case: brass front inside a thin dark rim with a screen, four keys and a large knob; cards in a tray on the lid and one card standing in a slot"></header>
-<nav><a href="#inside">What goes where</a><a href="#changes">Changes</a><a href="#measure">Measure first</a><a href="#print">Print</a><a href="#hardware">Hardware</a><a href="#assembly">Assembly</a><a href="#drawings">Drawings</a><a href="#brass">Brass</a><a href="#rebuild">Rebuild</a></nav>
+<nav><a href="#inside">What goes where</a><a href="#changes">Changes</a><a href="#measure">Measure first</a><a href="#print">Print</a><a href="#hardware">Hardware</a><a href="#controls">Keys and knob</a><a href="#assembly">Assembly</a><a href="#drawings">Drawings</a><a href="#brass">Brass</a><a href="#rebuild">Rebuild</a></nav>
 
 <section id="inside"><h2>What goes where</h2>
 <p>The numbers on each picture are explained in the list under it. Hover a number or a line to pick out the other. The bought parts are simple blocks at their nominal size and position: they show where things go and which way round, not exactly what they look like.</p>
@@ -182,6 +184,7 @@ def page():
 <section id="changes"><h2>Changes in revision {REVISION}</h2><table><tr><th>Area</th><th>Change</th><th>Why</th></tr>
 <tr><td>Headphones</td><td>The separate {n(c.PHONES_HOLE)} mm rear jack hole and its extension lead are gone. The DAC's own 3.5 mm socket comes out through the rear window, next to its RCA sockets.</td><td>On the DAC Pro the headphone socket is on the same edge as the RCA sockets, so it already faces the window. The extra socket only added a lead from one side of the rear panel to the other. Set <code>REAR_JACK = True</code> in <code>case.py</code> to bring it back.</td></tr>
 <tr><td>Screw towers</td><td>{n(c.TOWER_X)} mm wide instead of 12.</td><td>With the lid screws moved to {n(c.LID_SCREW_X[0])} mm from the sides, their pilot holes left only 0.7 mm of wall. Now there is 2.7 mm.</td></tr>
+<tr><td>Keys and knob</td><td>A new section explains what to buy for them, how they are held, and how they feel, with a section drawing through a key and the encoder.</td><td>It was not clear what was printed and what was bought, or how the encoder stays put.</td></tr>
 <tr><td>Pictures and drawings</td><td>New assembly pictures and dimensioned drawings, all generated from the same model as the STLs.</td><td>The previous diagrams were not to scale and their labels overlapped.</td></tr>
 </table></section>
 
@@ -211,17 +214,62 @@ def page():
 <section id="hardware"><h2>Hardware</h2><ul>
 <li>M3 screws that thread straight into the print (try one in the gauge first, and drive by hand): four M3 × 10 for the front (they pass the brass and panel), four M3 × 8 for the rear, four low-profile M3 × 6 for the lid (head at most 6 mm across and 1.5 mm tall), two M3 × 6 for the card guide and two for the screen cradle.</li>
 <li>Four M2.5 standoffs 5 mm tall, four M2.5 × 6 screws from below, and four more on top for the Pi.</li>
-<li>Four Kailh Choc V1 switches with keycaps up to 17.5 mm wide. An M7 encoder with a 6 mm shaft, and a knob up to {n(c.KNOB_D)} mm.</li>
+<li>Keys and knob: four switches, four keycaps, an encoder and a knob, all bought. See <a href="#controls">Keys and knob</a> for exactly what to get.</li>
 <li>A panel-mount USB-C socket on a short lead ending in micro-USB.</li>
 <li>{n(c.BRASS_T)} mm brass sheet and thin double-sided tape. Four feet at least 5 mm tall. Foam pads, one small cable tie, and female jumper leads for the wiring.</li>
 </ul></section>
+
+<section id="controls"><h2>Keys and knob</h2>
+<p>Nothing you press or turn is printed. The keys are four ordinary keyboard switches with keycaps, and the knob sits on a rotary encoder. All of them are bought parts. The printed front panel is only what they clip or bolt into, and the brass covers its face.</p>
+
+<h3>What to buy</h3>
+<table><tr><th>Part</th><th>Get</th><th>Make sure</th></tr>
+<tr><td>Switches ×4</td><td>Kailh Choc <strong>V1</strong> low-profile switches</td><td>Choc V1, not Choc V2 or full-size MX: the panel's {n(c.KEY_HOLE)} mm square holes and {n(c.KEY_PLATE)} mm plate are cut for V1. Buy a spare or two.</td></tr>
+<tr><td>Keycaps ×4</td><td>Choc V1 keycaps, 1u</td><td>Made for Choc V1 stems (MX keycaps will not fit), and no bigger than 17.5 × 16.5 mm. The keys sit 18 mm apart, so standard Choc-spaced caps leave a 0.5 mm gap.</td></tr>
+<tr><td>Encoder</td><td>EC11-style rotary encoder with push switch: the Pi Hut one from the build guide, a Bourns PEC11R or an Alps EC11</td><td>An M7 threaded bushing at least 5 mm long, a 6 mm shaft that reaches at least 12 mm past the bushing, and a nut and washer (usually included). Try it in the fit gauge first.</td></tr>
+<tr><td>Knob</td><td>Solid metal knob, up to {n(c.KNOB_D)} mm across, for a 6 mm shaft</td><td>Fixed with a set screw, and its bore matches your shaft's shape (D-flat or knurled).</td></tr>
+<tr><td>Wire</td><td>Thin hook-up wire and female jumper leads</td><td>Neither part has a connector: you solder a wire to each pin.</td></tr></table>
+
+<h3>How the keys feel</h3>
+<p>The feel comes entirely from the switch you choose. All Choc V1 switches fit the same holes, so pick by feel:</p>
+<table><tr><th>Type</th><th>Feel</th><th>Typical Kailh name</th></tr>
+<tr><td>Linear</td><td>Smooth all the way down, no bump and no sound beyond the keycap landing.</td><td>Red</td></tr>
+<tr><td>Tactile</td><td>A soft bump you can feel as it actuates, quiet.</td><td>Brown</td></tr>
+<tr><td>Clicky</td><td>A bump with a crisp, audible click. Closest to a hi-fi push button.</td><td>White (light), Jade or Navy (heavier)</td></tr></table>
+<p>Each has about {n(3.0)} mm of travel and a spring that pushes the key back up. Any of them works with the player, which only sees the contact close.</p>
+
+<h3>How they are held</h3>
+<ul>
+<li><strong>Switches:</strong> push in from the front. Two spring clips on each switch snap behind the {n(c.KEY_PLATE)} mm plate, and the pocket behind it leaves them room. No glue or screws. To remove one, squeeze its clips from behind, or use a switch puller from the front.</li>
+<li><strong>Encoder:</strong> held by its own nut. It goes in from behind with the threaded bushing through the {n(c.ENCODER_HOLE)} mm hole. On the front, a washer and then the nut clamp the brass and the {n(c.PANEL_AT_NUT)} mm of plastic between the nut and the encoder body. The body also sits in a rectangular pocket, so it cannot turn when you twist the knob.</li>
+<li><strong>Locating lug:</strong> many encoders have a small lug beside the bushing, meant for a hole in a metal panel. The pocket already stops the encoder turning, so nip the lug off flush with side cutters, or the body will not sit flat.</li>
+<li><strong>Knob:</strong> slides onto the shaft and is held by its set screw on the shaft's flat. Leave about 1 mm between the knob and the nut so it never rubs.</li>
+</ul>
+{drawing("Controls-Section.svg", "Sections through a key and through the encoder, three times full size.")}
+
+<h3>Wiring</h3>
+<p>Every key and the encoder only connect a pin to ground, so they need no resistors or power. Pin numbers are the Pi's physical pins, reached through the splitter's spare header (the same as the build guide's step 5).</p>
+<table><tr><th>Part</th><th>Pin on the part</th><th>Pi pin</th></tr>
+<tr><td>Previous</td><td>Either pin; the other to ground</td><td>7 (GPIO 4)</td></tr>
+<tr><td>Play / pause</td><td>Either pin; the other to ground</td><td>11 (GPIO 17)</td></tr>
+<tr><td>Next</td><td>Either pin; the other to ground</td><td>36 (GPIO 16)</td></tr>
+<tr><td>Back</td><td>Either pin; the other to ground</td><td>32 (GPIO 12)</td></tr>
+<tr><td>Keys, shared ground</td><td>One pin of every key, chained together</td><td>14 (ground)</td></tr>
+<tr><td>Encoder</td><td>A, the outer pin on the three-pin side</td><td>29 (GPIO 5)</td></tr>
+<tr><td>Encoder</td><td>C, the middle pin</td><td>6 (ground)</td></tr>
+<tr><td>Encoder</td><td>B, the other outer pin</td><td>31 (GPIO 6)</td></tr>
+<tr><td>Encoder push switch</td><td>One of the two pins on the other side</td><td>37 (GPIO 26)</td></tr>
+<tr><td>Encoder push switch</td><td>The other</td><td>34 (ground)</td></tr></table>
+<aside>The smooth Bourns EM14 encoder mentioned in the build guide as a later upgrade has a different bushing and body. Check its drawing against the encoder hole and pocket, and change <code>ENCODER_HOLE</code> and <code>ENCODER_BODY</code> in <code>case.py</code> before printing.</aside>
+</section>
 
 <section id="assembly"><h2>Assembly</h2>
 {key}
 {step(1, "Fit the brass", "step-1-brass", "Front panel with the brass about to go in. Seen from the front left.", "Front panel with the brass face held in front of its pocket",
 f"<ol><li>Deburr the brass and try it in the pocket. It should drop in with a hair of clearance and sit flush with the rim.</li><li>Stick it down with thin double-sided tape, lining the screw holes up with the panel's.</li></ol>")}
-{step(2, "Fit the switches and the encoder", "step-2-controls", "Front panel seen from behind (the inside), so the knob end is on the left. One switch and the encoder are shown pulled out.", "Inside of the front panel with switches clipped in and the encoder about to go into its pocket",
-"<ol><li>Push the four switches in from the front, in the order previous, play/pause, next, back (left to right from the front), until they click.</li><li>From behind, put the encoder's bushing through its hole so the body sits in the rectangular pocket.</li><li>On the front: washer, nut, then the knob on the shaft.</li></ol>")}
+{step(2, "Fit the switches and the encoder", "step-2-front", "Keys and knob from the front left. One switch, two keycaps, the washer, nut and knob are pulled forward; the encoder is pulled back.", "Front of the panel with a switch, keycaps, washer, nut and knob pulled out in the order they go on",
+"<p>Solder the wires to the switches and the encoder first (see <a href=\"#controls\">Wiring</a>): it is easier before they are in the panel. Then:</p><ol><li>Push each switch in from the front until both clips snap behind the plate. From the front, left to right: previous, play/pause, next, back.</li><li>Press a keycap onto each switch's stem.</li><li>Nip off the encoder's locating lug if it has one. From behind, put the bushing through its hole so the body drops into the rectangular pocket.</li><li>On the front: washer, then nut. Tighten the nut firmly with a spanner, holding the body square in its pocket.</li><li>Slide the knob on, leaving about 1 mm clear of the nut, and tighten its set screw onto the flat of the shaft.</li></ol>",
+more=[("step-2-controls", "The same panel from behind (the inside), so the knob end is on the left. One switch is out of its hole and the encoder is pulled back from its pocket.", "Inside of the front panel with switches clipped in and the encoder about to go into its pocket")])}
 {step(3, "Fit the front panel and the screen", "step-3-screen", "Front left corner of the chassis from behind, with the front panel fitted and the screen lifted above its cradle.", "Screen cradle on the chassis floor behind the window, with the screen board above it ready to slide down",
 "<ol><li>Screw the front panel to the chassis with four M3 × 10 screws.</li><li>Screw the cradle loosely to its two floor bosses with M3 × 6 screws.</li><li>Slide the screen board down into the grooves of both uprights, glass towards the window and connector towards you.</li><li>Look through the window and slide the cradle sideways until the lit area is centred, then tighten its screws. A foam pad between the board and the lid stops it lifting.</li></ol>")}
 {step(4, "Mount the Pi, splitter and DAC", "step-4-stack", "Chassis from the front left with the front panel off for clarity, and the three boards lifted apart.", "Chassis floor with four standoffs in two slots, and the Pi, splitter and DAC stacked above them",

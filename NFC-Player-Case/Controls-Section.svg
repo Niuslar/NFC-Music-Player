@@ -1,0 +1,90 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="268mm" height="268mm" viewBox="0 0 268 268">
+<title>NFC Player: sections through a key and through the volume encoder, seen from the left, three times full size. Millimetres.</title>
+<rect width="268" height="268" fill="#ffffff"/>
+
+<text x="8" y="8" font-size="4.6" text-anchor="start" fill="#222826" font-weight="650" style="font-family:system-ui,-apple-system,'Segoe UI',sans-serif">Through a key</text>
+<rect x="122" y="86.75" width="2.4" height="20.25" rx="0" fill="#d4b06c" stroke="#8a6a2e" stroke-width="0.2" />
+<rect x="122" y="17" width="2.4" height="20.25" rx="0" fill="#d4b06c" stroke="#8a6a2e" stroke-width="0.2" />
+<rect x="124.4" y="87.5" width="9.6" height="19.5" rx="0" fill="#c9ccc8" stroke="#5f6b66" stroke-width="0.2" />
+<rect x="124.4" y="17" width="9.6" height="19.5" rx="0" fill="#c9ccc8" stroke="#5f6b66" stroke-width="0.2" />
+<rect x="124.4" y="82.85" width="3.6" height="4.65" rx="0" fill="#c9ccc8" stroke="#5f6b66" stroke-width="0.2" />
+<rect x="124.4" y="36.5" width="3.6" height="4.65" rx="0" fill="#c9ccc8" stroke="#5f6b66" stroke-width="0.2" />
+<rect x="116" y="39.5" width="8.4" height="45" rx="0" fill="#4a4f4d" stroke="#222826" stroke-width="0.3" />
+<rect x="124.4" y="41.3" width="8.4" height="41.4" rx="0" fill="#4a4f4d" stroke="#222826" stroke-width="0.3" />
+<polygon points="128,82.7 129.2,84.8 132.8,82.7" fill="#4a4f4d" stroke="#222826" stroke-width="0.3" />
+<polygon points="128,41.3 129.2,39.2 132.8,41.3" fill="#4a4f4d" stroke="#222826" stroke-width="0.3" />
+<rect x="132.8" y="71" width="9" height="1.8" rx="0" fill="#b9b7ad" stroke="#5f6b66" stroke-width="0.15" />
+<rect x="132.8" y="54.2" width="9" height="1.8" rx="0" fill="#b9b7ad" stroke="#5f6b66" stroke-width="0.15" />
+<rect x="107" y="57.5" width="9" height="9" rx="0" fill="#8e3b2e" stroke="none" stroke-width="0.3" />
+<rect x="99.5" y="37.25" width="7.5" height="49.5" rx="0" fill="#2b2f31" stroke="#222826" stroke-width="0.3" />
+<line x1="99.5" y1="38" x2="89.8" y2="37" stroke="#a9b1ad" stroke-width="0.18" />
+<circle cx="99.5" cy="38" r="0.45" fill="#5f6b66" stroke="none" stroke-width="0.3"/>
+<text x="89" y="38" font-size="3.7" text-anchor="end" fill="#222826" font-weight="400" style="font-family:system-ui,-apple-system,'Segoe UI',sans-serif">Keycap (Choc V1 fit)</text>
+<line x1="111.5" y1="57.5" x2="89.8" y2="56.5" stroke="#a9b1ad" stroke-width="0.18" />
+<circle cx="111.5" cy="57.5" r="0.45" fill="#5f6b66" stroke="none" stroke-width="0.3"/>
+<text x="89" y="57.5" font-size="3.7" text-anchor="end" fill="#222826" font-weight="400" style="font-family:system-ui,-apple-system,'Segoe UI',sans-serif">Stem: 3 mm of travel</text>
+<line x1="119" y1="80" x2="89.8" y2="79" stroke="#a9b1ad" stroke-width="0.18" />
+<circle cx="119" cy="80" r="0.45" fill="#5f6b66" stroke="none" stroke-width="0.3"/>
+<text x="89" y="80" font-size="3.7" text-anchor="end" fill="#222826" font-weight="400" style="font-family:system-ui,-apple-system,'Segoe UI',sans-serif">Switch housing, in the brass slot</text>
+<line x1="123.2" y1="95" x2="89.8" y2="94" stroke="#a9b1ad" stroke-width="0.18" />
+<circle cx="123.2" cy="95" r="0.45" fill="#5f6b66" stroke="none" stroke-width="0.3"/>
+<text x="89" y="95" font-size="3.7" text-anchor="end" fill="#222826" font-weight="400" style="font-family:system-ui,-apple-system,'Segoe UI',sans-serif">Brass, 0.8</text>
+<line x1="134" y1="26" x2="148.2" y2="25" stroke="#a9b1ad" stroke-width="0.18" />
+<circle cx="134" cy="26" r="0.45" fill="#5f6b66" stroke="none" stroke-width="0.3"/>
+<text x="149" y="26" font-size="3.7" text-anchor="start" fill="#222826" font-weight="400" style="font-family:system-ui,-apple-system,'Segoe UI',sans-serif">Front panel</text>
+<line x1="129.2" y1="40.1" x2="148.2" y2="39.1" stroke="#a9b1ad" stroke-width="0.18" />
+<circle cx="129.2" cy="40.1" r="0.45" fill="#5f6b66" stroke="none" stroke-width="0.3"/>
+<text x="149" y="40.1" font-size="3.7" text-anchor="start" fill="#222826" font-weight="400" style="font-family:system-ui,-apple-system,'Segoe UI',sans-serif">Clips catch the back of the 1.2 mm plate</text>
+<line x1="141.8" y1="55.1" x2="148.2" y2="54.1" stroke="#a9b1ad" stroke-width="0.18" />
+<circle cx="141.8" cy="55.1" r="0.45" fill="#5f6b66" stroke="none" stroke-width="0.3"/>
+<text x="149" y="55.1" font-size="3.7" text-anchor="start" fill="#222826" font-weight="400" style="font-family:system-ui,-apple-system,'Segoe UI',sans-serif">Two pins: solder a wire to each</text>
+<line x1="132.5" y1="89" x2="148.2" y2="88" stroke="#a9b1ad" stroke-width="0.18" />
+<circle cx="132.5" cy="89" r="0.45" fill="#5f6b66" stroke="none" stroke-width="0.3"/>
+<text x="149" y="89" font-size="3.7" text-anchor="start" fill="#222826" font-weight="400" style="font-family:system-ui,-apple-system,'Segoe UI',sans-serif">Pocket: room for the clips</text>
+<text x="8" y="124" font-size="4.6" text-anchor="start" fill="#222826" font-weight="650" style="font-family:system-ui,-apple-system,'Segoe UI',sans-serif">Through the volume encoder</text>
+<line x1="8" y1="116" x2="260" y2="116" stroke="#a9b1ad" stroke-width="0.2" />
+<rect x="132" y="200.95" width="2.4" height="46.05" rx="0" fill="#d4b06c" stroke="#8a6a2e" stroke-width="0.2" />
+<rect x="132" y="133" width="2.4" height="46.05" rx="0" fill="#d4b06c" stroke="#8a6a2e" stroke-width="0.2" />
+<rect x="134.4" y="211.75" width="9.6" height="35.25" rx="0" fill="#c9ccc8" stroke="#5f6b66" stroke-width="0.2" />
+<rect x="134.4" y="133" width="9.6" height="35.25" rx="0" fill="#c9ccc8" stroke="#5f6b66" stroke-width="0.2" />
+<rect x="134.4" y="200.95" width="4.5" height="10.8" rx="0" fill="#c9ccc8" stroke="#5f6b66" stroke-width="0.2" />
+<rect x="134.4" y="168.25" width="4.5" height="10.8" rx="0" fill="#c9ccc8" stroke="#5f6b66" stroke-width="0.2" />
+<rect x="138.9" y="169.9" width="19.5" height="40.2" rx="0" fill="#4a4f4d" stroke="#222826" stroke-width="0.3" />
+<rect x="158.4" y="208" width="10.5" height="2.1" rx="0" fill="#b9b7ad" stroke="#5f6b66" stroke-width="0.15" />
+<rect x="123.9" y="179.5" width="15" height="21" rx="0" fill="#9a9a94" stroke="#5f6b66" stroke-width="0.2" />
+<rect x="130.5" y="172" width="1.5" height="36" rx="0" fill="#b9b7ad" stroke="#5f6b66" stroke-width="0.2" />
+<rect x="124.5" y="175" width="6" height="30" rx="0" fill="#9a9a94" stroke="#5f6b66" stroke-width="0.2" />
+<rect x="78.9" y="181" width="45" height="18" rx="0" fill="#c8c8c2" stroke="#5f6b66" stroke-width="0.2" />
+<polygon points="121.5,238 73.5,238 73.5,142 121.5,142 121.5,179.8 77.4,179.8 77.4,200.2 121.5,200.2" fill="#d4b06c" stroke="#8a6a2e" stroke-width="0.25" />
+<rect x="94.5" y="200.2" width="9" height="37.8" rx="0" fill="#6f5426" stroke="none" stroke-width="0.3" />
+<rect x="135.9" y="173.2" width="3" height="3" rx="0" fill="none" stroke="#d2452d" stroke-width="0.3" stroke-dasharray="0.8 0.5"/>
+<line x1="97.5" y1="148" x2="68.3" y2="147" stroke="#a9b1ad" stroke-width="0.18" />
+<circle cx="97.5" cy="148" r="0.45" fill="#5f6b66" stroke="none" stroke-width="0.3"/>
+<text x="67.5" y="148" font-size="3.7" text-anchor="end" fill="#222826" font-weight="400" style="font-family:system-ui,-apple-system,'Segoe UI',sans-serif">Knob, up to 34 mm</text>
+<line x1="127.5" y1="176.5" x2="68.3" y2="175.5" stroke="#a9b1ad" stroke-width="0.18" />
+<circle cx="127.5" cy="176.5" r="0.45" fill="#5f6b66" stroke="none" stroke-width="0.3"/>
+<text x="67.5" y="176.5" font-size="3.7" text-anchor="end" fill="#222826" font-weight="400" style="font-family:system-ui,-apple-system,'Segoe UI',sans-serif">Nut</text>
+<line x1="131.25" y1="206.5" x2="68.3" y2="205.5" stroke="#a9b1ad" stroke-width="0.18" />
+<circle cx="131.25" cy="206.5" r="0.45" fill="#5f6b66" stroke="none" stroke-width="0.3"/>
+<text x="67.5" y="206.5" font-size="3.7" text-anchor="end" fill="#222826" font-weight="400" style="font-family:system-ui,-apple-system,'Segoe UI',sans-serif">Washer</text>
+<line x1="99" y1="226" x2="68.3" y2="225" stroke="#a9b1ad" stroke-width="0.18" />
+<circle cx="99" cy="226" r="0.45" fill="#5f6b66" stroke="none" stroke-width="0.3"/>
+<text x="67.5" y="226" font-size="3.7" text-anchor="end" fill="#222826" font-weight="400" style="font-family:system-ui,-apple-system,'Segoe UI',sans-serif">Set screw onto the shaft's flat</text>
+<line x1="144" y1="142" x2="158.2" y2="141" stroke="#a9b1ad" stroke-width="0.18" />
+<circle cx="144" cy="142" r="0.45" fill="#5f6b66" stroke="none" stroke-width="0.3"/>
+<text x="159" y="142" font-size="3.7" text-anchor="start" fill="#222826" font-weight="400" style="font-family:system-ui,-apple-system,'Segoe UI',sans-serif">Front panel</text>
+<line x1="137.4" y1="174.7" x2="158.2" y2="173.7" stroke="#a9b1ad" stroke-width="0.18" />
+<circle cx="137.4" cy="174.7" r="0.45" fill="#5f6b66" stroke="none" stroke-width="0.3"/>
+<text x="159" y="174.7" font-size="3.7" text-anchor="start" fill="#222826" font-weight="400" style="font-family:system-ui,-apple-system,'Segoe UI',sans-serif">Locating lug, if fitted: nip it off</text>
+<line x1="131.4" y1="188.5" x2="158.2" y2="187.5" stroke="#a9b1ad" stroke-width="0.18" />
+<circle cx="131.4" cy="188.5" r="0.45" fill="#5f6b66" stroke="none" stroke-width="0.3"/>
+<text x="159" y="188.5" font-size="3.7" text-anchor="start" fill="#222826" font-weight="400" style="font-family:system-ui,-apple-system,'Segoe UI',sans-serif">Threaded bushing, needs ≥ 5 mm</text>
+<line x1="148.65" y1="202" x2="158.2" y2="201" stroke="#a9b1ad" stroke-width="0.18" />
+<circle cx="148.65" cy="202" r="0.45" fill="#5f6b66" stroke="none" stroke-width="0.3"/>
+<text x="159" y="202" font-size="3.7" text-anchor="start" fill="#222826" font-weight="400" style="font-family:system-ui,-apple-system,'Segoe UI',sans-serif">Body in the pocket: it cannot turn</text>
+<line x1="167.4" y1="217" x2="158.2" y2="216" stroke="#a9b1ad" stroke-width="0.18" />
+<circle cx="167.4" cy="217" r="0.45" fill="#5f6b66" stroke="none" stroke-width="0.3"/>
+<text x="159" y="217" font-size="3.7" text-anchor="start" fill="#222826" font-weight="400" style="font-family:system-ui,-apple-system,'Segoe UI',sans-serif">Five pins, to the splitter</text>
+<text x="134" y="265" font-size="3.3" text-anchor="middle" fill="#5f6b66" font-weight="400" style="font-family:system-ui,-apple-system,'Segoe UI',sans-serif">Bought parts at nominal sizes. The nut clamps brass and panel between itself and the encoder body.</text>
+</svg>

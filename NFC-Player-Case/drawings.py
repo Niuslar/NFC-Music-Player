@@ -32,16 +32,16 @@ class Sheet:
 
     def __init__(self, width, height, title):
         self.w, self.h, self.title, self.out = width, height, title, []
-        self.ox, self.oy, self.top = 0.0, 0.0, 0.0  # sheet position of panel x = 0 and z = top
+        self.ox, self.oy, self.top, self.k = 0.0, 0.0, 0.0, 1.0  # sheet position of panel x = 0 and z = top; scale
 
-    def place(self, ox, oy, top):
-        self.ox, self.oy, self.top = ox, oy, top
+    def place(self, ox, oy, top, scale=1.0):
+        self.ox, self.oy, self.top, self.k = ox, oy, top, scale
 
     def X(self, x):
-        return self.ox + x
+        return self.ox + self.k * x
 
     def Y(self, z):
-        return self.oy + (self.top - z)
+        return self.oy + self.k * (self.top - z)
 
     def poly(self, pts, fill, stroke=INK, sw=0.3, extra=""):
         d = " ".join(f"{n(self.X(x))},{n(self.Y(z))}" for x, z in pts)
@@ -49,11 +49,11 @@ class Sheet:
 
     def rect(self, x0, z0, x1, z1, fill, stroke=INK, sw=0.3, rx=0, extra=""):
         self.out.append(
-            f'<rect x="{n(self.X(min(x0, x1)))}" y="{n(self.Y(max(z0, z1)))}" width="{n(abs(x1 - x0))}" height="{n(abs(z1 - z0))}" rx="{n(rx)}" fill="{fill}" stroke="{stroke}" stroke-width="{sw}" {extra}/>'
+            f'<rect x="{n(self.X(min(x0, x1)))}" y="{n(self.Y(max(z0, z1)))}" width="{n(self.k * abs(x1 - x0))}" height="{n(self.k * abs(z1 - z0))}" rx="{n(self.k * rx)}" fill="{fill}" stroke="{stroke}" stroke-width="{sw}" {extra}/>'
         )
 
     def circle(self, x, z, d, fill, stroke=INK, sw=0.3):
-        self.out.append(f'<circle cx="{n(self.X(x))}" cy="{n(self.Y(z))}" r="{n(d / 2)}" fill="{fill}" stroke="{stroke}" stroke-width="{sw}"/>')
+        self.out.append(f'<circle cx="{n(self.X(x))}" cy="{n(self.Y(z))}" r="{n(self.k * d / 2)}" fill="{fill}" stroke="{stroke}" stroke-width="{sw}"/>')
 
     def line(self, x0, y0, x1, y1, colour=DIM, sw=0.2, extra=""):
         """Sheet coordinates."""
@@ -254,6 +254,114 @@ def board_stack():
     return s.svg()
 
 
+# ---- controls ----------------------------------------------------------------------
+# Nominal sizes of the bought parts in the section drawing. Check them against yours.
+CHOC_TOP = 2.8  # Choc V1 housing height in front of the plate
+CHOC_BELOW = 2.2  # housing depth behind the plate
+CHOC_TRAVEL = 3.0
+KEYCAP_T = 2.5
+ENC_BODY = (13.4, 6.5)  # height, depth
+ENC_THREAD = 5.0  # threaded bushing length
+WASHER_T, NUT_T, NUT_W = 0.5, 2.0, 10.0
+SHAFT = 15.0  # shaft beyond the bushing
+KNOB_GAP, KNOB_DEPTH = 1.0, 16.0
+
+
+def controls_section():
+    """Two side sections, seen from the left (front of the case on the left): through a key, and through the encoder."""
+    back = c.FRONT_T - c.BRASS_T  # plastic behind the brass, measured from the inside face
+    plate_front = c.BRASS_T  # y of the plate's front face (the back of the brass)
+    plate_back = c.BRASS_T + c.KEY_PLATE
+    pocket_front = c.FRONT_T - (back - c.PANEL_AT_NUT)  # y where the encoder pocket's floor is
+    K = 3.0  # drawn three times full size
+    s = Sheet(268, 268, "NFC Player: sections through a key and through the volume encoder, seen from the left, three times full size. Millimetres.")
+    PANEL, BRASSC, PART = "#c9ccc8", BRASS, "#4a4f4d"
+
+    def callouts(origin_y, items_left, items_right, x_left, x_right):
+        for side, items in ((-1, items_left), (1, items_right)):
+            items = sorted(items, key=lambda i: -i[0])
+            zs = [i[0] for i in items]
+            for i in range(1, len(zs)):
+                zs[i] = min(zs[i], zs[i - 1] - 6.2 / K)
+            for (z, y, text), zt in zip(items, zs):
+                xt = x_left if side < 0 else x_right
+                s.line(s.X(y), s.Y(z), xt - side * 0.8, s.Y(zt) - 1.0, FAINT, 0.18)
+                s.circle(y, z, 0.9 / K, DIM, stroke="none")
+                s.text(xt, s.Y(zt), text, 3.7, "end" if side < 0 else "start")
+
+    # ---- key ----
+    s.place(122, 14, c.CTRL_Z + 16, K)
+    s.text(8, 8, "Through a key", 4.6, "start", INK, 650)
+    z0, z1 = c.CTRL_Z - 15, c.CTRL_Z + 15
+    hole, pocket, slot = c.KEY_HOLE / 2, 8.5, 8.25
+    for a, b in ((z0, c.CTRL_Z - slot), (c.CTRL_Z + slot, z1)):
+        s.rect(0, a, c.BRASS_T, b, BRASSC, "#8a6a2e", 0.2)
+    for a, b in ((z0, c.CTRL_Z - pocket), (c.CTRL_Z + pocket, z1)):
+        s.rect(plate_front, a, c.FRONT_T, b, PANEL, DIM, 0.2)
+    for a, b in ((c.CTRL_Z - pocket, c.CTRL_Z - hole), (c.CTRL_Z + hole, c.CTRL_Z + pocket)):
+        s.rect(plate_front, a, plate_back, b, PANEL, DIM, 0.2)
+    top = plate_front - CHOC_TOP
+    s.rect(top, c.CTRL_Z - 7.5, plate_front, c.CTRL_Z + 7.5, PART)  # top housing, sits on the plate
+    s.rect(plate_front, c.CTRL_Z - 6.9, plate_front + CHOC_BELOW + 0.6, c.CTRL_Z + 6.9, PART)  # bottom housing
+    for d in (-1, 1):  # the clips that catch the back of the plate
+        s.poly([(plate_back, c.CTRL_Z + d * 6.9), (plate_back + 0.4, c.CTRL_Z + d * 7.6), (plate_back + 1.6, c.CTRL_Z + d * 6.9)], PART)
+    s.rect(plate_front + CHOC_BELOW + 0.6, c.CTRL_Z - 3.6, plate_front + CHOC_BELOW + 3.6, c.CTRL_Z - 3.0, "#b9b7ad", DIM, 0.15)
+    s.rect(plate_front + CHOC_BELOW + 0.6, c.CTRL_Z + 2.0, plate_front + CHOC_BELOW + 3.6, c.CTRL_Z + 2.6, "#b9b7ad", DIM, 0.15)
+    s.rect(top - CHOC_TRAVEL, c.CTRL_Z - 1.5, top, c.CTRL_Z + 1.5, "#8e3b2e", "none")  # stem
+    s.rect(top - CHOC_TRAVEL - KEYCAP_T, c.CTRL_Z - 8.25, top - CHOC_TRAVEL, c.CTRL_Z + 8.25, "#2b2f31")
+    callouts(0, [
+        (c.CTRL_Z + 8, top - CHOC_TRAVEL - KEYCAP_T, "Keycap (Choc V1 fit)"),
+        (c.CTRL_Z + 1.5, top - CHOC_TRAVEL / 2, f"Stem: {n(CHOC_TRAVEL)} mm of travel"),
+        (c.CTRL_Z - 6, top + 1, "Switch housing, in the brass slot"),
+        (c.CTRL_Z - 11, c.BRASS_T / 2, f"Brass, {n(c.BRASS_T)}"),
+    ], [
+        (c.CTRL_Z + 12, c.FRONT_T, "Front panel"),
+        (c.CTRL_Z + 7.3, plate_back + 0.4, f"Clips catch the back of the {n(c.KEY_PLATE)} mm plate"),
+        (c.CTRL_Z + 2.3, plate_front + CHOC_BELOW + 3.6, "Two pins: solder a wire to each"),
+        (c.CTRL_Z - 9, c.FRONT_T - 0.5, "Pocket: room for the clips"),
+    ], s.X(-11), s.X(c.FRONT_T + 5))
+
+    # ---- encoder ----
+    s.place(132, 130, c.CTRL_Z + 20, K)
+    s.text(8, 124, "Through the volume encoder", 4.6, "start", INK, 650)
+    s.line(8, 116, s.w - 8, 116, FAINT, 0.2)
+    z0, z1 = c.CTRL_Z - 19, c.CTRL_Z + 19
+    eh, ph = c.ENCODER_HOLE / 2, c.ENCODER_BODY[1] / 2
+    for a, b in ((z0, c.CTRL_Z - eh), (c.CTRL_Z + eh, z1)):
+        s.rect(0, a, c.BRASS_T, b, BRASSC, "#8a6a2e", 0.2)
+    for a, b in ((z0, c.CTRL_Z - ph), (c.CTRL_Z + ph, z1)):
+        s.rect(plate_front, a, c.FRONT_T, b, PANEL, DIM, 0.2)
+    for a, b in ((c.CTRL_Z - ph, c.CTRL_Z - eh), (c.CTRL_Z + eh, c.CTRL_Z + ph)):
+        s.rect(plate_front, a, pocket_front, b, PANEL, DIM, 0.2)
+    bh = ENC_BODY[0] / 2
+    s.rect(pocket_front, c.CTRL_Z - bh, pocket_front + ENC_BODY[1], c.CTRL_Z + bh, PART)
+    s.rect(pocket_front + ENC_BODY[1], c.CTRL_Z - bh, pocket_front + ENC_BODY[1] + 3.5, c.CTRL_Z - bh + 0.7, "#b9b7ad", DIM, 0.15)
+    s.rect(pocket_front - ENC_THREAD, c.CTRL_Z - 3.5, pocket_front, c.CTRL_Z + 3.5, "#9a9a94", DIM, 0.2)  # threaded bushing
+    s.rect(-WASHER_T, c.CTRL_Z - 6, 0, c.CTRL_Z + 6, "#b9b7ad", DIM, 0.2)
+    s.rect(-WASHER_T - NUT_T, c.CTRL_Z - NUT_W / 2, -WASHER_T, c.CTRL_Z + NUT_W / 2, "#9a9a94", DIM, 0.2)
+    shaft_end = pocket_front - ENC_THREAD - SHAFT
+    s.rect(shaft_end, c.CTRL_Z - 3, pocket_front - ENC_THREAD, c.CTRL_Z + 3, "#c8c8c2", DIM, 0.2)
+    k0 = -WASHER_T - NUT_T - KNOB_GAP
+    s.poly([(k0, c.CTRL_Z - c.KNOB_D / 2 + 1), (k0 - KNOB_DEPTH, c.CTRL_Z - c.KNOB_D / 2 + 1), (k0 - KNOB_DEPTH, c.CTRL_Z + c.KNOB_D / 2 - 1), (k0, c.CTRL_Z + c.KNOB_D / 2 - 1), (k0, c.CTRL_Z + 3.4), (shaft_end - 0.5, c.CTRL_Z + 3.4), (shaft_end - 0.5, c.CTRL_Z - 3.4), (k0, c.CTRL_Z - 3.4)], BRASSC, "#8a6a2e", 0.25)
+    s.rect(k0 - 9, c.CTRL_Z - c.KNOB_D / 2 + 1, k0 - 6, c.CTRL_Z - 3.4, "#6f5426", "none")  # set screw
+    lug = pocket_front - 1.0
+    s.rect(lug, c.CTRL_Z + 4.6, pocket_front, c.CTRL_Z + 5.6, "none", "#d2452d", 0.3, extra='stroke-dasharray="0.8 0.5"')
+    callouts(0, [
+        (c.CTRL_Z + 14, k0 - KNOB_DEPTH / 2, f"Knob, up to {n(c.KNOB_D)} mm"),
+        (c.CTRL_Z - 12, k0 - 7.5, "Set screw onto the shaft's flat"),
+        (c.CTRL_Z + 4.5, -WASHER_T - NUT_T / 2, "Nut"),
+        (c.CTRL_Z - 5.5, -WASHER_T / 2, "Washer"),
+    ], [
+        (c.CTRL_Z + 16, c.FRONT_T, "Front panel"),
+        (c.CTRL_Z + 5.1, lug + 0.5, "Locating lug, if fitted: nip it off"),
+        (c.CTRL_Z + 0.5, pocket_front - 2.5, f"Threaded bushing, needs ≥ {n(ENC_THREAD)} mm"),
+        (c.CTRL_Z - 4, pocket_front + ENC_BODY[1] / 2, "Body in the pocket: it cannot turn"),
+        (c.CTRL_Z - 9, pocket_front + ENC_BODY[1] + 3, "Five pins, to the splitter"),
+    ], s.X(-21.5), s.X(c.FRONT_T + 5))
+    s.text(s.w / 2, s.h - 3, "Bought parts at nominal sizes. The nut clamps brass and panel between itself and the encoder body.", 3.3, "middle", DIM)
+    return s.svg()
+
+
 # ---- brass ------------------------------------------------------------------------
 def brass_template():
     b = c.brass_shapes()
@@ -283,6 +391,7 @@ DRAWINGS = {
     "Front-Panel.svg": front_panel,
     "Rear-Panel.svg": rear_panel,
     "Board-Stack.svg": board_stack,
+    "Controls-Section.svg": controls_section,
     "Brass-Front-Template.svg": brass_template,
 }
 

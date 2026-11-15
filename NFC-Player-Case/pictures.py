@@ -83,11 +83,14 @@ def stand_ins():
     s["screen connector"] = (B(LCD_CX + 14, LCD_CX + 24, LCD_Y + 1.6, LCD_Y + 7, LCD_CZ - 4, LCD_CZ + 4), (0.92, 0.92, 0.88), "screen")
     # front controls
     for i, k in enumerate(c.KEYS_X):
-        s[f"switch {i}"] = (c.union(B(k - 7.5, k + 7.5, -1.4, 0.8, c.CTRL_Z - 7.5, c.CTRL_Z + 7.5), B(k - 6.9, k + 6.9, 0.8, 5.0, c.CTRL_Z - 6.9, c.CTRL_Z + 6.9)), (0.35, 0.30, 0.28), f"key {i}")
-        s[f"keycap {i}"] = (B(k - 8.75, k + 8.75, -4.4, -1.4, c.CTRL_Z - 8.25, c.CTRL_Z + 8.25), KEYCAP, f"key {i}")
-    s["encoder"] = (c.union(B(c.KNOB_X - 6.25, c.KNOB_X + 6.25, 2.4, 9.0, c.CTRL_Z - 6.7, c.CTRL_Z + 6.7), c.cyly(c.KNOB_X, c.CTRL_Z, -2.2, 2.4, 7.0), c.cyly(c.KNOB_X, c.CTRL_Z, -18, -2.2, 6.0), *[B(c.KNOB_X + dx - 0.4, c.KNOB_X + dx + 0.4, 9, 13, c.CTRL_Z - 8, c.CTRL_Z - 6.5) for dx in (-2.5, 0, 2.5)]), METAL, "encoder")
-    s["encoder nut"] = (ring_y(c.KNOB_X, c.CTRL_Z, -2.0, -0.05, 10.0, 7.0), METAL, "nut")
-    s["knob"] = (c.cyly(c.KNOB_X, c.CTRL_Z, -18.5, -2.6, c.KNOB_D), BRASS, "knob")
+        s[f"switch {i}"] = (c.union(B(k - 7.5, k + 7.5, -2.0, 0.8, c.CTRL_Z - 7.5, c.CTRL_Z + 7.5), B(k - 6.9, k + 6.9, 0.8, 3.6, c.CTRL_Z - 6.9, c.CTRL_Z + 6.9), *[B(k + dx - 0.4, k + dx + 0.4, 3.6, 6.6, c.CTRL_Z + dz - 0.4, c.CTRL_Z + dz + 0.4) for dx, dz in ((-3.5, 2.5), (2.5, -3.3))]), (0.30, 0.31, 0.32), f"switch {i}")
+        s[f"stem {i}"] = (B(k - 1.5, k + 1.5, -5.0, -2.0, c.CTRL_Z - 1.5, c.CTRL_Z + 1.5), (0.62, 0.22, 0.17), f"switch {i}")
+        s[f"keycap {i}"] = (B(k - 8.75, k + 8.75, -7.5, -5.0, c.CTRL_Z - 8.25, c.CTRL_Z + 8.25), KEYCAP, f"keycap {i}")
+    enc_face = c.FRONT_T - (c.FRONT_T - c.BRASS_T - c.PANEL_AT_NUT)  # floor of the encoder's pocket
+    s["encoder"] = (c.union(B(c.KNOB_X - 6.25, c.KNOB_X + 6.25, enc_face, enc_face + 6.5, c.CTRL_Z - 6.7, c.CTRL_Z + 6.7), c.cyly(c.KNOB_X, c.CTRL_Z, enc_face - 5.0, enc_face, 7.0), c.cyly(c.KNOB_X, c.CTRL_Z, enc_face - 20.0, enc_face - 5.0, 6.0), *[B(c.KNOB_X + dx - 0.4, c.KNOB_X + dx + 0.4, enc_face + 6.5, enc_face + 10, c.CTRL_Z - 8, c.CTRL_Z - 6.5) for dx in (-2.5, 0, 2.5)]), METAL, "encoder")
+    s["encoder washer"] = (ring_y(c.KNOB_X, c.CTRL_Z, -0.5, -0.05, 12.0, 7.2), (0.80, 0.80, 0.78), "washer")
+    s["encoder nut"] = (ring_y(c.KNOB_X, c.CTRL_Z, -2.5, -0.5, 10.0, 7.0), METAL, "nut")
+    s["knob"] = (c.cyly(c.KNOB_X, c.CTRL_Z, -19.5, -3.5, c.KNOB_D), BRASS, "knob")
     # NFC reader and card
     s["NFC reader"] = (c.xf(LEAN, B(c.CARD_X - 21.35, c.CARD_X + 21.35, READER_Y + 0.05, READER_Y + 1.65, c.PN532_CENTRE_Z - 20.2, c.PN532_CENTRE_Z + 20.2)), PCB_NFC, "reader")
     s["NFC reader header"] = (c.xf(LEAN, B(c.CARD_X - 10, c.CARD_X + 10, READER_Y + 1.65, READER_Y + 4.2, c.PN532_CENTRE_Z + 15, c.PN532_CENTRE_Z + 17.5)), BLACK, "reader")
@@ -262,13 +265,13 @@ ISO_FR = (1.0, -1.25, 0.95)
 ISO_RL = (-1.0, 1.2, 1.0)  # from the rear left, above
 ISO_RR = (1.0, 1.2, 1.0)
 INSIDE = ("chassis", "standoffs", "pi", "splitter", "dac", "screen", "cradle", "guide", "reader", "tie", "wires", "usb lead", "encoder", "knob", "nut")
-KEYS = tuple(f"key {i}" for i in range(4))
+KEYS = tuple(f"switch {i}" for i in range(4)) + tuple(f"keycap {i}" for i in range(4))
 BACKS = (c.FRONT_T + 2, c.D - c.REAR_T - 2)  # just inside the panels
 SHOTS = {
     "exploded": {
         "view": ISO_FL,
         "hide": ("wires", "usb lead", "card"),
-        "move": {"lid": v(0, 0, 45), "lid screws": v(0, 0, 58), "front": v(0, -40, 0), "brass": v(0, -62, 0), "front screws": v(0, -76, 0), "knob": v(0, -86, 0), "nut": v(0, -40, 0), "encoder": v(0, -40, 0), **{k: v(0, -40, 0) for k in KEYS}, "rear": v(0, 40, 0)},
+        "move": {"lid": v(0, 0, 45), "lid screws": v(0, 0, 58), "front": v(0, -40, 0), "brass": v(0, -62, 0), "front screws": v(0, -76, 0), "knob": v(0, -86, 0), "nut": v(0, -40, 0), "washer": v(0, -40, 0), "encoder": v(0, -40, 0), **{k: v(0, -40, 0) for k in KEYS}, "rear": v(0, 40, 0)},
         "marks": [
             ("Lid with the card tray and slot", (60, 30, c.H), "lid"),
             ("Chassis: floor, side walls and screw towers", (4, 70, 30), "chassis"),
@@ -286,7 +289,7 @@ SHOTS = {
         "hide": ("lid", "lid screws", "card"),
         "marks": [
             ("Screen, held upright in its cradle behind the window", (LCD_CX - 18, LCD_Y + 4, 47), "screen"),
-            ("Four switches", (c.KEYS_X[1] + 9, 4, 40), "key 0"),
+            ("Four switches", (c.KEYS_X[1] + 9, 4, 40), "switch 0"),
             ("Encoder (volume knob)", (c.KNOB_X, 6, 40), "encoder"),
             ("Card guide, card slot leaning 5° back", (c.CARD_X + 24, c.CARD_Y - 3, 50), "guide"),
             ("NFC reader on the back of the guide", (c.CARD_X - 18, READER_Y + 3, 55), "reader"),
@@ -328,16 +331,33 @@ SHOTS = {
     "step-2-controls": {
         "view": (-0.75, 1.0, 0.55),  # from behind the front panel, looking forward
         "frame": ("front", "brass", "encoder", "knob", "nut") + KEYS,
-        "hide": ("chassis", "lid", "lid screws", "rear", "standoffs", "pi", "splitter", "dac", "screen", "cradle", "guide", "reader", "tie", "wires", "usb lead", "feet", "card", "front screws"),
+        "hide": ("chassis", "lid", "lid screws", "rear", "standoffs", "pi", "splitter", "dac", "screen", "cradle", "guide", "reader", "tie", "wires", "usb lead", "feet", "card", "front screws", "keycap 3"),
         "focus": ("front",),
-        "move": {"key 3": v(0, -22, 0), "encoder": v(0, 22, 0), "nut": v(0, -16, 0), "knob": v(0, -42, 0)},
+        "move": {"switch 3": v(0, -22, 0), "encoder": v(0, 22, 0), "nut": v(0, -16, 0), "washer": v(0, -12, 0), "knob": v(0, -42, 0)},
         "arrows": [((c.KEYS_X[3], -14, c.CTRL_Z + 13), (c.KEYS_X[3], 2, c.CTRL_Z + 13)), ((c.KNOB_X, 26, c.CTRL_Z + 12), (c.KNOB_X, 10, c.CTRL_Z + 12))],
         "marks": [
-            ("Switches push in from the front and clip into the 1.2 mm plate", (c.KEYS_X[3] + 8, 2.0, c.CTRL_Z + 7.5), "key 3"),
+            ("Switches push in from the front and clip into the 1.2 mm plate", (c.KEYS_X[3] + 8, 2.0, c.CTRL_Z + 7.5), "switch 3"),
             ("Pockets behind the switches leave room for their clips", (c.KEYS_X[1], c.FRONT_T, c.CTRL_Z - 8.5), "front"),
             ("Encoder goes in from behind; its body sits in the pocket", (c.KNOB_X + 6.25, 9, c.CTRL_Z + 6.7), "encoder"),
             ("Encoder pocket stops the body turning", (c.KNOB_X - 6.75, c.FRONT_T, c.CTRL_Z - 7.25), "front"),
             ("Washer and nut on the front, then the knob", (c.KNOB_X, -2, c.CTRL_Z + 5), "nut"),
+        ],
+    },
+    "step-2-front": {
+        "view": (-0.55, -1.0, 0.38),  # from the front left, so parts pulled forward move clear to the right
+        "frame": ("encoder", "knob", "nut", "washer") + KEYS,
+        "margin": 0.1,
+        "hide": ("chassis", "lid", "lid screws", "rear", "standoffs", "pi", "splitter", "dac", "screen", "cradle", "guide", "reader", "tie", "wires", "usb lead", "feet", "card", "front screws"),
+        "focus": ("front",),
+        "move": {"switch 3": v(0, -18, 0), "keycap 2": v(0, -16, 0), "keycap 3": v(0, -38, 0), "encoder": v(0, 18, 0), "washer": v(0, -14, 0), "nut": v(0, -26, 0), "knob": v(0, -56, 0)},
+        "arrows": [((c.KEYS_X[3], -34, c.CTRL_Z + 14), (c.KEYS_X[3], -8, c.CTRL_Z + 14)), ((c.KNOB_X, -36, c.CTRL_Z - 22), (c.KNOB_X, -6, c.CTRL_Z - 22))],
+        "marks": [
+            ("Keycap: presses onto the switch's stem", (c.KEYS_X[3] - 8.75, -7.5, c.CTRL_Z + 8.25), "keycap 3"),
+            ("Kailh Choc V1 switch: pushes in from the front until its clips snap behind the plate", (c.KEYS_X[3] - 7.5, -2.0, c.CTRL_Z - 7.5), "switch 3"),
+            ("Brass slot: the switch housings sit in it", (c.KEYS_X[0] - 8.25, 0, c.CTRL_Z + 8.25), "brass"),
+            ("Encoder: goes in from behind, bushing through the hole", (c.KNOB_X + 6.25, 2.3, c.CTRL_Z + 6.7), "encoder"),
+            ("Washer, then nut: clamps panel and brass against the encoder body", (c.KNOB_X + 5, -2.5, c.CTRL_Z + 3), "nut"),
+            ("Knob: slides on the shaft, set screw onto the flat", (c.KNOB_X - 12, -19.5, c.CTRL_Z + 12), "knob"),
         ],
     },
     "step-3-screen": {
