@@ -2,9 +2,9 @@
 
 A tabletop music player where each album is a card. Put a card in the slot and its album plays; take it out and it pauses. It is built for a Hi-Fi shelf: a proper DAC, a screen, a knob, and local storage for a whole collection.
 
-![Concept render of the player: a walnut and brass box with a card standing in a slot, a small screen, three buttons and a large knob](docs/concept.jpg)
+![Render of the case design: a charcoal box with a brass front set inside a thin rim, a screen, four keys and a large knob, five cards in a tray on the lid and one card standing in a slot](NFC-Player-Case/NFC-Player-Render.png)
 
-*Concept image, AI generated. It shows the look I am aiming for, not the finished device; the brand name on it is made up by the image generator. The real build is currently parts on a bench.*
+*Render of the case design, made from the same model as its printable parts. The case has not been printed yet; the real build is currently parts on a bench.*
 
 ## What it does
 
@@ -33,7 +33,7 @@ This is a work in progress.
 
 - The player logic, screens, web remote and MPD playback run and are tested on a Mac, using a browser simulator in place of the hardware.
 - On a real Pi, setup and the web remote have been run. The display, NFC reader, knob, buttons and USB drive mode were written without the hardware and are not yet proven.
-- There is no case yet.
+- The case is designed but not yet printed. Its printable parts, drawings and assembly guide are in [NFC-Player-Case](NFC-Player-Case); open `NFC-Player-Assembly.html` there in a browser.
 
 ## Try it without any hardware
 
@@ -64,6 +64,7 @@ Run the tests with:
 - `player/web/` is the web remote.
 - `player/playback.py` talks to [MPD](https://www.musicpd.org/), which does the decoding and audio output.
 - `system/` has the Raspberry Pi setup script and service files.
+- `NFC-Player-Case/` is the 3D-printed case. Every dimension is in `case.py`; Blender scripts build the STLs, pictures and assembly guide from it.
 
 ## A note on the web remote
 
