@@ -1,0 +1,227 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>NFC Album Player</title>
+<meta name="description" content="A tabletop music player where each album is a card. Build guide, case design, drawings and source.">
+<meta property="og:title" content="NFC Album Player">
+<meta property="og:description" content="A tabletop music player where each album is a card.">
+<meta property="og:image" content="docs/concept.jpg">
+<style>
+  :root {
+    --bg: #faf9f6; --panel: #ffffff; --ink: #1d1c1a; --dim: #66635d; --line: #e2dfd8; --accent: #b86e12;
+    --code-bg: #f1eee8; --warn-bg: #fdf3e0; --warn-line: #e8b860; --ok: #2f8a57; --todo: #b86e12;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #151517; --panel: #1e1e21; --ink: #ecebe6; --dim: #a09d96; --line: #333338; --accent: #e8a33d;
+      --code-bg: #26262a; --warn-bg: #2e2616; --warn-line: #7a5d1f; --ok: #4fc283; --todo: #e8a33d;
+    }
+  }
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; scroll-padding-top: 16px; }
+  body { margin: 0; background: var(--bg); color: var(--ink); font: 16px/1.6 -apple-system, "Segoe UI", system-ui, sans-serif; }
+  .layout { display: grid; grid-template-columns: 200px minmax(0, 820px); gap: 48px; max-width: 1120px; margin: 0 auto; padding: 40px 20px 96px; }
+  nav { position: sticky; top: 24px; align-self: start; font-size: 14px; }
+  nav strong { display: block; margin-bottom: 8px; }
+  nav a { display: block; color: var(--dim); text-decoration: none; padding: 3px 0; }
+  nav a:hover { color: var(--accent); }
+  nav hr { border: 0; border-top: 1px solid var(--line); margin: 10px 0; }
+  @media (max-width: 860px) {
+    .layout { grid-template-columns: minmax(0, 1fr); gap: 0; padding: 24px 16px 64px; }
+    nav { position: static; margin-bottom: 24px; display: flex; flex-wrap: wrap; gap: 4px 14px; }
+    nav strong, nav hr { display: none; }
+  }
+  h1 { font-size: 38px; line-height: 1.1; margin: 0 0 8px; letter-spacing: -0.02em; }
+  h2 { font-size: 24px; margin: 56px 0 12px; padding-top: 20px; border-top: 1px solid var(--line); letter-spacing: -0.01em; }
+  h3 { font-size: 17px; margin: 0 0 4px; }
+  .lede { color: var(--dim); font-size: 19px; margin: 0 0 24px; max-width: 60ch; }
+  a { color: var(--accent); }
+  p, li { max-width: 70ch; }
+  li { margin: 4px 0; }
+  code { font: 14px/1.5 ui-monospace, "SF Mono", Menlo, monospace; background: var(--code-bg); padding: 1px 5px; border-radius: 4px; }
+  pre { background: var(--code-bg); border-radius: 8px; padding: 12px 14px; overflow-x: auto; margin: 12px 0; }
+  pre code { background: none; padding: 0; }
+  .hero { margin: 0 0 8px; border-radius: 12px; overflow: hidden; border: 1px solid var(--line); background: var(--panel); }
+  .hero img { display: block; width: 100%; height: auto; }
+  .hero figcaption { color: var(--dim); font-size: 14px; padding: 10px 14px; }
+  .note { background: var(--warn-bg); border: 1px solid var(--warn-line); border-radius: 8px; padding: 12px 16px; margin: 16px 0; }
+  .note p { margin: 4px 0; }
+  .cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 12px; margin: 16px 0; }
+  .card { display: block; background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 14px 16px; color: inherit; text-decoration: none; transition: border-color .15s; }
+  .card:hover { border-color: var(--accent); }
+  .card p { margin: 0; color: var(--dim); font-size: 14px; }
+  .card .kind { display: block; font-size: 12px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: var(--accent); margin-bottom: 4px; }
+  .table-wrap { overflow-x: auto; margin: 12px 0; }
+  table { border-collapse: collapse; width: 100%; font-size: 15px; }
+  th, td { text-align: left; padding: 7px 10px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  th { font-size: 13px; color: var(--dim); font-weight: 600; white-space: nowrap; }
+  .status { list-style: none; padding: 0; }
+  .status li { padding-left: 22px; position: relative; }
+  .status li::before { content: ""; position: absolute; left: 4px; top: .62em; width: 9px; height: 9px; border-radius: 50%; }
+  .status .done::before { background: var(--ok); }
+  .status .todo::before { border: 2px solid var(--todo); width: 5px; height: 5px; }
+  .files { display: flex; flex-wrap: wrap; gap: 8px; margin: 10px 0; padding: 0; list-style: none; }
+  .files a { display: inline-block; font-size: 14px; padding: 4px 10px; border: 1px solid var(--line); border-radius: 6px; background: var(--panel); text-decoration: none; }
+  .files a:hover { border-color: var(--accent); }
+  footer { margin-top: 64px; color: var(--dim); font-size: 14px; }
+</style>
+</head>
+<body>
+<div class="layout">
+<nav>
+  <strong>NFC Album Player</strong>
+  <a href="#about">About</a>
+  <a href="#docs">Guides</a>
+  <a href="#status">Status</a>
+  <a href="#hardware">Hardware</a>
+  <a href="#case">Case</a>
+  <a href="#simulator">Try it</a>
+  <a href="#code">Code map</a>
+  <hr>
+  <a href="docs/index.html">Build guide</a>
+  <a href="NFC-Player-Case/NFC-Player-Assembly.html">Case assembly</a>
+  <a href="https://github.com/Niuslar/NFC-Music-Player">Source on GitHub</a>
+</nav>
+<main>
+
+<h1>NFC Album Player</h1>
+<p class="lede">A tabletop music player where each album is a card. Put a card in the slot and its album plays; take it out and it pauses.</p>
+
+<figure class="hero">
+  <img src="docs/concept.jpg" width="1600" height="1200" alt="Render of the case design: a charcoal box with a brass front set inside a thin rim, a screen, four keys and a large knob, five cards in a tray on the lid and one card standing in a slot">
+  <figcaption>Render of the case design, made from the same model as its printable parts. The case has not been printed yet.</figcaption>
+</figure>
+
+<h2 id="about">About</h2>
+<p>It is built for a Hi-Fi shelf: a proper DAC, a screen, a knob, and local storage for a whole collection.</p>
+<ul>
+  <li><strong>Cards are albums.</strong> Blank NFC cards are linked to albums on the device itself. A card remembers where it stopped. A card can also play a whole artist, or a list: a folder of songs from different albums.</li>
+  <li><strong>Hi-Fi output.</strong> A Raspberry Pi DAC Pro provides 3.5 mm and RCA outputs, with a balanced output available for a 4.4 mm socket.</li>
+  <li><strong>Screen and controls.</strong> A 2-inch display shows the cover, track and time. A clicky knob sets the volume and scrolls lists; four keys do previous, play/pause, next and back. Hold previous or next to scan; press back to pick a track from a list.</li>
+  <li><strong>Music over USB.</strong> Plug the player into a computer and its music appears as a drive called <code>MUSIC</code>.</li>
+  <li><strong>Web remote.</strong> A page served by the player controls playback, links cards, and uploads or deletes music from any phone or computer on the same Wi-Fi.</li>
+</ul>
+
+<h2 id="docs">Guides</h2>
+<div class="cards">
+  <a class="card" href="docs/index.html">
+    <span class="kind">Guide</span>
+    <h3>Build guide</h3>
+    <p>Parts list, flashing the SD card, fitting the DAC, wiring each part with a check command, adding music, the web remote, backups and troubleshooting.</p>
+  </a>
+  <a class="card" href="NFC-Player-Case/NFC-Player-Assembly.html">
+    <span class="kind">Guide</span>
+    <h3>Case assembly</h3>
+    <p>What goes where, measuring your parts, printing, the keys and knob, step-by-step assembly, dimensioned drawings and the brass face.</p>
+  </a>
+  <a class="card" href="https://github.com/Niuslar/NFC-Music-Player#readme">
+    <span class="kind">Source</span>
+    <h3>README and code</h3>
+    <p>The repository on GitHub: the player program, Pi setup scripts, tests and the case model.</p>
+  </a>
+</div>
+
+<h3 style="margin-top:24px">Jump into the build guide</h3>
+<ul class="files">
+  <li><a href="docs/index.html#parts">Parts</a></li>
+  <li><a href="docs/index.html#flash">1. Flash the SD card</a></li>
+  <li><a href="docs/index.html#boot">2. First boot</a></li>
+  <li><a href="docs/index.html#dac">3. Fit the DAC</a></li>
+  <li><a href="docs/index.html#install">4. Install the player</a></li>
+  <li><a href="docs/index.html#wiring">5. Wire and test</a></li>
+  <li><a href="docs/index.html#music">6. Add music</a></li>
+  <li><a href="docs/index.html#use">7. Use it</a></li>
+  <li><a href="docs/index.html#web">8. Web remote</a></li>
+  <li><a href="docs/index.html#trouble">Troubleshooting</a></li>
+</ul>
+
+<h2 id="status">Status</h2>
+<p>This is a work in progress.</p>
+<ul class="status">
+  <li class="done">The player logic, screens, web remote and MPD playback run and are tested on a Mac, using a browser simulator in place of the hardware.</li>
+  <li class="done">On a real Pi, setup and the web remote have been run.</li>
+  <li class="todo">The display, NFC reader, knob, buttons and USB drive mode were written without the hardware and are not yet proven.</li>
+  <li class="todo">The case is designed but not yet printed.</li>
+</ul>
+
+<h2 id="hardware">Hardware</h2>
+<div class="table-wrap">
+<table>
+  <tr><th>Part</th><th>Used here</th></tr>
+  <tr><td>Computer</td><td>Raspberry Pi Zero 2 W</td></tr>
+  <tr><td>DAC</td><td>Raspberry Pi DAC Pro</td></tr>
+  <tr><td>Display</td><td>2-inch ST7789 SPI LCD, 320×240</td></tr>
+  <tr><td>NFC reader</td><td>PN532 over SPI, with NTAG215 cards</td></tr>
+  <tr><td>Knob</td><td>24-click rotary encoder with push switch</td></tr>
+  <tr><td>Buttons</td><td>Four momentary push buttons</td></tr>
+</table>
+</div>
+<p>Prices, alternatives and wiring are in the <a href="docs/index.html#parts">build guide's parts list</a>.</p>
+
+<h2 id="case">Case</h2>
+<p>A 3D-printed case with a brass front. Every dimension lives in <code>case.py</code>; Blender scripts build the STLs, pictures, drawings and the assembly guide from it, so they always match. Start with the <a href="NFC-Player-Case/NFC-Player-Assembly.html">assembly guide</a>, and print the fit gauge first to check your printer's tolerances.</p>
+
+<h3 style="margin-top:20px">Printable parts (STL)</h3>
+<ul class="files">
+  <li><a href="NFC-Player-Case/STL/fit-gauge.stl" download>fit-gauge.stl</a></li>
+  <li><a href="NFC-Player-Case/STL/chassis.stl" download>chassis.stl</a></li>
+  <li><a href="NFC-Player-Case/STL/lid.stl" download>lid.stl</a></li>
+  <li><a href="NFC-Player-Case/STL/front.stl" download>front.stl</a></li>
+  <li><a href="NFC-Player-Case/STL/rear.stl" download>rear.stl</a></li>
+  <li><a href="NFC-Player-Case/STL/card-guide.stl" download>card-guide.stl</a></li>
+  <li><a href="NFC-Player-Case/STL/display-cradle.stl" download>display-cradle.stl</a></li>
+</ul>
+<p style="font-size:14px;color:var(--dim)">To look at a part in 3D first, open it <a href="https://github.com/Niuslar/NFC-Music-Player/tree/main/NFC-Player-Case/STL">on GitHub</a>, which has an STL viewer.</p>
+
+<h3 style="margin-top:20px">Drawings</h3>
+<ul class="files">
+  <li><a href="NFC-Player-Case/Front-Panel.svg">Front panel</a></li>
+  <li><a href="NFC-Player-Case/Rear-Panel.svg">Rear panel</a></li>
+  <li><a href="NFC-Player-Case/Board-Stack.svg">Board stack section</a></li>
+  <li><a href="NFC-Player-Case/Controls-Section.svg">Keys and knob section</a></li>
+  <li><a href="NFC-Player-Case/Brass-Front-Template.svg">Brass face template (print at 100%)</a></li>
+</ul>
+
+<h3 style="margin-top:20px">Source files</h3>
+<ul class="files">
+  <li><a href="https://github.com/Niuslar/NFC-Music-Player/blob/main/NFC-Player-Case/case.py">case.py</a></li>
+  <li><a href="https://github.com/Niuslar/NFC-Music-Player/blob/main/NFC-Player-Case/NFC-Player-Case.scad">NFC-Player-Case.scad</a></li>
+  <li><a href="NFC-Player-Case/NFC-Player-Render.blend" download>NFC-Player-Render.blend</a></li>
+  <li><a href="NFC-Player-Case/NFC-Player-Render.png">Full-size render</a></li>
+</ul>
+
+<h2 id="simulator">Try it without any hardware</h2>
+<p>The simulator shows the display in a browser and stands in for the knob, buttons, cards and USB port.</p>
+<pre><code>python3 -m venv .venv
+.venv/bin/pip install pillow numpy python-mpd2 pytest
+.venv/bin/python -m player.demo_library demo/music
+.venv/bin/python -m player.main --sim</code></pre>
+<p>Then open <code>http://localhost:8137</code> for the simulated device and <code>http://localhost:8080</code> for the web remote. The demo library is generated sine tones, and the simulator is silent unless you run it against MPD (<code>system/mpd-dev.sh</code>, then add <code>--playback mpd</code>). Add <code>mutagen</code> to the install line to read tags from your own music with <code>--music</code>.</p>
+<p>Run the tests with <code>.venv/bin/python -m pytest</code>.</p>
+
+<h2 id="code">Code map</h2>
+<div class="table-wrap">
+<table>
+  <tr><th>Where</th><th>What it is</th></tr>
+  <tr><td><a href="https://github.com/Niuslar/NFC-Music-Player/blob/main/player/app.py"><code>player/app.py</code></a></td><td>The player's behaviour: a state machine fed with events from cards, controls, USB and the web.</td></tr>
+  <tr><td><a href="https://github.com/Niuslar/NFC-Music-Player/blob/main/player/ui/render.py"><code>player/ui/render.py</code></a></td><td>Draws the screens.</td></tr>
+  <tr><td><a href="https://github.com/Niuslar/NFC-Music-Player/tree/main/player/hw"><code>player/hw/</code></a></td><td>Drivers for the display, NFC reader, knob and buttons and USB drive mode, the simulator, and bring-up checks for each part.</td></tr>
+  <tr><td><a href="https://github.com/Niuslar/NFC-Music-Player/tree/main/player/web"><code>player/web/</code></a></td><td>The web remote.</td></tr>
+  <tr><td><a href="https://github.com/Niuslar/NFC-Music-Player/blob/main/player/playback.py"><code>player/playback.py</code></a></td><td>Talks to <a href="https://www.musicpd.org/">MPD</a>, which does the decoding and audio output.</td></tr>
+  <tr><td><a href="https://github.com/Niuslar/NFC-Music-Player/tree/main/system"><code>system/</code></a></td><td>The Raspberry Pi setup script and service files.</td></tr>
+  <tr><td><a href="https://github.com/Niuslar/NFC-Music-Player/tree/main/NFC-Player-Case"><code>NFC-Player-Case/</code></a></td><td>The 3D-printed case: model, STLs, drawings and assembly guide.</td></tr>
+  <tr><td><a href="https://github.com/Niuslar/NFC-Music-Player/tree/main/tests"><code>tests/</code></a></td><td>Tests for the player, hardware drivers, web remote and deleting music.</td></tr>
+</table>
+</div>
+
+<div class="note">
+  <p><strong>A note on the web remote.</strong> It has no password. Anyone on the same network can control playback and add or delete music. Use it on a home network you trust, or turn it off with <code>--web-port 0</code>.</p>
+</div>
+
+<footer>NFC Album Player · <a href="https://github.com/Niuslar/NFC-Music-Player">github.com/Niuslar/NFC-Music-Player</a></footer>
+</main>
+</div>
+</body>
+</html>
