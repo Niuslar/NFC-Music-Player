@@ -78,29 +78,40 @@ class Encoder:
                 self.queue.put(ev.Rotate(counts))
 
 
-class Buttons:
-    """buttons maps a name (prev, play, next, back) to its GPIO; knob is the encoder's push switch."""
+# Buttons that do something different when held: a short press is sent on release instead.
+HOLD_NAMES = {"knob": "knob_long", "prev": "prev_hold", "next": "next_hold"}
+REPEATS = {"prev", "next"}  # these keep sending their hold event while held, to scan through a track
 
-    def __init__(self, event_queue, knob_pin: int, buttons: dict[str, int], hold_seconds: float = 0.6):
+
+class Buttons:
+    """buttons maps a name (prev, play, next, back) to its GPIO; knob is the encoder's push switch.
+
+    The knob sends knob_long once when held. Previous and next send prev_hold / next_hold
+    every scan_seconds while held, and nothing on release; a short press sends the plain name.
+    """
+
+    def __init__(self, event_queue, knob_pin: int, buttons: dict[str, int], hold_seconds: float = 0.6, scan_seconds: float = 0.4):
         from gpiozero import Button
 
         self.queue = event_queue
-        self._held = False
+        self._held: dict[str, bool] = {}
         self._devices = []
-        knob = Button(knob_pin, pull_up=True, bounce_time=0.02, hold_time=hold_seconds)
-        knob.when_held = self._knob_held
-        knob.when_released = self._knob_released
-        self._devices.append(knob)
-        for name, pin in buttons.items():
-            b = Button(pin, pull_up=True, bounce_time=0.02)
-            b.when_pressed = lambda name=name: self.queue.put(ev.Press(name))
+        for name, pin in {"knob": knob_pin, **buttons}.items():
+            if name in HOLD_NAMES:
+                repeat = name in REPEATS
+                b = Button(pin, pull_up=True, bounce_time=0.02, hold_time=scan_seconds if repeat else hold_seconds, hold_repeat=repeat)
+                b.when_held = lambda name=name: self.held(name)
+                b.when_released = lambda name=name: self.released(name)
+            else:
+                b = Button(pin, pull_up=True, bounce_time=0.02)
+                b.when_pressed = lambda name=name: self.queue.put(ev.Press(name))
             self._devices.append(b)
 
-    def _knob_held(self) -> None:
-        self._held = True
-        self.queue.put(ev.Press("knob_long"))
+    def held(self, name: str) -> None:
+        self._held[name] = True
+        self.queue.put(ev.Press(HOLD_NAMES[name]))
 
-    def _knob_released(self) -> None:
-        if not self._held:
-            self.queue.put(ev.Press("knob"))
-        self._held = False
+    def released(self, name: str) -> None:
+        if not self._held.get(name):
+            self.queue.put(ev.Press(name))
+        self._held[name] = False

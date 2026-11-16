@@ -284,3 +284,20 @@ def test_mpd_without_a_volume_control_does_not_crash():
     client.mixer = True  # the DAC appears
     p.play((Track("Artist/Album/01 Song.flac", "Song"),))
     assert client.calls == [("play", 0), ("setvol", 35)]
+
+
+def test_prev_and_next_scan_while_held_and_skip_on_a_short_press():
+    from player.hw.inputs import Buttons
+    from player.hw.sim.server import _to_event
+
+    q = queue.Queue()
+    b = Buttons.__new__(Buttons)  # the press logic, without gpiozero
+    b.queue, b._held = q, {}
+    b.released("next")  # short press: sent on release
+    b.held("next")  # held: repeats while the button stays down...
+    b.held("next")
+    b.released("next")  # ...and nothing more when it comes up
+    b.held("knob")
+    b.released("knob")
+    assert [q.get_nowait().button for _ in range(q.qsize())] == ["next", "next_hold", "next_hold", "knob_long"]
+    assert _to_event({"type": "press", "button": "prev_hold"}) == ev.Press("prev_hold")

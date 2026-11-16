@@ -19,7 +19,7 @@ def _to_event(msg: dict):
     kind = msg.get("type")
     if kind == "rotate":
         return ev.Rotate(int(msg["counts"]))
-    if kind == "press" and msg.get("button") in ("knob", "knob_long", "prev", "play", "next", "back"):
+    if kind == "press" and msg.get("button") in ("knob", "knob_long", "prev", "play", "next", "back", "prev_hold", "next_hold"):
         return ev.Press(msg["button"])
     if kind == "card":
         return ev.CardInserted(str(msg["uid"])) if msg.get("uid") else ev.CardRemoved()

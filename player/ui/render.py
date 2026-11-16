@@ -118,10 +118,11 @@ def list_screen(header: str, rows: list[tuple[str, str]], selected: int) -> Imag
     return img
 
 
-def now_playing(name: str, details: tuple[str, str], art: bytes | None, status, volume: int | None) -> Image.Image:
+def now_playing(name: str, details: tuple[str, str], art: bytes | None, status, volume: int | None, note: str | None = None) -> Image.Image:
     """details are the two lines under the track title; art is the cover's image data.
 
-    volume is given only while the volume overlay should be visible.
+    volume is given only while the volume overlay should be visible; note replaces the
+    track count under the progress bar (for "Fast forward" and "Rewind").
     """
     img, d = _canvas()
     img.paste(_cover(art, name), (PAD, PAD))
@@ -159,7 +160,9 @@ def now_playing(name: str, details: tuple[str, str], art: bytes | None, status, 
         return img
     d.text((PAD, y), _clock(status.elapsed), font=font(14), fill=DIM)
     d.text((W - PAD, y), _clock(status.duration), font=font(14), fill=DIM, anchor="ra")
-    if status.state == "pause":
+    if note:
+        d.text((W // 2, y), note, font=font(14), fill=ACCENT, anchor="mt")
+    elif status.state == "pause":
         d.text((W // 2, y), "Paused", font=font(14), fill=ACCENT, anchor="mt")
     else:
         d.text((W // 2, y), f"{status.track_index + 1} / {status.track_count}", font=font(14), fill=DIM, anchor="mt")

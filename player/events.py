@@ -22,7 +22,10 @@ class Rotate:
 
 @dataclass(frozen=True)
 class Press:
-    """button is one of: knob, knob_long, prev, play, next, back."""
+    """button is one of: knob, knob_long, prev, play, next, back, prev_hold, next_hold.
+
+    prev_hold and next_hold repeat for as long as the button is held.
+    """
 
     button: str
 

@@ -60,7 +60,7 @@
 
 <p class="help">
   <kbd>←</kbd> <kbd>→</kbd> turn knob (15° each, <kbd>Shift</kbd> for fine) · <kbd>Enter</kbd> push · <kbd>M</kbd> long push ·
-  <kbd>Z</kbd> <kbd>X</kbd> <kbd>C</kbd> prev / play / next · <kbd>Esc</kbd> back · <kbd>1</kbd>–<kbd>4</kbd> insert card · <kbd>0</kbd> remove
+  <kbd>Z</kbd> <kbd>X</kbd> <kbd>C</kbd> prev / play / next (hold <kbd>Z</kbd> or <kbd>C</kbd>, or the button, to rewind or fast-forward) · <kbd>Esc</kbd> back · <kbd>1</kbd>–<kbd>4</kbd> insert card · <kbd>0</kbd> remove
 </p>
 
 <script>
@@ -111,7 +111,33 @@ knob.addEventListener("pointerup", () => {
   drag = null;
 });
 
-document.querySelectorAll("[data-press]").forEach((b) => b.addEventListener("click", () => press(b.dataset.press)));
+// Previous and next work like the real buttons: a short press skips, holding scans.
+const holds = {};
+function holdStart(name) {
+  if (holds[name]) return;
+  holds[name] = { held: false, timer: setTimeout(function repeat() {
+    holds[name].held = true;
+    press(name + "_hold");
+    holds[name].timer = setTimeout(repeat, 400);
+  }, 400) };
+}
+function holdEnd(name) {
+  const h = holds[name];
+  if (!h) return;
+  clearTimeout(h.timer);
+  if (!h.held) press(name);
+  delete holds[name];
+}
+document.querySelectorAll("[data-press]").forEach((b) => {
+  const name = b.dataset.press;
+  if (name === "prev" || name === "next") {
+    b.addEventListener("pointerdown", () => holdStart(name));
+    b.addEventListener("pointerup", () => holdEnd(name));
+    b.addEventListener("pointerleave", () => holdEnd(name));
+  } else {
+    b.addEventListener("click", () => press(name));
+  }
+});
 function setCard(uid) {
   send({ type: "card", uid });
   document.querySelectorAll("[data-card]").forEach((b) => b.classList.toggle("on", !!uid && b.dataset.card === uid));
@@ -127,14 +153,19 @@ document.addEventListener("keydown", (e) => {
   else if (k === "arrowleft") rotate(-step);
   else if (k === "enter" && !e.repeat) press("knob");
   else if (k === "m" && !e.repeat) press("knob_long");
-  else if (k === "z") press("prev");
+  else if (k === "z") { if (!e.repeat) holdStart("prev"); }
   else if (k === "x" || k === " ") press("play");
-  else if (k === "c") press("next");
+  else if (k === "c") { if (!e.repeat) holdStart("next"); }
   else if (k === "escape") press("back");
   else if (k >= "1" && k <= "4") setCard(cardUids[+k - 1]);
   else if (k === "0") setCard("");
   else return;
   e.preventDefault();
+});
+document.addEventListener("keyup", (e) => {
+  const k = e.key.toLowerCase();
+  if (k === "z") holdEnd("prev");
+  else if (k === "c") holdEnd("next");
 });
 </script>
 </body>

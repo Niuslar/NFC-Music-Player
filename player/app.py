@@ -14,6 +14,13 @@ from .playback import Status
 from .ui import render
 
 VOLUME_OVERLAY_SECONDS = 1.5
+# Holding previous or next scans through the track: this many seconds of music per second held,
+# speeding up after SCAN_FASTER_AFTER seconds. A pause longer than SCAN_GAP starts a new scan.
+SCAN_SPEEDS = (8.0, 24.0)
+SCAN_FASTER_AFTER = 3.0
+SCAN_FIRST_STEP = 4.0
+SCAN_GAP = 1.0
+SCAN_LABEL_SECONDS = 0.8
 MISSING = "The music linked to this card is missing."
 MENU_ITEMS = ("Link to something else", "Unlink this card", "Close")
 KIND_NAMES = {"album": ("Album", "album"), "artist": ("Artist", "artist"), "list": ("List", "list")}
@@ -29,6 +36,7 @@ class Mode(Enum):
     UNLINKED = auto()  # card in the slot with nothing to play
     LINKING = auto()  # choosing what the card plays: first the kind, then the album, artist or list
     MENU = auto()
+    TRACKS = auto()  # the tracks of what is playing, to jump to one
     TRANSFER = auto()  # music partition handed to the computer
 
 
@@ -66,6 +74,8 @@ class App:
         self._art: bytes | None = None
         self._vol_knob = volume_scaler(volume_steps_per_rev)
         self._list_knob = list_scaler()
+        self._scan_forward: bool | None = None
+        self._scan_start = self._scan_last = -1e9
         playback.set_volume(store.volume)
 
     # ---- events -------------------------------------------------------------
@@ -110,8 +120,8 @@ class App:
     def _rotate(self, counts: int, now: float) -> None:
         if self.mode is Mode.TRANSFER or self.usb_offer:
             return
-        if self.mode in (Mode.LINKING, Mode.MENU):
-            count = len(self._link_choices()) if self.mode is Mode.LINKING else len(MENU_ITEMS)
+        if self.mode in (Mode.LINKING, Mode.MENU, Mode.TRACKS):
+            count = {Mode.LINKING: lambda: len(self._link_choices()), Mode.MENU: lambda: len(MENU_ITEMS), Mode.TRACKS: lambda: len(self.album.tracks)}[self.mode]()
             steps = self._list_knob.feed(counts, now)
             self.selected = min(max(self.selected + steps, 0), count - 1)
             return
@@ -172,6 +182,8 @@ class App:
         fresh = self.library.get(self.album.key)
         if fresh is not None:
             self.album = fresh  # same thing, possibly with tracks added or removed
+            if self.mode is Mode.TRACKS:
+                self.selected = min(self.selected, max(len(fresh.tracks) - 1, 0))
             return
         # What was playing has been deleted.
         from_card = self.card is not None and not self.remote
@@ -195,13 +207,23 @@ class App:
             elif button == "back":
                 self.usb_offer = False
             return
-        if self.mode is Mode.PLAYING:
-            if button in ("knob", "play"):
+        if self.mode in (Mode.PLAYING, Mode.TRACKS):
+            # The transport buttons work the same with the track list open.
+            if button == "play" or (button == "knob" and self.mode is Mode.PLAYING):
                 self._toggle()
             elif button == "next":
                 self.playback.next()
             elif button == "prev":
                 self.playback.prev()
+            elif button in ("next_hold", "prev_hold"):
+                self._scan(button == "next_hold")
+            elif self.mode is Mode.TRACKS:
+                if button == "knob":
+                    self._play_track(self.selected)
+                elif button in ("back", "knob_long"):
+                    self.mode = Mode.PLAYING
+            elif button == "back":
+                self._open_tracks()
             elif button == "knob_long" and self.card and not self.remote:
                 self._open_list(Mode.MENU, 0)  # the menu is about the card's link
         elif self.mode is Mode.MENU:
@@ -233,6 +255,44 @@ class App:
         else:
             self.playback.play(self.album.tracks)
         self.status = self.playback.status()
+
+    def _scan(self, forward: bool) -> None:
+        """One step of fast-forward or rewind; called repeatedly while the button is held."""
+        st = self.playback.status()
+        if st.state == "stop" or not st.duration:
+            return
+        now = self._now
+        if forward != self._scan_forward or now - self._scan_last > SCAN_GAP:
+            self._scan_start, step = now, SCAN_FIRST_STEP
+        else:
+            speed = SCAN_SPEEDS[1] if now - self._scan_start >= SCAN_FASTER_AFTER else SCAN_SPEEDS[0]
+            step = speed * min(now - self._scan_last, SCAN_GAP)
+        self._scan_forward, self._scan_last = forward, now
+        target = st.elapsed + (step if forward else -step)
+        if forward and target >= st.duration - 0.5:
+            if st.track_index + 1 < st.track_count:
+                self.playback.next()  # carry on scanning from the start of the next track
+            else:
+                self.playback.seek(st.duration - 0.5)
+        else:
+            self.playback.seek(max(target, 0.0))  # rewinding stops at the start of the track
+        self.status = self.playback.status()
+
+    def _open_tracks(self) -> None:
+        if not self.album or not self.album.tracks:
+            return
+        st = self.playback.status()
+        self._open_list(Mode.TRACKS, st.track_index if st.state != "stop" else 0)
+
+    def _play_track(self, index: int) -> None:
+        st = self.playback.status()
+        if st.state != "stop" and index == st.track_index:
+            if st.state == "pause":
+                self.playback.resume()
+        else:
+            self.playback.play(self.album.tracks, index)
+        self.status = self.playback.status()
+        self.mode = Mode.PLAYING
 
     def _open_list(self, mode: Mode, selected: int) -> None:
         self.mode, self.selected = mode, selected
@@ -427,5 +487,14 @@ class App:
             return render.list_screen(f"Choose {article} {self.link_kind} for this card", rows, self.selected)
         if self.mode is Mode.MENU:
             return render.list_screen(self.album.title, [(item, "") for item in MENU_ITEMS], self.selected)
+        if self.mode is Mode.TRACKS:
+            playing = self.status.track_index if self.status.state != "stop" else -1
+            rows = []
+            for i, t in enumerate(self.album.tracks):
+                sub = t.artist if self.album.kind == "list" else t.album if self.album.kind == "artist" else ""
+                rows.append((f"{i + 1}. {t.title}", "Playing now" if i == playing else sub))
+            return render.list_screen(self.album.title, rows, self.selected)
         volume = self.store.volume if now < self._volume_until else None
-        return render.now_playing(self.album.title, self._details(), self._cover(), self.status, volume)
+        scanning = now - self._scan_last < SCAN_LABEL_SECONDS
+        note = ("Fast forward" if self._scan_forward else "Rewind") if scanning else None
+        return render.now_playing(self.album.title, self._details(), self._cover(), self.status, volume, note)

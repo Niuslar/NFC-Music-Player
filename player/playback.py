@@ -73,6 +73,14 @@ class FakePlayback:
     def stop(self) -> None:
         self._state, self._index, self._elapsed = "stop", 0, 0.0
 
+    def seek(self, seconds: float) -> None:
+        """Moves within the current track, keeping play or pause."""
+        self._settle()
+        if self._state == "stop":
+            return
+        self._elapsed = min(max(seconds, 0.0), self._durations[self._index])
+        self._since = self.clock()
+
     def _jump(self, index: int) -> None:
         self._index, self._elapsed, self._since = index, 0.0, self.clock()
 
@@ -184,6 +192,15 @@ class MpdPlayback:
 
     def stop(self) -> None:
         self._call(lambda c: c.stop())
+
+    def seek(self, seconds: float) -> None:
+        """Moves within the current track, keeping play or pause."""
+
+        def go(c):
+            if c.status().get("state", "stop") != "stop":
+                c.seekcur(f"{max(seconds, 0.0):.1f}")
+
+        self._call(go)
 
     def next(self) -> None:
         def go(c):

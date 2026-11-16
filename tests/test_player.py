@@ -461,3 +461,88 @@ def test_deleting_an_album_from_a_shared_folder_takes_only_its_tracks(tagged):
         web.list_files(library, library.artists[0].key)  # an artist has no folder
     assert web.delete_music(library, Writer(), low.key) == 2
     assert sorted(f.name for f in (library.root / "From iTunes").iterdir()) == ["Beauty and the Beast.wav", "Heroes.wav", "Sinnerman.wav"]
+
+
+# ---- scanning and the track list ----------------------------------------------
+
+
+def test_fake_playback_seeks_within_the_track(rig):
+    app, send, clock, store, playback, *_ = rig
+    linked(rig)
+    playback.seek(12.5)
+    assert playback.status().elapsed == pytest.approx(12.5)
+    playback.seek(-5)
+    assert playback.status().elapsed == pytest.approx(0)
+    playback.pause()
+    playback.seek(3)
+    assert playback.status().state == "pause" and playback.status().elapsed == pytest.approx(3)
+
+
+def test_holding_next_fast_forwards_and_runs_into_the_next_track(rig):
+    app, send, clock, *_ = rig
+    linked(rig)  # first track is 20 s long
+    send(ev.Press("next_hold"))
+    assert app.status.elapsed == pytest.approx(4.0)  # the first step
+    send(advance=0.4)
+    send(ev.Press("next_hold"))
+    assert app.status.elapsed == pytest.approx(4.4 + 8 * 0.4)  # played on, then 8x for the time held
+    assert app.render(clock.t).tobytes() != app.render(clock.t + 5).tobytes()  # "Fast forward" shows, then goes
+    for _ in range(5):  # past the end of the 20 s track
+        send(advance=0.4)
+        send(ev.Press("next_hold"))
+    assert app.status.track_index == 1 and app.status.state == "play" and app.status.elapsed < 5
+
+
+def test_holding_prev_rewinds_to_the_start_of_the_track_but_no_further(rig):
+    app, send, clock, *_ = rig
+    linked(rig)
+    send(ev.Press("next"), advance=10.0)
+    send(ev.Press("prev_hold"))
+    assert app.status.elapsed == pytest.approx(6.0)
+    for _ in range(10):
+        send(advance=0.4)
+        send(ev.Press("prev_hold"))
+    assert (app.status.track_index, app.status.elapsed) == (1, pytest.approx(0, abs=0.5))
+
+
+def test_scanning_speeds_up_the_longer_it_is_held(rig):
+    app, send, clock, *_ = rig
+    linked(rig, album_index=4)  # Slow Rooms: five tracks, 20 to 40 s
+    send(ev.Press("next"), ev.Press("next"), ev.Press("next"), ev.Press("next"))  # last track, 40 s
+    send(ev.Press("next_hold"))
+    for _ in range(8):  # 3.2 s held
+        send(advance=0.4)
+        before = app.status.elapsed
+        send(ev.Press("next_hold"))
+    assert app.status.elapsed - before == pytest.approx(24 * 0.4, abs=0.01)
+
+
+def test_back_shows_the_tracks_and_the_knob_picks_one(rig):
+    app, send, clock, store, playback, *_ = rig
+    linked(rig, album_index=4)  # Slow Rooms: five tracks
+    per_item = round(COUNTS_PER_REV * 15 / 360) + 1
+    send(ev.Press("next"), advance=2.0)
+    send(ev.Press("back"))
+    assert app.mode is Mode.TRACKS and app.selected == 1  # the playing track is highlighted
+    shown = app.render(clock.t).tobytes()
+    send(ev.Rotate(per_item), advance=0.5)
+    assert app.selected == 2 and app.status.track_index == 1  # browsing does not change what plays
+    assert app.render(clock.t).tobytes() != shown
+    send(ev.Press("knob"))
+    assert app.mode is Mode.PLAYING and app.status.track_index == 2 and app.status.elapsed < 0.5
+    send(ev.Press("back"), ev.Press("back"))  # open and close without choosing
+    assert app.mode is Mode.PLAYING and app.status.track_index == 2
+    send(ev.Press("play"), ev.Press("back"), ev.Press("knob"))  # choosing the paused track resumes it in place
+    assert app.status.state == "play" and app.status.track_index == 2
+
+
+def test_track_list_works_for_a_list_and_survives_a_rescan(tagged):
+    app, send, library, store = tagged
+    send(ev.CardInserted(CARD), ev.WebCommand("link_card", "From iTunes"))
+    send(ev.Press("back"))
+    assert app.mode is Mode.TRACKS
+    app.render(100.0)
+    send(ev.LibraryChanged())
+    assert app.mode is Mode.TRACKS and app.selected < len(app.album.tracks)
+    send(ev.CardRemoved())
+    assert app.mode is Mode.IDLE
