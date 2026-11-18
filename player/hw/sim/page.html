@@ -39,7 +39,7 @@
       <button class="key" data-press="prev" title="Previous">⏮</button>
       <button class="key" data-press="play" title="Play / pause">⏯</button>
       <button class="key" data-press="next" title="Next">⏭</button>
-      <button class="key" data-press="back" title="Back">↩</button>
+      <button class="key" data-press="back" title="Back (hold 3 seconds to restart the album)">↩</button>
       <button class="key power" data-press="power" title="Power: turns the player off, and on again">⏻</button>
     </div>
   </div>
@@ -63,7 +63,7 @@
 
 <p class="help">
   <kbd>←</kbd> <kbd>→</kbd> turn knob (15° each, <kbd>Shift</kbd> for fine) · <kbd>Enter</kbd> push · <kbd>M</kbd> long push ·
-  <kbd>Z</kbd> <kbd>X</kbd> <kbd>C</kbd> prev / play / next (hold <kbd>Z</kbd> or <kbd>C</kbd>, or the button, to rewind or fast-forward) · <kbd>Esc</kbd> back · ⏻ power off and on · <kbd>1</kbd>–<kbd>4</kbd> insert card · <kbd>0</kbd> remove
+  <kbd>Z</kbd> <kbd>X</kbd> <kbd>C</kbd> prev / play / next (hold <kbd>Z</kbd> or <kbd>C</kbd>, or the button, to rewind or fast-forward) · <kbd>Esc</kbd> back (hold 3 s to restart the album) · ⏻ power off and on · <kbd>1</kbd>–<kbd>4</kbd> insert card · <kbd>0</kbd> remove
 </p>
 
 <script>
@@ -116,9 +116,14 @@ knob.addEventListener("pointerup", () => {
 });
 
 // Previous and next work like the real buttons: a short press skips, holding scans.
+// Back sends back_long once when held for 3 seconds, and back on a shorter press.
 const holds = {};
 function holdStart(name) {
   if (holds[name]) return;
+  if (name === "back") {
+    holds[name] = { held: false, timer: setTimeout(() => { holds[name].held = true; press("back_long"); }, 3000) };
+    return;
+  }
   holds[name] = { held: false, timer: setTimeout(function repeat() {
     holds[name].held = true;
     press(name + "_hold");
@@ -134,7 +139,7 @@ function holdEnd(name) {
 }
 document.querySelectorAll("[data-press]").forEach((b) => {
   const name = b.dataset.press;
-  if (name === "prev" || name === "next") {
+  if (name === "prev" || name === "next" || name === "back") {
     b.addEventListener("pointerdown", () => holdStart(name));
     b.addEventListener("pointerup", () => holdEnd(name));
     b.addEventListener("pointerleave", () => holdEnd(name));
@@ -160,7 +165,7 @@ document.addEventListener("keydown", (e) => {
   else if (k === "z") { if (!e.repeat) holdStart("prev"); }
   else if (k === "x" || k === " ") press("play");
   else if (k === "c") { if (!e.repeat) holdStart("next"); }
-  else if (k === "escape") press("back");
+  else if (k === "escape") { if (!e.repeat) holdStart("back"); }
   else if (k >= "1" && k <= "4") setCard(cardUids[+k - 1]);
   else if (k === "0") setCard("");
   else return;
@@ -170,6 +175,7 @@ document.addEventListener("keyup", (e) => {
   const k = e.key.toLowerCase();
   if (k === "z") holdEnd("prev");
   else if (k === "c") holdEnd("next");
+  else if (k === "escape") holdEnd("back");
 });
 </script>
 </body>

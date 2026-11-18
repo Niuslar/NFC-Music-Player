@@ -536,6 +536,27 @@ def test_back_shows_the_tracks_and_the_knob_picks_one(rig):
     assert app.status.state == "play" and app.status.track_index == 2
 
 
+def test_holding_back_restarts_the_album(rig):
+    app, send, clock, *_ = rig
+    linked(rig, album_index=4)  # Slow Rooms: five tracks
+    send(ev.Press("next"), ev.Press("next"), advance=5.0)
+    send(ev.Press("back_long"))
+    assert app.mode is Mode.PLAYING
+    assert (app.status.state, app.status.track_index) == ("play", 0) and app.status.elapsed < 0.5
+    send(ev.Press("next"), ev.Press("play"), ev.Press("back"))  # paused, with the track list open
+    send(ev.Press("back_long"))
+    assert app.mode is Mode.PLAYING and (app.status.state, app.status.track_index) == ("play", 0)
+
+
+def test_holding_back_outside_playback_works_as_back(rig):
+    app, send, *_ = rig
+    linked(rig)
+    send(ev.Press("knob_long"))
+    assert app.mode is Mode.MENU
+    send(ev.Press("back_long"))
+    assert app.mode is Mode.PLAYING and app.status.track_index == 0
+
+
 def test_track_list_works_for_a_list_and_survives_a_rescan(tagged):
     app, send, library, store = tagged
     send(ev.CardInserted(CARD), ev.WebCommand("link_card", "From iTunes"))

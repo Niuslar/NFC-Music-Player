@@ -208,6 +208,8 @@ class App:
             self.mode = Mode.IDLE
 
     def _press(self, button: str) -> None:
+        if button == "back_long" and not (self.mode in (Mode.PLAYING, Mode.TRACKS) and self.album and not self.usb_offer):
+            button = "back"  # holding back only means something while playing; elsewhere it is a slow back
         if self.mode is Mode.TRANSFER:
             if button == "knob_long":  # manual way out if the eject was not noticed
                 self._end_transfer()
@@ -230,6 +232,8 @@ class App:
                 self.playback.prev()
             elif button in ("next_hold", "prev_hold"):
                 self._scan(button == "next_hold")
+            elif button == "back_long":
+                self._restart_album()
             elif self.mode is Mode.TRACKS:
                 if button == "knob":
                     self._play_track(self.selected)
@@ -268,6 +272,13 @@ class App:
         else:
             self.playback.play(self.album.tracks)
         self.status = self.playback.status()
+
+    def _restart_album(self) -> None:
+        """Plays what is playing from the start of its first track."""
+        if self.album.tracks:
+            self.playback.play(self.album.tracks, 0)
+            self.status = self.playback.status()
+        self.mode = Mode.PLAYING
 
     def _scan(self, forward: bool) -> None:
         """One step of fast-forward or rewind; called repeatedly while the button is held."""

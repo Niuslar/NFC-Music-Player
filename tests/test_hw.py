@@ -300,7 +300,10 @@ def test_prev_and_next_scan_while_held_and_skip_on_a_short_press():
     b.released("next")  # ...and nothing more when it comes up
     b.held("knob")
     b.released("knob")
-    assert [q.get_nowait().button for _ in range(q.qsize())] == ["next", "next_hold", "next_hold", "knob_long"]
+    b.held("back")
+    b.released("back")
+    assert [q.get_nowait().button for _ in range(q.qsize())] == ["next", "next_hold", "next_hold", "knob_long", "back_long"]
+    assert _to_event({"type": "press", "button": "back_long"}) == ev.Press("back_long")
     assert _to_event({"type": "press", "button": "prev_hold"}) == ev.Press("prev_hold")
 
 

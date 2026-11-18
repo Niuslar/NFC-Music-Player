@@ -79,14 +79,15 @@ class Encoder:
 
 
 # Buttons that do something different when held: a short press is sent on release instead.
-HOLD_NAMES = {"knob": "knob_long", "prev": "prev_hold", "next": "next_hold"}
+HOLD_NAMES = {"knob": "knob_long", "back": "back_long", "prev": "prev_hold", "next": "next_hold"}
+HOLD_SECONDS = {"back": 3.0}  # restarting the album is drastic: it needs a deliberate hold
 REPEATS = {"prev", "next"}  # these keep sending their hold event while held, to scan through a track
 
 
 class Buttons:
     """buttons maps a name (prev, play, next, back, power) to its GPIO; knob is the encoder's push switch.
 
-    The knob sends knob_long once when held. Previous and next send prev_hold / next_hold
+    The knob sends knob_long once when held for hold_seconds; back sends back_long once after 3 seconds. Previous and next send prev_hold / next_hold
     every scan_seconds while held, and nothing on release; a short press sends the plain name.
     """
 
@@ -99,7 +100,7 @@ class Buttons:
         for name, pin in {"knob": knob_pin, **buttons}.items():
             if name in HOLD_NAMES:
                 repeat = name in REPEATS
-                b = Button(pin, pull_up=True, bounce_time=0.02, hold_time=scan_seconds if repeat else hold_seconds, hold_repeat=repeat)
+                b = Button(pin, pull_up=True, bounce_time=0.02, hold_time=scan_seconds if repeat else HOLD_SECONDS.get(name, hold_seconds), hold_repeat=repeat)
                 b.when_held = lambda name=name: self.held(name)
                 b.when_released = lambda name=name: self.released(name)
             else:
