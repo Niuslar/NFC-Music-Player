@@ -564,3 +564,76 @@ def test_track_list_works_for_a_list_and_survives_a_rescan(tagged):
     assert app.mode is Mode.TRACKS and app.selected < len(app.album.tracks)
     send(ev.CardRemoved())
     assert app.mode is Mode.IDLE
+
+
+def test_power_key_saves_the_place_stops_and_shows_turning_off(rig, monkeypatch):
+    app, send, clock, store, playback, storage, state_file = rig
+    linked(rig)
+    send(ev.Press("next"), advance=5.0)
+    send(ev.Press("power"))
+    assert app.mode is Mode.OFF
+    assert playback.status().state == "stop"
+    saved = json.loads(state_file.read_text())
+    assert saved["cards"][CARD]["resume"] == [1, pytest.approx(5.0, abs=0.1)]
+    shown = []
+    monkeypatch.setattr("player.app.render.message", lambda title, body="": shown.append(title))
+    app.render(clock.t)
+    assert shown == ["Turning off"]
+    # Nothing else happens once it is turning off.
+    send(ev.CardRemoved(), ev.CardInserted(OTHER), ev.Press("play"), ev.WebCommand("toggle"))
+    assert app.mode is Mode.OFF and playback.status().state == "stop"
+
+
+def test_power_key_with_nothing_playing(rig):
+    app, send, *_ = rig
+    send(ev.Press("power"))
+    assert app.mode is Mode.OFF
+
+
+def test_power_key_waits_for_the_computer_to_eject_the_drive(rig):
+    app, send, clock, *_ = rig
+    send(ev.UsbHost(True), ev.Press("knob"))
+    assert app.mode is Mode.TRANSFER
+    send(ev.Press("power"))
+    assert app.mode is Mode.TRANSFER and app._error_until > clock.t
+
+
+def test_power_key_waits_for_a_web_upload(rig):
+    app, send, *_ = rig
+    app.is_uploading = lambda: True
+    send(ev.Press("power"))
+    assert app.mode is Mode.IDLE
+    app.is_uploading = lambda: False
+    send(ev.Press("power"))
+    assert app.mode is Mode.OFF
+
+
+def test_run_loop_shuts_down_once_after_drawing_the_off_screen(rig):
+    import queue
+
+    from player.main import run
+
+    app, *_ = rig
+    events = queue.Queue()
+    events.put(ev.Press("power"))
+    log = []
+
+    class Display:
+        def show(self, image):
+            log.append(("show", app.mode))
+
+    class Stop(BaseException):
+        pass
+
+    ticks = iter(range(4))
+
+    def clock():
+        try:
+            return 100.0 + next(ticks)
+        except StopIteration:
+            raise Stop
+
+    with pytest.raises(Stop):
+        run(app, events, Display(), clock=clock, power_off=lambda: log.append("power_off"))
+    assert log.index("power_off") == log.index(("show", Mode.OFF)) + 1
+    assert log.count("power_off") == 1

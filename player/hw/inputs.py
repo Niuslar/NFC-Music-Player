@@ -84,7 +84,7 @@ REPEATS = {"prev", "next"}  # these keep sending their hold event while held, to
 
 
 class Buttons:
-    """buttons maps a name (prev, play, next, back) to its GPIO; knob is the encoder's push switch.
+    """buttons maps a name (prev, play, next, back, power) to its GPIO; knob is the encoder's push switch.
 
     The knob sends knob_long once when held. Previous and next send prev_hold / next_hold
     every scan_seconds while held, and nothing on release; a short press sends the plain name.

@@ -50,7 +50,8 @@ echo "== USB helper and services"
 install -m 755 "$APP_DIR/system/nfc-player-usb" /usr/local/sbin/nfc-player-usb
 echo "OWNER=$RUN_USER" > /etc/nfc-player.conf
 H=/usr/local/sbin/nfc-player-usb
-echo "$RUN_USER ALL=(root) NOPASSWD: $H release, $H reclaim, $H rw, $H ro" > /etc/sudoers.d/nfc-player
+# The power key shuts the Pi down with systemctl poweroff.
+echo "$RUN_USER ALL=(root) NOPASSWD: $H release, $H reclaim, $H rw, $H ro, /usr/bin/systemctl poweroff" > /etc/sudoers.d/nfc-player
 chmod 440 /etc/sudoers.d/nfc-player
 visudo -cf /etc/sudoers.d/nfc-player >/dev/null
 install -m 644 "$APP_DIR/system/nfc-player-usb.service" /etc/systemd/system/

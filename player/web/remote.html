@@ -136,9 +136,10 @@ function command(action, value) {
 }
 
 function showState() {
-  const a = state.album, transfer = state.mode === "transfer";
-  $("banner").hidden = !transfer;
+  const a = state.album, transfer = state.mode === "transfer", off = state.mode === "off";
+  $("banner").hidden = !transfer && !off;
   if (transfer) $("banner").textContent = "The music drive is connected to a computer over USB. Playback and uploads are paused until it is ejected.";
+  if (off) $("banner").textContent = "The player is turning off. Plug its power back in to turn it on again.";
   $("track").textContent = a ? (state.state === "stop" ? "Finished" : state.track || a.title) : "Nothing playing";
   $("album").textContent = a ? state.details : (state.card ? "The card in the slot is not linked" : "Insert a card or pick something below");
   $("source").textContent = a ? (state.remote ? "Started from this page" : "Playing from the card") : "";
@@ -156,7 +157,7 @@ function showState() {
   $("duration").textContent = clock(state.duration || 0);
   $("count").textContent = a && state.state !== "stop" ? `${state.track_index + 1} / ${state.track_count}` : "";
   $("toggle").textContent = state.state === "play" ? "⏸" : "▶";
-  for (const id of ["prev", "toggle", "next"]) $(id).disabled = !a || transfer;
+  for (const id of ["prev", "toggle", "next"]) $(id).disabled = !a || transfer || off;
   if (!draggingVolume) { $("volume").value = state.volume; $("volumeOut").textContent = state.volume; }
   $("space").textContent = state.free_bytes != null ? `${(state.free_bytes / 1e9).toFixed(1)} GB free on the music drive.` : "";
   document.querySelectorAll(".albums li").forEach((li) => li.classList.toggle("current", !!a && li.dataset.key === a.key));

@@ -7,11 +7,12 @@
 
 import argparse
 import queue
+import subprocess
 import time
 import traceback
 from pathlib import Path
 
-from .app import App
+from .app import App, Mode
 from .cards import Store
 from .events import LibraryChanged
 from .library import FileTags, Library
@@ -25,14 +26,20 @@ PINS = {
     "encoder_a": 5,
     "encoder_b": 6,
     "knob_switch": 26,
-    "buttons": {"prev": 4, "play": 17, "next": 16, "back": 12},
+    "buttons": {"prev": 4, "play": 17, "next": 16, "back": 12, "power": 24},
 }
 USB_HELPER = "/usr/local/sbin/nfc-player-usb"
 DISPLAY_SPI = (0, 0)  # bus 0, CE0 (GPIO 8)
 NFC_SPI = (0, 1)  # bus 0, CE1 (GPIO 7)
 
 
-def run(app: App, event_queue: queue.Queue, display, shared=None, clock=time.monotonic) -> None:
+def power_off() -> None:
+    """Shuts the Pi down. setup.sh lets the player's user run this one command through sudo."""
+    subprocess.run(["sudo", "-n", "/usr/bin/systemctl", "poweroff"], check=True)
+
+
+def run(app: App, event_queue: queue.Queue, display, shared=None, clock=time.monotonic, power_off=power_off) -> None:
+    turning_off = False
     while True:
         try:
             pending = [event_queue.get(timeout=0.1)]
@@ -54,6 +61,13 @@ def run(app: App, event_queue: queue.Queue, display, shared=None, clock=time.mon
         if shared is not None:
             shared.snapshot = app.snapshot()
         display.show(app.render(now))
+        if app.mode is Mode.OFF and not turning_off:
+            turning_off = True  # once only, and after the "Turning off" screen is up
+            try:
+                power_off()
+            except Exception as e:
+                traceback.print_exc()
+                print(f"Could not shut down: {e}", flush=True)
 
 
 def open_spi(bus: int, device: int, speed_hz: int):
@@ -163,7 +177,7 @@ def main() -> None:
             print(f"Web remote not started: {e}", flush=True)
             shared = None
     try:
-        run(app, events, display, shared)
+        run(app, events, display, shared, power_off=(lambda: print("Simulator: the Pi would shut down now. Restart to turn it back on.", flush=True)) if args.sim else power_off)
     except KeyboardInterrupt:
         pass
 

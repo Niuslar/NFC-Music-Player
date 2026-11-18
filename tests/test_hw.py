@@ -309,3 +309,9 @@ def test_simulator_jack_events():
     assert _to_event({"type": "jack", "action": "unplug"}) == ev.AudioOutput(False)
     assert _to_event({"type": "jack", "action": "plug"}) == ev.AudioOutput(True)
     assert _to_event({"type": "jack", "action": "wiggle"}) is None
+
+
+def test_simulator_power_key():
+    from player.hw.sim.server import _to_event
+
+    assert _to_event({"type": "press", "button": "power"}) == ev.Press("power")

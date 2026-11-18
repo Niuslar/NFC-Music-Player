@@ -21,6 +21,7 @@ SCAN_FASTER_AFTER = 3.0
 SCAN_FIRST_STEP = 4.0
 SCAN_GAP = 1.0
 SCAN_LABEL_SECONDS = 0.8
+OFF_WAIT_SECONDS = 15  # what the screen asks for after the power key: the Pi needs about 10 to shut down
 MISSING = "The music linked to this card is missing."
 MENU_ITEMS = ("Link to something else", "Unlink this card", "Close")
 KIND_NAMES = {"album": ("Album", "album"), "artist": ("Artist", "artist"), "list": ("List", "list")}
@@ -38,6 +39,7 @@ class Mode(Enum):
     MENU = auto()
     TRACKS = auto()  # the tracks of what is playing, to jump to one
     TRANSFER = auto()  # music partition handed to the computer
+    OFF = auto()  # the power key was pressed: everything is saved and the Pi is shutting down
 
 
 class NullStorage:
@@ -82,7 +84,11 @@ class App:
 
     def handle(self, event, now: float) -> None:
         self._now = now
-        if isinstance(event, ev.WebCommand):
+        if self.mode is Mode.OFF:
+            return  # nothing more happens once the player is turning off
+        if isinstance(event, ev.Press) and event.button == "power":
+            self._power_off()
+        elif isinstance(event, ev.WebCommand):
             self._web(event.action, event.value)
         elif isinstance(event, ev.LibraryChanged):
             self._refresh_library()
@@ -114,7 +120,7 @@ class App:
 
     def tick(self, now: float) -> None:
         """Called several times a second to follow what the player is doing."""
-        if self.album is None or self.mode is Mode.TRANSFER:
+        if self.album is None or self.mode in (Mode.TRANSFER, Mode.OFF):
             return
         was_active = self.status.state != "stop"
         self.status = self.playback.status()
@@ -385,6 +391,21 @@ class App:
         self.album, self.status = None, Status()
         self.mode, self.note = Mode.UNLINKED, "Card unlinked."
 
+    def _power_off(self) -> None:
+        """Saves the card's place and stops playback; main then shuts the Pi down."""
+        if self.mode is Mode.TRANSFER:
+            self.show_error("The music drive is connected to a computer. Eject it there first, then press power again.", self._now)
+            return
+        if self.is_uploading():
+            self.show_error("An upload from the web page is still running. Try again when it finishes.", self._now)
+            return
+        self._leave_card()  # remembers where the card stopped and saves the volume
+        self.playback.stop()
+        self.store.save()
+        self.usb_offer = False
+        self._error_until = 0.0  # nothing may cover the last screen
+        self.mode = Mode.OFF
+
     def _start_transfer(self) -> None:
         self.usb_offer = False
         self._leave_card()
@@ -462,6 +483,8 @@ class App:
     # ---- drawing ------------------------------------------------------------
 
     def render(self, now: float):
+        if self.mode is Mode.OFF:
+            return render.message("Turning off", f"Wait {OFF_WAIT_SECONDS} seconds, then unplug the power.\nPlug it back in to turn on.")
         if now < self._error_until:
             return render.message("Something went wrong", self._error)
         if self.mode is Mode.TRANSFER:

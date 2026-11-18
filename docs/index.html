@@ -96,7 +96,7 @@
   <li><strong>Raspberry Pi Zero 2 W</strong> runs Raspberry Pi OS Lite, MPD (the music player) and the player program.</li>
   <li><strong>Raspberry Pi DAC Pro</strong> sits on the Pi's header and provides the 3.5 mm and RCA outputs.</li>
   <li><strong>Display and NFC reader</strong> share the Pi's SPI bus, each with its own chip-select pin.</li>
-  <li><strong>Knob and four buttons</strong> connect to plain GPIO pins.</li>
+  <li><strong>Knob, four buttons and a power key</strong> connect to plain GPIO pins.</li>
   <li><strong>Music</strong> lives in one large file on the SD card. Plug the Pi's USB port into the Mac and that file appears as a drive called <code>MUSIC</code>.</li>
   <li><strong>A web page</strong> served by the Pi at <code>http://nfcplayer.local</code> controls playback and takes uploads from any phone or computer on the same Wi-Fi.</li>
 </ul>
@@ -114,7 +114,7 @@
   <tr><td>NFC cards</td><td>NTAG215 blank PVC cards</td><td class="num">£8</td><td>NTAG213/216 and MIFARE Classic cards also work. Only the card's ID is read.</td></tr>
   <tr><td>Knob encoder</td><td>24-click rotary encoder with push switch, from a known maker: The Pi Hut "Rotary Encoder + Extras", or a Bourns PEC11R or Alps EC11</td><td class="num">£4</td><td>Clicks as it turns. Normal-pitch pins that fit a breadboard. Avoid unbranded multi-packs; they feel loose and wear quickly.</td></tr>
   <tr><td>Knob</td><td>Solid aluminium, 30–38 mm, with a set screw, to fit a 6 mm shaft</td><td class="num">£8</td><td>Most of the quality feel comes from this: weight, diameter and no wobble. Check your encoder's shaft (6 mm D-shaped or knurled) before buying.</td></tr>
-  <tr><td>Buttons</td><td>4 push buttons. Any tactile switch for testing; Kailh Choc switches with keycaps for the final build</td><td class="num">£8</td><td>Previous, play/pause, next, back.</td></tr>
+  <tr><td>Buttons</td><td>5 push buttons. Any tactile switch for testing; Kailh Choc switches with keycaps for the final build</td><td class="num">£10</td><td>Previous, play/pause, next, back, and a power key that shuts the player down safely.</td></tr>
   <tr><td>Bench bits</td><td>Breadboard, jumper wires (male–female and male–male)</td><td class="num">£8</td><td></td></tr>
   <tr><td>USB cable</td><td>Micro-USB to USB-C (or to USB-A) <em>data</em> cable</td><td class="num">£5</td><td>Powers the Pi from the Mac and carries the music. Charge-only cables will not work.</td></tr>
 </table>
@@ -261,8 +261,10 @@
 <text x="363" y="247.5" text-anchor="middle" font-size="10" font-weight="600" style="fill:#fff">17</text>
 <line x1="351" y1="244" x2="337" y2="244" style="stroke:var(--c-nfc)" stroke-width="1.5"/>
 <text x="333" y="248.5" text-anchor="end" font-size="13" xml:space="preserve"><tspan style="fill:var(--c-nfc)" font-weight="600">Reader VCC</tspan><tspan style="fill:var(--dim)">  ·  3.3 V</tspan></text>
-<circle cx="397" cy="244" r="10" style="fill:var(--pin-idle)"/>
-<text x="397" y="247.5" text-anchor="middle" font-size="10" font-weight="600" style="fill:var(--dim)">18</text>
+<circle cx="397" cy="244" r="10" style="fill:var(--c-buttons)"/>
+<text x="397" y="247.5" text-anchor="middle" font-size="10" font-weight="600" style="fill:#fff">18</text>
+<line x1="409" y1="244" x2="423" y2="244" style="stroke:var(--c-buttons)" stroke-width="1.5"/>
+<text x="427" y="248.5" text-anchor="start" font-size="13" xml:space="preserve"><tspan style="fill:var(--dim)">GPIO 24  ·  </tspan><tspan style="fill:var(--c-buttons)" font-weight="600">Button: power</tspan></text>
 <circle cx="363" cy="269" r="10" style="fill:var(--c-shared)"/>
 <text x="363" y="272.5" text-anchor="middle" font-size="10" font-weight="600" style="fill:#fff">19</text>
 <line x1="351" y1="269" x2="337" y2="269" style="stroke:var(--c-shared)" stroke-width="1.5"/>
@@ -416,9 +418,11 @@
   <tr><td>Play / pause</td><td class="num">11</td><td>GPIO 17</td></tr>
   <tr><td>Next</td><td class="num">36</td><td>GPIO 16</td></tr>
   <tr><td>Back</td><td class="num">32</td><td>GPIO 12</td></tr>
-  <tr><td>Common side of all four</td><td class="num">14</td><td>Ground</td></tr>
+  <tr><td>Power</td><td class="num">18</td><td>GPIO 24</td></tr>
+  <tr><td>Common side of all five</td><td class="num">14</td><td>Ground</td></tr>
 </table></div>
-<p>Run the same check as for the knob. Each press should print the button's name. Holding previous or next should print <code>prev_hold</code> or <code>next_hold</code> repeatedly until you let go; a short press of either prints its name when you let go.</p>
+<p>Run the same check as for the knob. Each press should print the button's name. Holding previous or next should print <code>prev_hold</code> or <code>next_hold</code> repeatedly until you let go; a short press of either prints its name when you let go. The power key prints <code>power</code>; during the check it does not shut anything down.</p>
+<div class="note"><p><strong>The power key</strong> shuts the Pi down safely, so the SD card is never cut off mid-write. Put it somewhere it will not be pressed by accident: one press is enough. The case does not have a hole for it yet. A Pi that is shut down cannot be woken by a button here (the pin that could do that belongs to the DAC), so to turn the player on again, unplug its power and plug it back in.</p></div>
 
 <h3>Start the player</h3>
 <pre><code>sudo systemctl start nfc-player</code></pre>
@@ -459,6 +463,7 @@
   <tr><td>Back, while playing</td><td>Shows the tracks of what is playing, with the current one marked. Turn the knob to choose, push to play it. Back again closes the list. Playback carries on while you browse.</td></tr>
   <tr><td>Hold the knob</td><td>Menu: link the card to something else, unlink it, or close.</td></tr>
   <tr><td>Back</td><td>Leaves a menu or list.</td></tr>
+  <tr><td>Press power</td><td>Remembers where the card stopped, stops playing and shows <strong>Turning off</strong> while the Pi shuts down. Wait 15 seconds, then unplug the power. Plug it back in to turn the player on. If the drive is connected to a computer, or the web page is uploading, it says so and stays on: eject or wait, then press power again.</td></tr>
 </table></div>
 
 <h2 id="web"><span class="step">Step 8</span>Web remote</h2>
@@ -560,6 +565,7 @@
   <tr><td>"PN532 not responding"</td><td>Check the two switches (1 off, 2 on), and that MISO and MOSI are not swapped.</td></tr>
   <tr><td>Knob counts jump or go one way only</td><td>One of A or B is not reaching the Pi, or the common pin is not on ground. Recheck those three wires.</td></tr>
   <tr><td>Mac never shows "Connected to a computer"</td><td>Use the <strong>USB</strong> port, not <strong>PWR IN</strong>, with a data cable. Run <code>python3 -m player.hw.check usb</code>: it should say <code>configured</code>.</td></tr>
+  <tr><td>Power key shows <strong>Turning off</strong> but the Pi keeps running</td><td>The player is not allowed to shut the Pi down. Run <code>cd ~/nfc-player && sudo system/setup.sh</code> again: it adds the permission. <code>journalctl -u nfc-player -n 50</code> shows the error.</td></tr>
   <tr><td>"Something went wrong" on the display</td><td>The message below it is the cause. The full detail is in <code>journalctl -u nfc-player -n 50</code>.</td></tr>
   <tr><td><code>http://nfcplayer.local</code> does not open</td><td>Check the phone is on the same Wi-Fi as the Pi, and type <code>http://</code> in full. Some Android phones cannot find <code>.local</code> names: run <code>hostname -I</code> on the Pi and use that address instead, for example <code>http://192.168.1.42</code>. Check <code>journalctl -u nfc-player -n 50</code> for "Web remote on port 80".</td></tr>
   <tr><td>Upload fails with a message about the drive</td><td>The drive is in use over USB, or could not be made writable. Eject it on the Mac first. If it persists, run <code>sudo /usr/local/sbin/nfc-player-usb rw</code> on the Pi and read the error.</td></tr>

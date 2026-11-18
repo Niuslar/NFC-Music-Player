@@ -10,7 +10,7 @@ A tabletop music player where each album is a card. Put a card in the slot and i
 
 - **Cards are albums.** Blank NFC cards are linked to albums on the device itself. A card remembers where it stopped. A card can also play a whole artist, or a list: a folder of songs from different albums.
 - **Hi-Fi output.** A Raspberry Pi DAC Pro provides 3.5 mm and RCA outputs, with a balanced output available for a 4.4 mm socket.
-- **Screen and controls.** A 2-inch display shows the cover, track and time. A clicky knob sets the volume and scrolls lists; four buttons do previous, play/pause, next and back.
+- **Screen and controls.** A 2-inch display shows the cover, track and time. A clicky knob sets the volume and scrolls lists; four buttons do previous, play/pause, next and back. A power key shuts the player down safely: the screen shows **Turning off**, and it is safe to unplug 15 seconds later.
 - **Music over USB.** Plug the player into a computer and its music appears as a drive called `MUSIC`.
 - **Web remote.** A page served by the player controls playback, links cards, and uploads or deletes music from any phone or computer on the same Wi-Fi.
 
@@ -23,7 +23,7 @@ A tabletop music player where each album is a card. Put a card in the slot and i
 | Display | 2-inch ST7789 SPI LCD, 320×240 |
 | NFC reader | PN532 over SPI, with NTAG215 cards |
 | Knob | 24-click rotary encoder with push switch |
-| Buttons | Four momentary push buttons |
+| Buttons | Five momentary push buttons: four for playback, one for power |
 
 The full parts list, wiring diagrams and step-by-step instructions are in the build guide, [docs/index.html](docs/index.html). GitHub shows that file as source, so open it in a browser from a local copy.
 
