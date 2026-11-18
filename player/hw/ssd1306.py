@@ -59,6 +59,20 @@ def to_pages(image) -> bytes:
     return (pages * weights).sum(axis=1).astype(np.uint8).tobytes()
 
 
+def changed_spans(old: bytes | None, new: bytes) -> list[tuple[int, int, int]]:
+    """(page, first column, last column) for each page that differs; every page when old is None."""
+    spans = []
+    for page in range(HEIGHT // 8):
+        a = slice(page * WIDTH, (page + 1) * WIDTH)
+        if old is None:
+            spans.append((page, 0, WIDTH - 1))
+            continue
+        cols = [x for x, (o, n) in enumerate(zip(old[a], new[a])) if o != n]
+        if cols:
+            spans.append((page, cols[0], cols[-1]))
+    return spans
+
+
 class SSD1306:
     def __init__(self, bus, rotate180: bool = False, contrast: int = 0x8F):
         self.bus = bus
@@ -91,8 +105,12 @@ class SSD1306:
         if data == self._last:
             return
         try:
-            self._command(0x21, 0, WIDTH - 1, 0x22, 0, HEIGHT // 8 - 1)
-            self.bus.write(bytes([_DATA]) + data)
+            for page, first, last in changed_spans(self._last, data):
+                # Only the columns that changed on each 8-row strip: a new second is a few
+                # dozen bytes instead of the whole 512-byte screen, so it appears at once.
+                self._command(0x21, first, last, 0x22, page, page)
+                start = page * WIDTH
+                self.bus.write(bytes([_DATA]) + data[start + first : start + last + 1])
             if not self._lit:  # light up only once there is a picture
                 self._command(DISPLAY_ON)
                 self._lit = True

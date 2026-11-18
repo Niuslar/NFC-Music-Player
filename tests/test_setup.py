@@ -85,7 +85,7 @@ def test_oled_sends_each_frame_once_and_survives_a_bus_error():
     assert init[0] == 0x00 and 0x8D in init and 0xAF not in init  # dark until there is a picture
     frame = tiny.message("Place a card", "to start playing")
     oled.show(frame)
-    assert bus.writes[-2][0] == 0x40 and len(bus.writes[-2]) == 513  # the picture
+    assert [len(w) for w in bus.writes[1:] if w[0] == 0x40] == [129] * 4  # the whole picture, a strip at a time
     assert bus.writes[-1] == bytes([0x00, 0xAF])  # then lit
     count = len(bus.writes)
     oled.show(frame)
@@ -309,3 +309,49 @@ def test_missing_i2c_says_how_to_turn_it_on(monkeypatch):
     monkeypatch.setattr(ssd1306.os, "open", no_device)
     with pytest.raises(FileNotFoundError, match="setup.sh"):
         ssd1306.open_bus(1)
+
+
+class FakeOled(FakeBus):
+    """Keeps a copy of the screen's memory, following the addressing commands."""
+
+    def __init__(self):
+        super().__init__()
+        self.ram = bytearray(512)
+        self.window = (0, 127, 0, 3)
+
+    def write(self, data):
+        super().write(data)
+        if data[0] == 0x00 and len(data) == 7 and data[1] == 0x21:
+            self.window = (data[2], data[3], data[5], data[6])
+        elif data[0] == 0x40:
+            c0, c1, p0, p1 = self.window
+            cells = [(p, c) for p in range(p0, p1 + 1) for c in range(c0, c1 + 1)]
+            for (p, c), byte in zip(cells, data[1:]):
+                self.ram[p * 128 + c] = byte
+
+
+def test_a_new_second_sends_only_the_changed_columns():
+    bus = FakeOled()
+    oled = SSD1306(bus)
+    st = Status(state="play", title="Small Hours", elapsed=3, duration=25, track_count=1)
+    oled.show(tiny.now_playing("x", ("0415", ""), None, st, None))
+    before = len(bus.writes)
+    st = Status(state="play", title="Small Hours", elapsed=4, duration=25, track_count=1)
+    frame = tiny.now_playing("x", ("0415", ""), None, st, None)
+    oled.show(frame)
+    sent = [w for w in bus.writes[before:] if w[0] == 0x40]
+    assert 0 < sum(len(w) - 1 for w in sent) < 64  # a few columns of the time, not 512 bytes
+    assert bytes(bus.ram) == to_pages(frame)  # and the screen ends up exactly right
+
+
+def test_after_a_bus_error_the_whole_screen_is_sent_again():
+    bus = FakeOled()
+    oled = SSD1306(bus)
+    oled.show(tiny.message("One"))
+    bus.fail = True
+    oled.show(tiny.message("Two"))
+    bus.fail = False
+    bus.ram[:] = bytes(512)  # whatever got there half-sent
+    frame = tiny.message("Two")
+    oled.show(frame)
+    assert bytes(bus.ram) == to_pages(frame)
