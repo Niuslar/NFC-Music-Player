@@ -43,6 +43,13 @@ class UsbEjected:
 
 
 @dataclass(frozen=True)
+class AudioOutput:
+    """Headphones or speakers were plugged into, or pulled out of, the 3.5 mm jack."""
+
+    connected: bool
+
+
+@dataclass(frozen=True)
 class WebCommand:
     """From the web remote. action: toggle, next, prev, volume (value 0-100), play_album, link_card (value = album path), unlink_card."""
 

@@ -103,6 +103,10 @@ class App:
         elif isinstance(event, ev.UsbEjected):
             if self.mode is Mode.TRANSFER:
                 self._end_transfer()
+        elif isinstance(event, ev.AudioOutput):
+            if not event.connected and self.album is not None and self.status.state == "play":
+                self.playback.pause()  # like a phone: unplugging never blasts music into the room
+                self.status = self.playback.status()
         elif isinstance(event, ev.Rotate):
             self._rotate(event.counts, now)
         elif isinstance(event, ev.Press):

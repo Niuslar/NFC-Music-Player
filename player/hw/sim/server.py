@@ -1,4 +1,4 @@
-"""Browser simulator: shows the display and stands in for the knob, buttons, cards and USB.
+"""Browser simulator: shows the display and stands in for the knob, buttons, cards, headphone jack and USB.
 
 Serves on localhost only. The page polls /frame.png and posts inputs to /event.
 """
@@ -23,6 +23,8 @@ def _to_event(msg: dict):
         return ev.Press(msg["button"])
     if kind == "card":
         return ev.CardInserted(str(msg["uid"])) if msg.get("uid") else ev.CardRemoved()
+    if kind == "jack" and msg.get("action") in ("plug", "unplug"):
+        return ev.AudioOutput(msg["action"] == "plug")
     if kind == "usb":
         return {"plug": ev.UsbHost(True), "unplug": ev.UsbHost(False), "eject": ev.UsbEjected()}.get(msg.get("action"))
     return None

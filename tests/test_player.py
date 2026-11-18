@@ -158,6 +158,24 @@ def test_remove_pauses_and_reinsert_resumes_position(rig):
     assert app.status.elapsed == pytest.approx(7.0, abs=0.01)
 
 
+def test_unplugging_headphones_pauses_and_plugging_back_does_not_resume(rig):
+    app, send, clock, store, playback, *_ = rig
+    linked(rig)
+    send(ev.AudioOutput(False), advance=2.0)
+    assert playback.status().state == "pause" and app.status.state == "pause"
+    assert app.mode is Mode.PLAYING
+    send(ev.AudioOutput(True), advance=2.0)
+    assert app.status.state == "pause"
+    send(ev.Press("play"))
+    assert app.status.state == "play"
+
+
+def test_unplugging_headphones_with_nothing_playing_is_harmless(rig):
+    app, send, *_ = rig
+    send(ev.AudioOutput(False))
+    assert app.mode is Mode.IDLE
+
+
 def test_swapping_cards_without_removal(rig):
     app, send, clock, store, *_ = rig
     first = linked(rig)

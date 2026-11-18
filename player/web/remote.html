@@ -51,6 +51,7 @@
   .card span { min-width: 0; }
   .small { background: #2c2c31; padding: 6px 12px; border-radius: 8px; font-size: 13px; flex: none; white-space: nowrap; }
   .small:hover { background: #3a3a40; }
+  .small[aria-disabled=true] { opacity: 0.4; cursor: default; background: #2c2c31; }
   .albums .acts { margin-left: auto; display: flex; gap: 8px; align-items: center; flex: none; }
   .albums li.files { display: block; cursor: default; background: var(--panel); padding: 10px 12px; margin: 2px 0 8px; font-size: 14px; }
   .files .f { display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 5px 0; border-bottom: 1px solid var(--line); }
@@ -210,13 +211,18 @@ function showAlbums() {
     acts.className = "acts";
     li.append(thumb, txt, acts);
     const linked = state.card_album && state.card_album.key === a.key;
-    if (state.card && state.mode !== "transfer" && !linked) {
+    if (!linked) {
+      // Always shown so it is easy to find; it only works with a card in the slot.
+      const ready = state.card && state.mode !== "transfer";
       const b = document.createElement("button");
       b.className = "small";
       b.textContent = "Link card";
-      b.addEventListener("click", (e) => { e.stopPropagation(); command("link_card", a.key); });
+      b.setAttribute("aria-disabled", !ready);
+      b.title = ready ? `Link the card in the slot to ${a.title}` : state.mode === "transfer" ? "Not available while the drive is connected over USB" : "Put a card in the slot first";
+      // aria-disabled rather than disabled, so a click on it never falls through to the row and plays the album.
+      b.addEventListener("click", (e) => { e.stopPropagation(); if (ready) command("link_card", a.key); });
       acts.appendChild(b);
-    } else if (linked) {
+    } else {
       const tag = document.createElement("span");
       tag.className = "a";
       tag.textContent = "Card";
