@@ -19,7 +19,13 @@ class I2cDevice:
 
     def __init__(self, address: int, bus: int = 1):
         self.address = address
-        self._fd = os.open(f"/dev/i2c-{bus}", os.O_RDWR)
+        try:
+            self._fd = os.open(f"/dev/i2c-{bus}", os.O_RDWR)
+        except FileNotFoundError:
+            raise FileNotFoundError(
+                f"/dev/i2c-{bus} does not exist: I2C is not turned on. "
+                "Run 'sudo system/setup.sh' again (it turns I2C on), then reboot."
+            ) from None
         fcntl.ioctl(self._fd, I2C_SLAVE, address)
 
     def write(self, data: bytes) -> None:

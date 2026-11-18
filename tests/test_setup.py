@@ -298,3 +298,14 @@ def test_tests_through_the_api(site):
     got = json.loads(call("GET", "/api/inputs?after=0")[1])
     assert got["items"][0]["text"] == "Button: back"
     assert json.loads(call("GET", f"/api/inputs?after={got['seq']}")[1])["items"] == []
+
+
+def test_missing_i2c_says_how_to_turn_it_on(monkeypatch):
+    from player.hw import ssd1306
+
+    def no_device(path, flags):
+        raise FileNotFoundError(2, "No such file or directory", path)
+
+    monkeypatch.setattr(ssd1306.os, "open", no_device)
+    with pytest.raises(FileNotFoundError, match="setup.sh"):
+        ssd1306.open_bus(1)
