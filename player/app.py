@@ -21,7 +21,6 @@ SCAN_FASTER_AFTER = 3.0
 SCAN_FIRST_STEP = 4.0
 SCAN_GAP = 1.0
 SCAN_LABEL_SECONDS = 0.8
-OFF_WAIT_SECONDS = 15  # what the screen asks for after the power key: the Pi needs about 10 to shut down
 MISSING = "The music linked to this card is missing."
 MENU_ITEMS = ("Link to something else", "Unlink this card", "Close")
 KIND_NAMES = {"album": ("Album", "album"), "artist": ("Artist", "artist"), "list": ("List", "list")}
@@ -484,7 +483,7 @@ class App:
 
     def render(self, now: float):
         if self.mode is Mode.OFF:
-            return render.message("Turning off", f"Wait {OFF_WAIT_SECONDS} seconds, then unplug the power.\nPlug it back in to turn on.")
+            return render.message("Turning off")  # stays up until the Pi is off; then the screen goes dark
         if now < self._error_until:
             return render.message("Something went wrong", self._error)
         if self.mode is Mode.TRANSFER:

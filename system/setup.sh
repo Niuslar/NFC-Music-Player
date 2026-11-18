@@ -55,6 +55,8 @@ echo "$RUN_USER ALL=(root) NOPASSWD: $H release, $H reclaim, $H rw, $H ro, /usr/
 chmod 440 /etc/sudoers.d/nfc-player
 visudo -cf /etc/sudoers.d/nfc-player >/dev/null
 install -m 644 "$APP_DIR/system/nfc-player-usb.service" /etc/systemd/system/
+# Turns the screen off at the very end of a shutdown, after the player has stopped.
+install -D -m 755 "$APP_DIR/system/nfc-player-screen-off" /usr/lib/systemd/system-shutdown/nfc-player-screen-off
 sed -e "s|@USER@|$RUN_USER|g" -e "s|@APP_DIR@|$APP_DIR|g" "$APP_DIR/system/nfc-player.service" > /etc/systemd/system/nfc-player.service
 
 echo "== Audio"

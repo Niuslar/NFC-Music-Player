@@ -34,7 +34,12 @@ NFC_SPI = (0, 1)  # bus 0, CE1 (GPIO 7)
 
 
 def power_off() -> None:
-    """Shuts the Pi down. setup.sh lets the player's user run this one command through sudo."""
+    """Shuts the Pi down. setup.sh lets the player's user run this one command through sudo.
+
+    "Turning off" stays on the screen while the Pi shuts down; system/nfc-player-screen-off
+    switches the backlight off at the very end. The power key is also wired to GPIO 3,
+    which wakes a Pi that has shut down.
+    """
     subprocess.run(["sudo", "-n", "/usr/bin/systemctl", "poweroff"], check=True)
 
 
@@ -177,7 +182,7 @@ def main() -> None:
             print(f"Web remote not started: {e}", flush=True)
             shared = None
     try:
-        run(app, events, display, shared, power_off=(lambda: print("Simulator: the Pi would shut down now. Restart to turn it back on.", flush=True)) if args.sim else power_off)
+        run(app, events, display, shared, power_off=server.power_cycle(display, events) if args.sim else power_off)
     except KeyboardInterrupt:
         pass
 

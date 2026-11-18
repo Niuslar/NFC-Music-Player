@@ -5,8 +5,11 @@ Serves on localhost only. The page polls /frame.png and posts inputs to /event.
 
 import io
 import json
+import os
 import queue
+import sys
 import threading
+import time
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 
@@ -48,6 +51,25 @@ class SimDisplay:
     def png(self) -> bytes:
         with self._lock:
             return self._png
+
+
+def power_cycle(display: SimDisplay, event_queue: queue.Queue, shutdown_seconds: float = 2.0):
+    """Stands in for systemctl poweroff: the screen goes dark, and the power key starts the player again."""
+
+    def power_off() -> None:
+        from PIL import Image
+
+        from ...ui.render import H, W
+
+        time.sleep(shutdown_seconds)  # "Turning off" stays up while the Pi shuts down
+        display.show(Image.new("RGB", (W, H)))
+        print("Simulator: off. Press the power key to turn it on.", flush=True)
+        while event_queue.get() != ev.Press("power"):
+            pass  # a Pi that is off ignores everything else
+        print("Simulator: starting again", flush=True)
+        os.execv(sys.executable, [sys.executable, "-m", "player.main", *sys.argv[1:]])
+
+    return power_off
 
 
 def start(event_queue: queue.Queue, display: SimDisplay, port: int = 8137) -> ThreadingHTTPServer:

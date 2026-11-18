@@ -139,7 +139,7 @@ function showState() {
   const a = state.album, transfer = state.mode === "transfer", off = state.mode === "off";
   $("banner").hidden = !transfer && !off;
   if (transfer) $("banner").textContent = "The music drive is connected to a computer over USB. Playback and uploads are paused until it is ejected.";
-  if (off) $("banner").textContent = "The player is turning off. Plug its power back in to turn it on again.";
+  if (off) $("banner").textContent = "The player is turning off. Press its power key to turn it on again.";
   $("track").textContent = a ? (state.state === "stop" ? "Finished" : state.track || a.title) : "Nothing playing";
   $("album").textContent = a ? state.details : (state.card ? "The card in the slot is not linked" : "Insert a card or pick something below");
   $("source").textContent = a ? (state.remote ? "Started from this page" : "Playing from the card") : "";

@@ -1,5 +1,6 @@
 """Hardware drivers tested against fakes that speak the same wire protocol."""
 
+import io
 import queue
 
 import pytest
@@ -315,3 +316,18 @@ def test_simulator_power_key():
     from player.hw.sim.server import _to_event
 
     assert _to_event({"type": "press", "button": "power"}) == ev.Press("power")
+
+
+def test_simulator_power_cycle_goes_dark_and_waits_for_the_power_key(monkeypatch):
+    from player.hw.sim import server
+
+    display = server.SimDisplay()
+    events = queue.Queue()
+    for e in (ev.Press("play"), ev.CardInserted("04AA"), ev.Press("power")):
+        events.put(e)
+    started = []
+    monkeypatch.setattr(server.os, "execv", lambda exe, argv: started.append(argv))
+    server.power_cycle(display, events, shutdown_seconds=0)()
+    frame = Image.open(io.BytesIO(display.png()))
+    assert frame.getextrema() == ((0, 0), (0, 0), (0, 0))  # dark
+    assert events.empty() and len(started) == 1 and started[0][1:3] == ["-m", "player.main"]
