@@ -431,6 +431,47 @@
   <li>The other side of the key goes to the striped end of both diodes.</li>
   <li>The plain end of one diode goes to pin 18 (GPIO 24); the plain end of the other goes to pin 5 (GPIO 3).</li>
 </ol>
+<figure>
+<svg viewBox="0 36 700 324" role="img" aria-label="Power key wiring: pin 18 and pin 5 each go through a diode to one side of the key, with each diode's stripe towards the key; the other side of the key goes to pin 14, ground">
+<rect x="20" y="62" width="170" height="36" rx="6" style="fill:var(--code-bg);stroke:var(--line)"/>
+<text x="105" y="84.5" text-anchor="middle" font-size="13" font-weight="600">Pin 18 · GPIO 24</text>
+<rect x="20" y="182" width="170" height="36" rx="6" style="fill:var(--code-bg);stroke:var(--line)"/>
+<text x="105" y="204.5" text-anchor="middle" font-size="13" font-weight="600">Pin 5 · GPIO 3</text>
+<rect x="20" y="262" width="170" height="36" rx="6" style="fill:var(--code-bg);stroke:var(--line)"/>
+<text x="105" y="284.5" text-anchor="middle" font-size="13" font-weight="600">Pin 14 · Ground</text>
+<line x1="190" y1="80" x2="262" y2="80" style="stroke:var(--c-buttons)" stroke-width="2.5"/>
+<rect x="262" y="69" width="80" height="22" rx="5" fill="#2b2b2f" style="stroke:var(--dim)" stroke-width="1"/>
+<rect x="322" y="69" width="11" height="22" fill="#d6d6d6"/>
+<line x1="342" y1="80" x2="420" y2="80" style="stroke:var(--c-buttons)" stroke-width="2.5"/>
+<line x1="190" y1="200" x2="262" y2="200" style="stroke:var(--c-buttons)" stroke-width="2.5"/>
+<rect x="262" y="189" width="80" height="22" rx="5" fill="#2b2b2f" style="stroke:var(--dim)" stroke-width="1"/>
+<rect x="322" y="189" width="11" height="22" fill="#d6d6d6"/>
+<line x1="342" y1="200" x2="420" y2="200" style="stroke:var(--c-buttons)" stroke-width="2.5"/>
+<text x="302" y="56" text-anchor="middle" font-size="12" style="fill:var(--dim)">diode</text>
+<text x="302" y="230" text-anchor="middle" font-size="12" style="fill:var(--dim)">diode</text>
+<path d="M 327 120 L 327 95" fill="none" style="stroke:var(--accent)" stroke-width="1.5"/>
+<path d="M 327 160 L 327 185" fill="none" style="stroke:var(--accent)" stroke-width="1.5"/>
+<polygon points="327,93 322,102 332,102" style="fill:var(--accent)"/>
+<polygon points="327,187 322,178 332,178" style="fill:var(--accent)"/>
+<text x="327" y="145" text-anchor="middle" font-size="13" font-weight="600" style="fill:var(--accent)">stripes face the key</text>
+<line x1="420" y1="80" x2="420" y2="200" style="stroke:var(--c-buttons)" stroke-width="2.5"/>
+<line x1="420" y1="140" x2="500" y2="140" style="stroke:var(--c-buttons)" stroke-width="2.5"/>
+<circle cx="420" cy="140" r="5" style="fill:var(--c-buttons)"/>
+<rect x="500" y="105" width="80" height="70" rx="10" style="fill:var(--code-bg);stroke:var(--dim)" stroke-width="1.5"/>
+<circle cx="540" cy="140" r="18" style="fill:var(--panel);stroke:var(--dim)" stroke-width="1.5"/>
+<text x="540" y="145" text-anchor="middle" font-size="16" style="fill:var(--c-power)">⏻</text>
+<text x="540" y="95" text-anchor="middle" font-size="13" font-weight="600">Power key</text>
+<line x1="580" y1="140" x2="640" y2="140" style="stroke:var(--c-gnd)" stroke-width="2.5"/>
+<polyline points="640,140 640,280 190,280" fill="none" style="stroke:var(--c-gnd)" stroke-width="2.5"/>
+<text x="20" y="335" font-size="13" style="fill:var(--dim)">On a circuit diagram the same diode is drawn as</text>
+<polygon points="330,320 330,340 350,330" style="fill:var(--ink)"/>
+<line x1="315" y1="330" x2="330" y2="330" style="stroke:var(--ink)" stroke-width="2"/>
+<line x1="351" y1="319" x2="351" y2="341" style="stroke:var(--ink)" stroke-width="2.5"/>
+<line x1="351" y1="330" x2="366" y2="330" style="stroke:var(--ink)" stroke-width="2"/>
+<text x="376" y="335" font-size="13" style="fill:var(--dim)">: the bar is the stripe.</text>
+</svg>
+<figcaption>The power key seen from the wiring side. Each diode's stripe (its bar on a circuit diagram) points at the key; the plain ends go to the Pi. With the pin 18 diode the wrong way round, the key never turns the player off. With the pin 5 diode the wrong way round, the key never turns it on, and the player may also turn itself off at random, because the DAC's signals on GPIO 3 then reach GPIO 24.</figcaption>
+</figure>
 <div class="note"><p>Check the diodes' direction before powering up: stripes towards the key. Put the key somewhere it will not be pressed by accident, because one press turns the player off. The case does not have a hole for it yet.</p></div>
 
 <h3>Start the player</h3>
