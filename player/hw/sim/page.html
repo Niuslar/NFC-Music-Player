@@ -53,12 +53,6 @@
   <button data-card="">Remove card</button>
 </div>
 
-<div class="panel" id="jack">
-  <div class="label">3.5 mm jack</div>
-  <button data-jack="plug" class="on">Plug in headphones</button>
-  <button data-jack="unplug">Unplug</button>
-</div>
-
 <div class="panel">
   <div class="label">USB-C port</div>
   <button data-usb="plug">Plug into Mac</button>
@@ -151,10 +145,6 @@ function setCard(uid) {
   document.querySelectorAll("[data-card]").forEach((b) => b.classList.toggle("on", !!uid && b.dataset.card === uid));
 }
 document.querySelectorAll("[data-card]").forEach((b) => b.addEventListener("click", () => setCard(b.dataset.card)));
-document.querySelectorAll("[data-jack]").forEach((b) => b.addEventListener("click", () => {
-  send({ type: "jack", action: b.dataset.jack });
-  document.querySelectorAll("[data-jack]").forEach((o) => o.classList.toggle("on", o === b));
-}));
 document.querySelectorAll("[data-usb]").forEach((b) => b.addEventListener("click", () => send({ type: "usb", action: b.dataset.usb })));
 
 const cardUids = [...document.querySelectorAll("[data-card]")].map((b) => b.dataset.card).filter(Boolean);

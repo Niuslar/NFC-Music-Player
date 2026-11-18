@@ -37,7 +37,7 @@ This is a work in progress.
 
 ## Try it without any hardware
 
-The simulator shows the display and stands in for the knob, buttons, cards, headphone jack and USB port.
+The simulator shows the display and stands in for the knob, buttons, cards and USB port.
 
 ```sh
 python3 -m venv .venv

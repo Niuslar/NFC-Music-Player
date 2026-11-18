@@ -304,14 +304,6 @@ def test_prev_and_next_scan_while_held_and_skip_on_a_short_press():
     assert _to_event({"type": "press", "button": "prev_hold"}) == ev.Press("prev_hold")
 
 
-def test_simulator_jack_events():
-    from player.hw.sim.server import _to_event
-
-    assert _to_event({"type": "jack", "action": "unplug"}) == ev.AudioOutput(False)
-    assert _to_event({"type": "jack", "action": "plug"}) == ev.AudioOutput(True)
-    assert _to_event({"type": "jack", "action": "wiggle"}) is None
-
-
 def test_simulator_power_key():
     from player.hw.sim.server import _to_event
 
