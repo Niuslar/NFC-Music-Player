@@ -22,6 +22,7 @@ SCAN_FIRST_STEP = 4.0
 SCAN_GAP = 1.0
 SCAN_LABEL_SECONDS = 0.8
 MISSING = "The music linked to this card is missing."
+TEST_SCREEN_SECONDS = 5.0
 MENU_ITEMS = ("Link to something else", "Unlink this card", "Close")
 KIND_NAMES = {"album": ("Album", "album"), "artist": ("Artist", "artist"), "list": ("List", "list")}
 
@@ -52,7 +53,8 @@ class NullStorage:
 
 
 class App:
-    def __init__(self, library: Library, store: Store, playback, storage=None, volume_steps_per_rev: int = 60):
+    def __init__(self, library: Library, store: Store, playback, storage=None, volume_steps_per_rev: int = 60, ui=render):
+        self.ui = ui  # render (the 320x240 colour screen) or ui.tiny (the 128x32 OLED)
         self.library = library
         self.store = store
         self.playback = playback
@@ -71,6 +73,8 @@ class App:
         self._volume_until = 0.0
         self._error = ""
         self._error_until = 0.0
+        self._test_until = 0.0
+        self.restart_requested = False  # main restarts the player once this is set
         self._art_from = None  # which file the cover on screen came from
         self._art: bytes | None = None
         self._vol_knob = volume_scaler(volume_steps_per_rev)
@@ -87,6 +91,10 @@ class App:
             return  # nothing more happens once the player is turning off
         if isinstance(event, ev.Press) and event.button == "power":
             self._power_off()
+        elif isinstance(event, ev.WebCommand) and event.action == "test_screen":
+            self._test_until = now + TEST_SCREEN_SECONDS
+        elif isinstance(event, ev.WebCommand) and event.action == "restart":
+            self._restart()
         elif isinstance(event, ev.WebCommand):
             self._web(event.action, event.value)
         elif isinstance(event, ev.LibraryChanged):
@@ -401,6 +409,19 @@ class App:
         self._error_until = 0.0  # nothing may cover the last screen
         self.mode = Mode.OFF
 
+    def _restart(self) -> None:
+        """Like turning off, but main starts the player again (to use new hardware settings)."""
+        if self.mode is Mode.TRANSFER:
+            self.show_error("The music drive is connected to a computer. Eject it there first, then restart.", self._now)
+            return
+        if self.is_uploading():
+            self.show_error("An upload from the web page is still running. Try again when it finishes.", self._now)
+            return
+        self._leave_card()  # the card picks up where it stopped once the player is back
+        self.playback.stop()
+        self.store.save()
+        self.restart_requested = True
+
     def _start_transfer(self) -> None:
         self.usb_offer = False
         self._leave_card()
@@ -418,7 +439,7 @@ class App:
     def _rescan(self) -> None:
         self.playback.rescan()  # first: on the Pi the library reads its tags from MPD's database
         self.library.rescan()
-        render.forget_covers()
+        self.ui.forget_covers()
         self._art_from = None
 
     def _track(self):
@@ -479,24 +500,28 @@ class App:
 
     def render(self, now: float):
         if self.mode is Mode.OFF:
-            return render.message("Turning off")  # stays up until the Pi is off; then the screen goes dark
+            return self.ui.message("Turning off")  # stays up until the Pi is off; then the screen goes dark
+        if self.restart_requested:
+            return self.ui.message("Restarting")
+        if now < self._test_until:
+            return self.ui.test_pattern()
         if now < self._error_until:
-            return render.message("Something went wrong", self._error)
+            return self.ui.message("Something went wrong", self._error)
         if self.mode is Mode.TRANSFER:
-            return render.message(
+            return self.ui.message(
                 "Transfer mode",
                 "Copy music to the MUSIC drive, then eject it on your computer.\nOr hold the knob when finished.",
             )
         if self.usb_offer:
-            return render.message("Connected to a computer", "Push the knob to transfer music.\nBack to keep listening.")
+            return self.ui.message("Connected to a computer", "Push the knob to transfer music.\nBack to keep listening.")
         if self.mode is Mode.IDLE:
-            return render.message("Place a card", "to start playing")
+            return self.ui.message("Place a card", "to start playing")
         if self.mode is Mode.UNLINKED:
             prompt = "Push the knob to choose what it plays." if self.library.albums else ""
-            return render.message("Card not linked", f"{self.note}\n{prompt}".strip())
+            return self.ui.message("Card not linked", f"{self.note}\n{prompt}".strip())
         if self.mode is Mode.LINKING and self.link_kind is None:
             rows = [(KIND_NAMES[k][0], _count(len(self.library.of(k)), KIND_NAMES[k][1])) for k in self._kinds()]
-            return render.list_screen("Link this card to", rows, self.selected)
+            return self.ui.list_screen("Link this card to", rows, self.selected)
         if self.mode is Mode.LINKING:
             items = self.library.of(self.link_kind)
             if self.link_kind == "album":
@@ -506,17 +531,17 @@ class App:
             else:
                 rows = [(a.title, _count(len(a.tracks), "track")) for a in items]
             article = "an" if self.link_kind[0] == "a" else "a"
-            return render.list_screen(f"Choose {article} {self.link_kind} for this card", rows, self.selected)
+            return self.ui.list_screen(f"Choose {article} {self.link_kind} for this card", rows, self.selected)
         if self.mode is Mode.MENU:
-            return render.list_screen(self.album.title, [(item, "") for item in MENU_ITEMS], self.selected)
+            return self.ui.list_screen(self.album.title, [(item, "") for item in MENU_ITEMS], self.selected)
         if self.mode is Mode.TRACKS:
             playing = self.status.track_index if self.status.state != "stop" else -1
             rows = []
             for i, t in enumerate(self.album.tracks):
                 sub = t.artist if self.album.kind == "list" else t.album if self.album.kind == "artist" else ""
                 rows.append((f"{i + 1}. {t.title}", "Playing now" if i == playing else sub))
-            return render.list_screen(self.album.title, rows, self.selected)
+            return self.ui.list_screen(self.album.title, rows, self.selected)
         volume = self.store.volume if now < self._volume_until else None
         scanning = now - self._scan_last < SCAN_LABEL_SECONDS
         note = ("Fast forward" if self._scan_forward else "Rewind") if scanning else None
-        return render.now_playing(self.album.title, self._details(), self._cover(), self.status, volume, note)
+        return self.ui.now_playing(self.album.title, self._details(), self._cover(), self.status, volume, note)

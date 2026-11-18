@@ -36,6 +36,7 @@ class SimDisplay:
         self._lock = threading.Lock()
         self._png = b""
         self._last = None
+        self.size = (320, 240)
 
     def show(self, image) -> None:
         raw = image.tobytes()
@@ -44,7 +45,7 @@ class SimDisplay:
         buf = io.BytesIO()
         image.save(buf, "PNG")
         with self._lock:
-            self._png, self._last = buf.getvalue(), raw
+            self._png, self._last, self.size = buf.getvalue(), raw, image.size
 
     def png(self) -> bytes:
         with self._lock:
@@ -57,10 +58,8 @@ def power_cycle(display: SimDisplay, event_queue: queue.Queue, shutdown_seconds:
     def power_off() -> None:
         from PIL import Image
 
-        from ...ui.render import H, W
-
         time.sleep(shutdown_seconds)  # "Turning off" stays up while the Pi shuts down
-        display.show(Image.new("RGB", (W, H)))
+        display.show(Image.new("RGB", display.size))
         print("Simulator: off. Press the power key to turn it on.", flush=True)
         while event_queue.get() != ev.Press("power"):
             pass  # a Pi that is off ignores everything else

@@ -11,6 +11,7 @@
   .device { background: #2a2a2e; border-radius: 22px; padding: 22px; display: flex; gap: 22px; align-items: center;
             box-shadow: 0 12px 40px #0008, inset 0 1px 0 #fff1; flex-wrap: wrap; justify-content: center; }
   .screen { width: 320px; height: 240px; background: #0e0e10; border-radius: 6px; image-rendering: auto; display: block; }
+  .screen.tiny { width: 512px; height: 128px; image-rendering: pixelated; border-radius: 2px; padding: 0; } /* the 128x32 OLED, 4x */
   .controls { display: flex; flex-direction: column; align-items: center; gap: 18px; }
   .knob { width: 96px; height: 96px; border-radius: 50%; border: 0; cursor: grab; position: relative;
           background: radial-gradient(circle at 35% 30%, #d9d9de, #8d8d94 70%); box-shadow: 0 4px 12px #000a; }
@@ -72,6 +73,7 @@ const rotate = (counts) => { if (counts) { send({ type: "rotate", counts }); tur
 const press = (button) => send({ type: "press", button });
 
 const screen = document.getElementById("screen");
+screen.addEventListener("load", () => screen.classList.toggle("tiny", screen.naturalWidth === 128));
 let busy = false;
 setInterval(async () => {
   if (busy) return;

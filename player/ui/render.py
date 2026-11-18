@@ -167,3 +167,15 @@ def now_playing(name: str, details: tuple[str, str], art: bytes | None, status, 
     else:
         d.text((W // 2, y), f"{status.track_index + 1} / {status.track_count}", font=font(14), fill=DIM, anchor="mt")
     return img
+
+
+def test_pattern() -> Image.Image:
+    """Colour bars, a white border and the size: every edge pixel and both colours of text should show."""
+    img, d = _canvas()
+    bars = [(255, 0, 0), (0, 255, 0), (0, 0, 255), (255, 255, 255)]
+    for i, colour in enumerate(bars):
+        d.rectangle((i * W // 4, 0, (i + 1) * W // 4, H // 2), fill=colour)
+    d.rectangle((0, 0, W - 1, H - 1), outline=(255, 255, 255))
+    d.text((W // 2, H * 3 // 4 - 14), "Screen test", font=font(22), fill=FG, anchor="mm")
+    d.text((W // 2, H * 3 // 4 + 16), "red · green · blue · white   320 x 240", font=font(14), fill=ACCENT, anchor="mm")
+    return img

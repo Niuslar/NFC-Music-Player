@@ -25,6 +25,8 @@ A tabletop music player where each album is a card. Put a card in the slot and i
 | Knob | 24-click rotary encoder with push switch |
 | Buttons | Five momentary push buttons: four for playback, one for power |
 
+A 0.91-inch 128×32 SSD1306 I2C OLED also works as a stand-in screen, with a compact layout and no cover art. Wire it to 3.3 V, GND, SDA (GPIO 2) and SCL (GPIO 3); it shares that bus with the DAC. Choose the screen and knob on the web remote's **Setup** page (`/setup`), which also tests the screen, DAC, buttons, knob and NFC reader. The settings are saved in `/var/lib/nfc-player/hardware.json` and used after a restart.
+
 The full parts list, wiring diagrams and step-by-step instructions are in the build guide, [docs/index.html](docs/index.html). GitHub shows that file as source, so open it in a browser from a local copy.
 
 ## Status
@@ -45,6 +47,8 @@ python3 -m venv .venv
 .venv/bin/python -m player.demo_library demo/music
 .venv/bin/python -m player.main --sim
 ```
+
+Add `--display ssd1306` to see the small OLED layout in the simulator.
 
 Add `mutagen` to the `pip install` line if you point the simulator at your own tagged music with `--music`; without it, albums come from folder names only. On the Pi the tags come from MPD and nothing extra is needed.
 

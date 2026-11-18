@@ -6,12 +6,15 @@
 """
 
 import argparse
+import os
 import queue
 import subprocess
+import sys
 import time
 import traceback
 from pathlib import Path
 
+from . import hwconfig
 from .app import App, Mode
 from .cards import Store
 from .events import LibraryChanged
@@ -29,6 +32,7 @@ PINS = {
     "buttons": {"prev": 4, "play": 17, "next": 16, "back": 12, "power": 24},
 }
 USB_HELPER = "/usr/local/sbin/nfc-player-usb"
+I2C_BUS = 1  # GPIO 2 (SDA) and 3 (SCL), shared with the DAC
 DISPLAY_SPI = (0, 0)  # bus 0, CE0 (GPIO 8)
 NFC_SPI = (0, 1)  # bus 0, CE1 (GPIO 7)
 
@@ -43,7 +47,12 @@ def power_off() -> None:
     subprocess.run(["sudo", "-n", "/usr/bin/systemctl", "poweroff"], check=True)
 
 
-def run(app: App, event_queue: queue.Queue, display, shared=None, clock=time.monotonic, power_off=power_off) -> None:
+def restart() -> None:
+    """Starts the player again in the same process, so new hardware settings are read."""
+    os.execv(sys.executable, [sys.executable, "-m", "player.main", *sys.argv[1:]])
+
+
+def run(app: App, event_queue: queue.Queue, display, shared=None, clock=time.monotonic, power_off=power_off, inputs=None, restart=restart) -> None:
     turning_off = False
     while True:
         try:
@@ -56,6 +65,9 @@ def run(app: App, event_queue: queue.Queue, display, shared=None, clock=time.mon
             except queue.Empty:
                 break
         now = clock()
+        if inputs is not None:
+            for event in pending:
+                inputs.add(event)  # for the Setup page's tests
         try:
             for event in pending:
                 app.handle(event, now)
@@ -66,6 +78,9 @@ def run(app: App, event_queue: queue.Queue, display, shared=None, clock=time.mon
         if shared is not None:
             shared.snapshot = app.snapshot()
         display.show(app.render(now))
+        if app.restart_requested:
+            restart()  # "Restarting" is on the screen; normally this does not return
+            return
         if app.mode is Mode.OFF and not turning_off:
             turning_off = True  # once only, and after the "Turning off" screen is up
             try:
@@ -85,7 +100,19 @@ def open_spi(bus: int, device: int, speed_hz: int):
     return spi
 
 
-def open_display(rotate180: bool):
+class NullDisplay:
+    """Stands in for a screen that did not start, so the rest of the player still works."""
+
+    def show(self, image) -> None:
+        pass
+
+
+def open_display(kind: str, rotate180: bool):
+    if kind == "ssd1306":
+        from .hw.ssd1306 import SSD1306, open_bus
+
+        return SSD1306(open_bus(I2C_BUS), rotate180=rotate180)
+
     from gpiozero import DigitalOutputDevice
 
     from .hw.st7789 import ST7789
@@ -105,20 +132,45 @@ def open_nfc():
     return PN532(open_spi(*NFC_SPI, 500_000))
 
 
-def start_hardware(events: queue.Queue, args):
-    """Brings up every driver; returns (display, storage)."""
+def _attempt(status: dict, part: str, start):
+    """Starts one part; a part that fails is reported on the Setup page instead of stopping the player."""
+    try:
+        result = start()
+        status[part] = "ok"
+        return result
+    except Exception as e:
+        traceback.print_exc()
+        status[part] = f"{type(e).__name__}: {e}" if str(e) else type(e).__name__
+        print(f"{part} did not start: {status[part]}", flush=True)
+        return None
+
+
+def start_hardware(events: queue.Queue, config: dict, status: dict):
+    """Brings up every driver; returns (display, storage, keep). status gets each part's result."""
     from .hw.inputs import Buttons, Encoder
     from .hw.pn532 import CardWatcher
     from .hw.usb import UsbMonitor, UsbStorage
 
-    display = open_display(args.rotate == 180)
-    CardWatcher(open_nfc(), events).start()
+    display = _attempt(status, "screen", lambda: open_display(config["display"], config["rotate"] == 180)) or NullDisplay()
+    _attempt(status, "nfc", lambda: CardWatcher(open_nfc(), events).start())
     keep = [  # hold references so the callbacks stay registered
-        Encoder(events, PINS["encoder_a"], PINS["encoder_b"], args.encoder, args.encoder_reverse),
-        Buttons(events, PINS["knob_switch"], PINS["buttons"]),
+        _attempt(status, "knob", lambda: Encoder(events, PINS["encoder_a"], PINS["encoder_b"], config["encoder"], config["encoder_reverse"])),
+        _attempt(status, "buttons", lambda: Buttons(events, PINS["knob_switch"], PINS["buttons"])),
     ]
-    UsbMonitor(events).start()
+    _attempt(status, "usb", lambda: UsbMonitor(events).start())
     return display, UsbStorage(), keep
+
+
+def effective_config(args) -> tuple[dict, dict, list[str]]:
+    """(saved, running, overridden): the file's settings, those with command-line options applied, and which options won."""
+    saved = hwconfig.load(args.config)
+    running, overridden = dict(saved), []
+    for key in hwconfig.DEFAULTS:
+        value = getattr(args, key)
+        if value is not None and value != saved[key]:
+            running[key] = value
+            overridden.append(key)
+    return saved, running, overridden
 
 
 def main() -> None:
@@ -130,10 +182,17 @@ def main() -> None:
     p.add_argument("--sim", action="store_true", help="run the browser simulator instead of real hardware")
     p.add_argument("--port", type=int, default=8137, help="simulator web port")
     p.add_argument("--web-port", type=int, default=8080, help="web remote port; 0 turns it off")
-    p.add_argument("--encoder", choices=("pec11", "em14"), default="pec11", help="pec11: clicky (default); em14: smooth optical")
-    p.add_argument("--encoder-reverse", action="store_true", help="swap the knob's direction")
-    p.add_argument("--rotate", type=int, choices=(0, 180), default=0, help="display orientation")
+    p.add_argument("--config", type=Path, help="hardware settings file (default: hardware.json next to --state)")
+    # These four override the settings file, which the web remote's Setup page edits.
+    p.add_argument("--display", choices=tuple(hwconfig.DISPLAYS), help="st7789: 2-inch colour LCD; ssd1306: 0.91-inch OLED")
+    p.add_argument("--encoder", choices=tuple(hwconfig.ENCODERS), help="pec11: clicky; em14: smooth optical")
+    p.add_argument("--encoder-reverse", action="store_const", const=True, help="swap the knob's direction")
+    p.add_argument("--rotate", type=int, choices=hwconfig.ROTATIONS, help="display orientation")
     args = p.parse_args()
+    if args.config is None:
+        args.config = args.state.parent / "hardware.json"
+    saved, config, overridden = effective_config(args)
+    print(f"Hardware: {config['display']} screen, {config['encoder']} knob" + (f" (from the command line: {', '.join(overridden)})" if overridden else ""), flush=True)
 
     events: queue.Queue = queue.Queue()
     if args.playback == "mpd":
@@ -152,19 +211,25 @@ def main() -> None:
         library = Library(args.music, tags=files.tags, art=files.art)
         playback = FakePlayback(library)
 
+    status: dict = {}
     if args.sim:
         from .hw.sim import server
 
         display, storage = server.SimDisplay(), None
         server.start(events, display, args.port)
+        status = {part: "simulated" for part in ("screen", "nfc", "knob", "buttons", "usb")}
         print(f"Simulator: http://localhost:{args.port}")
     else:
-        display, storage, _keep = start_hardware(events, args)
+        display, storage, _keep = start_hardware(events, config, status)
 
     from .hw.inputs import VOLUME_STEPS_PER_REV
+    from .hw.selftest import InputLog, dac_test
+    from .ui import render, tiny
 
-    steps = 60 if args.sim else VOLUME_STEPS_PER_REV[args.encoder]
-    app = App(library, Store(args.state), playback, storage, volume_steps_per_rev=steps)
+    steps = 60 if args.sim else VOLUME_STEPS_PER_REV[config["encoder"]]
+    ui = tiny if config["display"] == "ssd1306" else render
+    app = App(library, Store(args.state), playback, storage, volume_steps_per_rev=steps, ui=ui)
+    inputs = InputLog()
     print(f"{len(library.albums)} albums, {len(library.artists)} artists and {len(library.lists)} lists in {args.music}", flush=True)
 
     shared = None
@@ -174,15 +239,24 @@ def main() -> None:
         # On the Pi the drive is read-only until the root helper opens it; the simulator's folder is always writable.
         writer = web.MusicWriter(lambda: events.put(LibraryChanged()), helper=None if args.sim else USB_HELPER)
         shared = web.Shared()
+        setup = web.Setup(
+            path=args.config,
+            running=config,
+            overridden=overridden,
+            hardware=status,
+            inputs=inputs,
+            dac_test=None if args.sim or args.playback != "mpd" else (lambda: dac_test(args.mpd_port)),
+            simulator=args.sim,
+        )
         try:
-            web.start(events, shared, library, writer, args.web_port, bind="127.0.0.1" if args.sim else "0.0.0.0")
+            web.start(events, shared, library, writer, args.web_port, bind="127.0.0.1" if args.sim else "0.0.0.0", setup=setup)
             app.is_uploading = lambda: writer.busy
             print(f"Web remote on port {args.web_port}", flush=True)
         except OSError as e:
             print(f"Web remote not started: {e}", flush=True)
             shared = None
     try:
-        run(app, events, display, shared, power_off=server.power_cycle(display, events) if args.sim else power_off)
+        run(app, events, display, shared, power_off=server.power_cycle(display, events) if args.sim else power_off, inputs=inputs)
     except KeyboardInterrupt:
         pass
 

@@ -1,7 +1,10 @@
 #!/bin/sh
 # systemd runs this as the very last step before the Pi powers off, halts or reboots
 # (installed in /usr/lib/systemd/system-shutdown/ by setup.sh).
-# It switches the screen's backlight off, so a dark screen means the Pi is really off
+# It switches the screen's backlight (or the OLED) off, so a dark screen means the Pi is really off
 # and the power key can wake it. GPIO 13 is display_bl in player/main.py.
 BL=13
 pinctrl set $BL op dl 2>/dev/null || raspi-gpio set $BL op dl 2>/dev/null || true
+# The OLED screen (if that is the one fitted) is switched off over I2C instead:
+# 0x3C is its address, 0x00 marks a command and 0xAE is "display off".
+i2cset -y 1 0x3c 0x00 0xae 2>/dev/null || true

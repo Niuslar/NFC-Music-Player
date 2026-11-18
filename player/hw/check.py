@@ -1,7 +1,8 @@
 """Bring-up checks, one part at a time. Stop the player first so the pins are free:
 
     sudo systemctl stop nfc-player
-    python3 -m player.hw.check display     # colour bars and text for 10 s
+    python3 -m player.hw.check display     # test picture for 10 s, on the screen chosen in Setup
+    python3 -m player.hw.check display --ssd1306   # ...or name the screen: --st7789 / --ssd1306
     python3 -m player.hw.check nfc         # prints card UIDs for 30 s
     python3 -m player.hw.check inputs      # prints knob and button events for 30 s
     python3 -m player.hw.check audio       # lists sound cards, then plays through MPD
@@ -13,23 +14,29 @@ import subprocess
 import sys
 import time
 
+from .. import hwconfig
 from ..main import PINS, open_display, open_nfc
+
+HARDWARE_FILE = "/var/lib/nfc-player/hardware.json"
+
+
+def _config(args) -> dict:
+    config = hwconfig.load(HARDWARE_FILE)
+    for kind in hwconfig.DISPLAYS:
+        if f"--{kind}" in args:
+            config["display"] = kind
+    return config
 
 
 def display(args) -> None:
-    from PIL import Image, ImageDraw
+    from ..ui import render, tiny
 
-    from ..ui.render import H, W, font
-
-    img = Image.new("RGB", (W, H))
-    d = ImageDraw.Draw(img)
-    for i, colour in enumerate([(255, 0, 0), (0, 255, 0), (0, 0, 255), (255, 255, 255)]):
-        d.rectangle((i * W // 4, 0, (i + 1) * W // 4, H // 2), fill=colour)
-    d.text((W // 2, H * 3 // 4 - 14), "red green blue white", font=font(20), fill=(255, 255, 255), anchor="mm")
-    d.text((W // 2, H * 3 // 4 + 14), "this text reads left to right", font=font(16), fill=(160, 160, 160), anchor="mm")
-    open_display("--rotate" in args).show(img)
-    print("You should see four bars (red, green, blue, white) above two lines of text.")
-    print("Upside down? Run again with --rotate, and add '--rotate 180' to the service.")
+    config = _config(args)
+    ui = tiny if config["display"] == "ssd1306" else render
+    open_display(config["display"], "--rotate" in args).show(ui.test_pattern())
+    print(f"Screen: {hwconfig.DISPLAYS[config['display']]}")
+    print("You should see a border on every edge and 'Screen test' reading left to right.")
+    print("Upside down? Run again with --rotate, then choose 'Upside down' on the Setup page.")
     time.sleep(10)
 
 
@@ -50,7 +57,7 @@ def inputs(args) -> None:
     from .inputs import Buttons, Encoder
 
     events: queue.Queue = queue.Queue()
-    kind = "em14" if "--em14" in args else "pec11"
+    kind = "em14" if "--em14" in args else "pec11" if "--pec11" in args else _config(args)["encoder"]
     _keep = (
         Encoder(events, PINS["encoder_a"], PINS["encoder_b"], kind),
         Buttons(events, PINS["knob_switch"], PINS["buttons"]),

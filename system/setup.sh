@@ -15,7 +15,7 @@ REBOOT=0
 
 echo "== Packages"
 apt-get update -q
-apt-get install -y -q mpd python3-pil python3-numpy python3-spidev python3-gpiozero python3-lgpio python3-mpd exfatprogs fdisk alsa-utils
+apt-get install -y -q mpd python3-pil python3-numpy python3-spidev python3-gpiozero python3-lgpio python3-mpd exfatprogs fdisk alsa-utils i2c-tools
 
 echo "== Boot configuration ($CONFIG)"
 if ! grep -q "^# nfc-player" "$CONFIG"; then
@@ -29,7 +29,14 @@ dtoverlay=dwc2,dr_mode=peripheral
 EOF
   REBOOT=1
 fi
-usermod -aG spi,gpio,audio "$RUN_USER"
+# I2C for the small OLED screen (it shares GPIO 2 and 3 with the DAC). Added separately so older installs get it too.
+if ! grep -q "^dtparam=i2c_arm=on" "$CONFIG"; then
+  printf '\n# nfc-player: I2C for the OLED screen\n[all]\ndtparam=i2c_arm=on\n' >> "$CONFIG"
+  REBOOT=1
+fi
+echo i2c-dev > /etc/modules-load.d/nfc-player-i2c.conf
+modprobe i2c-dev 2>/dev/null || true
+usermod -aG spi,gpio,audio,i2c "$RUN_USER"
 
 echo "== Music drive ($IMG)"
 mkdir -p /srv/nfc-player /mnt/music /var/lib/nfc-player

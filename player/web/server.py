@@ -20,9 +20,11 @@ from pathlib import Path
 from urllib.parse import parse_qs, urlsplit
 
 from .. import events as ev
+from .. import hwconfig
 from ..library import AUDIO_EXT, IMAGE_EXT, Library
 
 PAGE = Path(__file__).parent / "remote.html"
+SETUP_PAGE = Path(__file__).parent / "setup.html"
 UPLOAD_EXT = AUDIO_EXT | IMAGE_EXT
 HEADER = "X-Requested-With"
 HEADER_VALUE = "nfc-player"
@@ -185,6 +187,46 @@ class MusicWriter:
         self.on_change()
 
 
+class Setup:
+    """What the Setup page shows and changes: the hardware settings, how each part started, and tests."""
+
+    def __init__(self, path: Path, running: dict, overridden=(), hardware=None, inputs=None, dac_test=None, simulator: bool = False):
+        self.path, self.running, self.overridden = Path(path), dict(running), list(overridden)
+        self.hardware = hardware if hardware is not None else {}
+        self.inputs, self.dac_test, self.simulator = inputs, dac_test, simulator
+        self._dac_lock = threading.Lock()
+
+    def state(self) -> dict:
+        saved = hwconfig.load(self.path)
+        pending = [k for k in saved if k not in self.overridden and saved[k] != self.running[k]]
+        return {
+            "saved": saved,
+            "running": self.running,
+            "overridden": self.overridden,
+            "restart_needed": pending,
+            "choices": hwconfig.choices(),
+            "hardware": self.hardware,
+            "dac_test": self.dac_test is not None,
+            "simulator": self.simulator,
+        }
+
+    def save(self, raw: dict) -> dict:
+        hwconfig.save(self.path, {**hwconfig.load(self.path), **raw})
+        return self.state()
+
+    def test_dac(self) -> dict:
+        if self.dac_test is None:
+            return {"ok": False, "message": "There is no DAC to test here: the simulator and the fake player make no sound."}
+        if not self._dac_lock.acquire(blocking=False):
+            return {"ok": False, "message": "A test is already playing."}
+        try:
+            return self.dac_test()
+        except Exception as e:
+            return {"ok": False, "message": f"The test failed: {e}"}
+        finally:
+            self._dac_lock.release()
+
+
 class Shared:
     """Latest app snapshot, written by the main loop and read by web threads."""
 
@@ -203,7 +245,7 @@ def _host_allowed(host_header: str) -> bool:
         return False
 
 
-def start(event_queue, shared: Shared, library: Library, writer: MusicWriter, port: int, bind: str = "0.0.0.0"):
+def start(event_queue, shared: Shared, library: Library, writer: MusicWriter, port: int, bind: str = "0.0.0.0", setup: Setup | None = None):
     covers: dict[str, bytes] = {}
 
     class Handler(BaseHTTPRequestHandler):
@@ -241,6 +283,16 @@ def start(event_queue, shared: Shared, library: Library, writer: MusicWriter, po
             url = urlsplit(self.path)
             if url.path == "/":
                 self._send(200, PAGE.read_bytes(), "text/html; charset=utf-8")
+            elif url.path == "/setup" and setup is not None:
+                self._send(200, SETUP_PAGE.read_bytes(), "text/html; charset=utf-8")
+            elif url.path == "/api/setup" and setup is not None:
+                self._json(200, setup.state())
+            elif url.path == "/api/inputs" and setup is not None and setup.inputs is not None:
+                try:
+                    after = int(parse_qs(url.query).get("after", ["0"])[0])
+                except ValueError:
+                    after = 0
+                self._json(200, setup.inputs.since(after))
             elif url.path == "/api/state":
                 state = dict(shared.snapshot)
                 state["uploading"] = writer.busy
@@ -313,6 +365,9 @@ def start(event_queue, shared: Shared, library: Library, writer: MusicWriter, po
             if path == "/api/delete":
                 self._delete()
                 return
+            if path in ("/api/setup", "/api/restart", "/api/test") and setup is not None:
+                self._setup(path)
+                return
             if path != "/api/command":
                 self._fail(404, "Not found")
                 return
@@ -331,6 +386,39 @@ def start(event_queue, shared: Shared, library: Library, writer: MusicWriter, po
                 return
             event_queue.put(ev.WebCommand(action, value))
             self._json(200, {"ok": True})
+
+        def _body(self) -> dict:
+            length = int(self.headers.get("Content-Length", 0))
+            if length > 4096:
+                raise ValueError
+            msg = json.loads(self.rfile.read(length) or b"{}")
+            if not isinstance(msg, dict):
+                raise ValueError
+            return msg
+
+        def _setup(self, path: str) -> None:
+            try:
+                msg = self._body()
+            except (ValueError, TypeError):
+                self._fail(400, "Bad request")
+                return
+            if path == "/api/setup":
+                try:
+                    self._json(200, setup.save(msg))
+                except ValueError as e:
+                    self._fail(400, str(e))
+                except OSError as e:
+                    self._fail(500, f"Could not save the settings: {e}")
+            elif path == "/api/restart":
+                event_queue.put(ev.WebCommand("restart"))
+                self._json(200, {"ok": True})
+            elif msg.get("part") == "screen":
+                event_queue.put(ev.WebCommand("test_screen"))
+                self._json(200, {"ok": True, "message": "The test picture is on the player's screen for 5 seconds."})
+            elif msg.get("part") == "dac":
+                self._json(200, setup.test_dac())
+            else:
+                self._fail(400, "Unknown test")
 
         def _delete(self) -> None:
             try:

@@ -1,0 +1,264 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>NFC Player setup</title>
+<style>
+  :root { color-scheme: dark; --bg: #121214; --panel: #1d1d20; --ink: #f0eee8; --dim: #9a978f; --line: #303035; --accent: #e8a33d; --bad: #f0776f; --good: #8fd18a; }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--ink); font: 16px/1.45 -apple-system, "Segoe UI", system-ui, sans-serif; }
+  main { max-width: 560px; margin: 0 auto; padding: 16px 16px 64px; }
+  a { color: var(--dim); }
+  h1 { font-size: 22px; margin: 8px 0 4px; }
+  h2 { font-size: 13px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--dim); margin: 32px 0 10px; font-weight: 600; }
+  .panel { background: var(--panel); border-radius: 16px; padding: 16px; }
+  .hint { color: var(--dim); font-size: 14px; margin: 8px 0; }
+  fieldset { border: 0; margin: 0 0 16px; padding: 0; }
+  legend { font-weight: 600; margin-bottom: 6px; }
+  .opt { display: flex; gap: 10px; align-items: flex-start; padding: 8px 10px; border-radius: 10px; cursor: pointer; }
+  .opt:hover { background: #26262a; }
+  .opt input { accent-color: var(--accent); margin-top: 4px; }
+  .opt small { display: block; color: var(--dim); }
+  .row { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+  button { font: inherit; color: inherit; border: 0; cursor: pointer; background: #2c2c31; padding: 10px 16px; border-radius: 10px; }
+  button:hover { background: #3a3a40; }
+  button.main { background: var(--accent); color: #1a1407; font-weight: 600; }
+  button:disabled { opacity: 0.4; cursor: default; }
+  .banner { background: #3a2c12; color: #f3d59b; border-radius: 10px; padding: 10px 14px; margin: 12px 0; font-size: 14px; }
+  .parts li { display: flex; justify-content: space-between; gap: 12px; padding: 6px 0; border-bottom: 1px solid var(--line); font-size: 14px; }
+  .parts li:last-child { border-bottom: 0; }
+  .parts .s { text-align: right; min-width: 0; overflow-wrap: anywhere; }
+  ul { list-style: none; margin: 0; padding: 0; }
+  .ok { color: var(--good); }
+  .bad { color: var(--bad); }
+  .test { margin-bottom: 18px; }
+  .test:last-child { margin-bottom: 0; }
+  .test h3 { font-size: 16px; margin: 0 0 4px; }
+  .result { font-size: 14px; margin: 8px 0 0; white-space: pre-wrap; }
+  #log { font: 13px/1.5 ui-monospace, Menlo, monospace; background: #151517; border-radius: 10px; padding: 8px 12px; height: 180px; overflow-y: auto; margin-top: 8px; }
+  #log div { color: var(--dim); }
+  #log div:last-child { color: var(--ink); }
+  .keys { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+  .keys span { font-size: 13px; padding: 4px 10px; border-radius: 8px; background: #2c2c31; color: var(--dim); }
+  .keys span.seen { background: #23381f; color: var(--good); }
+  .card { font-size: 15px; margin-top: 6px; }
+</style>
+</head>
+<body>
+<main>
+  <p><a href="/">← Back to the remote</a></p>
+  <h1>Setup</h1>
+  <p class="hint">Choose the parts this player is built with, then test each one.</p>
+  <div class="banner" id="banner" hidden></div>
+
+  <h2>Hardware</h2>
+  <form class="panel" id="form">
+    <fieldset id="display"><legend>Screen</legend></fieldset>
+    <fieldset id="rotate"><legend>Screen orientation</legend></fieldset>
+    <fieldset id="encoder"><legend>Knob</legend></fieldset>
+    <fieldset>
+      <legend>Knob direction</legend>
+      <label class="opt"><input type="checkbox" name="encoder_reverse"><span>Reverse<small>Tick this if turning clockwise lowers the volume.</small></span></label>
+    </fieldset>
+    <div class="row">
+      <button type="submit" class="main" id="save">Save</button>
+      <button type="button" id="restart">Restart the player</button>
+    </div>
+    <p class="result" id="saveResult"></p>
+  </form>
+
+  <h2>Parts at start-up</h2>
+  <div class="panel"><ul class="parts" id="parts"></ul></div>
+
+  <h2>Tests</h2>
+  <div class="panel">
+    <div class="test">
+      <h3>Screen</h3>
+      <p class="hint">Shows a test picture on the player for 5 seconds. Check that the border reaches every edge and the text is the right way up.</p>
+      <button id="testScreen">Show test picture</button>
+      <p class="result" id="screenResult"></p>
+    </div>
+    <div class="test">
+      <h3>DAC</h3>
+      <p class="hint">Pauses playback and plays a quiet tone: a low one in the left ear, then a higher one in the right. Plug in headphones or speakers first.</p>
+      <button id="testDac">Play test tone</button>
+      <p class="result" id="dacResult"></p>
+    </div>
+    <div class="test">
+      <h3>Buttons and knob</h3>
+      <p class="hint">Press each button and turn the knob; each one lights up here when the player sees it. Clockwise should read “clockwise”.</p>
+      <div class="keys" id="keys"></div>
+    </div>
+    <div class="test">
+      <h3>NFC reader</h3>
+      <p class="hint">Put a card in the slot, then take it out.</p>
+      <div class="card" id="card">No card</div>
+    </div>
+    <div class="test">
+      <h3>Everything the player sees</h3>
+      <div id="log"></div>
+    </div>
+  </div>
+</main>
+
+<script>
+const $ = (id) => document.getElementById(id);
+const HEADERS = { "X-Requested-With": "nfc-player", "Content-Type": "application/json" };
+const KEYS = ["prev", "play", "next", "back", "knob", "knob_long", "power", "clockwise", "anticlockwise"];
+const NAMES = { prev: "Previous", play: "Play/pause", next: "Next", back: "Back", knob: "Knob push", knob_long: "Knob hold", power: "Power", clockwise: "Turn clockwise", anticlockwise: "Turn anticlockwise" };
+const PART_NAMES = { screen: "Screen", nfc: "NFC reader", knob: "Knob", buttons: "Buttons", usb: "USB port" };
+let state = null, seq = 0, seen = new Set();
+
+async function post(path, body) {
+  const r = await fetch(path, { method: "POST", headers: HEADERS, body: JSON.stringify(body || {}) });
+  const data = await r.json().catch(() => ({}));
+  if (!r.ok) throw new Error(data.error || `Error ${r.status}`);
+  return data;
+}
+
+function option(group, value, label, sub) {
+  const l = document.createElement("label");
+  l.className = "opt";
+  const i = document.createElement("input");
+  i.type = "radio"; i.name = group; i.value = String(value);
+  const s = document.createElement("span");
+  s.textContent = label;
+  if (sub) { const sm = document.createElement("small"); sm.textContent = sub; s.append(sm); }
+  l.append(i, s);
+  return l;
+}
+
+function showSetup() {
+  const c = state.choices;
+  for (const [group, entries] of [
+    ["display", Object.entries(c.display)],
+    ["encoder", Object.entries(c.encoder)],
+    ["rotate", c.rotate.map((r) => [r, r === 0 ? "Normal" : "Upside down (180°)"])],
+  ]) {
+    const fs = $(group);
+    fs.querySelectorAll(".opt").forEach((n) => n.remove());
+    for (const [value, text] of entries) {
+      const [label, ...rest] = String(text).split(", ");
+      fs.append(option(group, value, label, rest.join(", ")));
+    }
+    const pick = fs.querySelector(`input[value="${state.saved[group]}"]`);
+    if (pick) pick.checked = true;
+  }
+  $("form").encoder_reverse.checked = state.saved.encoder_reverse;
+
+  const notes = [];
+  if (state.simulator) notes.push("This is the simulator: settings are saved and the screen choice changes the simulated screen after a restart. The DAC test needs the real player.");
+  if (state.restart_needed.length) notes.push(`Saved changes (${state.restart_needed.join(", ")}) take effect when the player restarts.`);
+  if (state.overridden.length) notes.push(`Options in the player's service command win over these settings: ${state.overridden.join(", ")}. Remove them from the service to use this page.`);
+  $("banner").hidden = !notes.length;
+  $("banner").textContent = notes.join(" ");
+
+  const parts = $("parts");
+  parts.replaceChildren();
+  for (const [part, result] of Object.entries(state.hardware)) {
+    const li = document.createElement("li");
+    const n = document.createElement("span"); n.textContent = PART_NAMES[part] || part;
+    const s = document.createElement("span"); s.className = "s " + (result === "ok" || result === "simulated" ? "ok" : "bad");
+    s.textContent = result === "ok" ? "Started" : result === "simulated" ? "Simulated" : result;
+    li.append(n, s);
+    parts.append(li);
+  }
+  if (!parts.children.length) parts.textContent = "Not reported.";
+  $("testDac").disabled = !state.dac_test;
+  if (!state.dac_test) $("dacResult").textContent = state.simulator ? "Not available in the simulator." : "Not available: the player is not using MPD.";
+}
+
+async function load() {
+  state = await (await fetch("/api/setup")).json();
+  showSetup();
+}
+
+$("form").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const f = $("form");
+  const body = {
+    display: f.display.value,
+    encoder: f.encoder.value,
+    rotate: Number(f.rotate.value),
+    encoder_reverse: f.encoder_reverse.checked,
+  };
+  try {
+    state = await post("/api/setup", body);
+    showSetup();
+    $("saveResult").className = "result ok";
+    $("saveResult").textContent = state.restart_needed.length ? "Saved. Restart the player to use the new settings." : "Saved.";
+  } catch (err) {
+    $("saveResult").className = "result bad";
+    $("saveResult").textContent = err.message;
+  }
+});
+
+$("restart").addEventListener("click", async () => {
+  $("saveResult").className = "result";
+  $("saveResult").textContent = "Restarting… the player keeps each card's place.";
+  try { await post("/api/restart"); } catch (err) { $("saveResult").textContent = err.message; return; }
+  setTimeout(async function wait() {
+    try { await load(); $("saveResult").textContent = "The player is back."; seq = 0; }
+    catch (e) { setTimeout(wait, 1000); }
+  }, 2500);
+});
+
+async function runTest(part, button, out) {
+  button.disabled = true;
+  out.className = "result";
+  out.textContent = part === "dac" ? "Playing…" : "";
+  try {
+    const r = await post("/api/test", { part });
+    out.className = "result " + (r.ok ? "ok" : "bad");
+    out.textContent = r.message;
+  } catch (err) {
+    out.className = "result bad";
+    out.textContent = err.message;
+  }
+  button.disabled = part === "dac" && !state.dac_test;
+}
+$("testScreen").addEventListener("click", () => runTest("screen", $("testScreen"), $("screenResult")));
+$("testDac").addEventListener("click", () => runTest("dac", $("testDac"), $("dacResult")));
+
+function showKeys() {
+  $("keys").replaceChildren(...KEYS.map((k) => {
+    const s = document.createElement("span");
+    s.textContent = NAMES[k];
+    if (seen.has(k)) s.className = "seen";
+    return s;
+  }));
+}
+
+async function poll() {
+  try {
+    const r = await (await fetch(`/api/inputs?after=${seq}`)).json();
+    const log = $("log");
+    for (const item of r.items) {
+      let line = log.querySelector(`[data-id="${item.id}"]`);  // a knob turn keeps updating its own line
+      if (!line) {
+        line = document.createElement("div");
+        line.dataset.id = item.id;
+        log.append(line);
+      }
+      line.textContent = `${new Date(item.time * 1000).toLocaleTimeString()}  ${item.text}`;
+      const m = item.text.match(/^Button: (\w+)/);
+      if (m) seen.add(m[1].replace(/_hold$/, ""));
+      if (item.text.startsWith("Knob: clockwise")) seen.add("clockwise");
+      if (item.text.startsWith("Knob: anticlockwise")) seen.add("anticlockwise");
+    }
+    while (log.children.length > 80) log.firstElementChild.remove();
+    if (r.items.length) log.scrollTop = log.scrollHeight;
+    seq = r.seq;
+    $("card").textContent = r.card ? `Card in the slot: ${r.card}` : "No card";
+    $("card").className = "card" + (r.card ? " ok" : "");
+    showKeys();
+  } catch (e) {}
+  setTimeout(poll, 400);
+}
+
+showKeys();
+load().then(poll);
+</script>
+</body>
+</html>
