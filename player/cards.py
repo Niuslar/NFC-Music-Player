@@ -1,4 +1,4 @@
-"""Persistent state on the small data partition: card links, resume positions, volume.
+"""Persistent state on the small data partition: card links, resume positions, volume and its limit.
 
 Every save is atomic (write temp, fsync, rename) so a power cut never corrupts it.
 """
@@ -8,6 +8,7 @@ import os
 from pathlib import Path
 
 DEFAULT_VOLUME = 30
+VOLUME_LIMITS = (100, 90, 80, 70, 60, 50)  # 100 means no limit
 
 
 class Store:
@@ -15,11 +16,14 @@ class Store:
         self.path = Path(path)
         self._cards: dict[str, dict] = {}
         self.volume = DEFAULT_VOLUME
+        self.max_volume = 100
         if self.path.exists():
             try:
                 data = json.loads(self.path.read_text())
                 self._cards = dict(data.get("cards", {}))
                 self.volume = int(data.get("volume", DEFAULT_VOLUME))
+                limit = data.get("max_volume", 100)
+                self.max_volume = limit if limit in VOLUME_LIMITS else 100
             except (ValueError, OSError):
                 pass  # unreadable file: start empty rather than refuse to boot
 
@@ -56,7 +60,7 @@ class Store:
         self.path.parent.mkdir(parents=True, exist_ok=True)
         tmp = self.path.with_suffix(".tmp")
         with open(tmp, "w") as f:
-            json.dump({"cards": self._cards, "volume": self.volume}, f, indent=1)
+            json.dump({"cards": self._cards, "volume": self.volume, "max_volume": self.max_volume}, f, indent=1)
             f.flush()
             os.fsync(f.fileno())
         os.replace(tmp, self.path)

@@ -77,6 +77,7 @@
   <a href="#playing">Playing</a>
   <a href="#tracks">Choose a track</a>
   <a href="#card-menu">Change a card</a>
+  <a href="#settings">Wi-Fi and settings</a>
   <a href="#music">Add music over USB</a>
   <a href="#remote">Web remote</a>
   <a href="#setup">Setup page</a>
@@ -106,7 +107,7 @@
 <table>
   <tr><th>Control</th><th>What it is for</th></tr>
   <tr><td><strong>Card slot</strong></td><td>Put a card in to play it. Take it out to pause.</td></tr>
-  <tr><td><strong>Knob</strong></td><td>Turn for volume, or to move through a list. Push to pause and resume, or to choose. Hold for the card menu.</td></tr>
+  <tr><td><strong>Knob</strong></td><td>Turn for volume, or to move through a list. Push to pause and resume, or to choose. Hold for 1 second for the card menu, or for settings when there is no card in the slot.</td></tr>
   <tr><td><strong>⏮ Previous</strong></td><td>Back a track. Hold to rewind.</td></tr>
   <tr><td><strong>⏯ Play / pause</strong></td><td>Pause and resume.</td></tr>
   <tr><td><strong>⏭ Next</strong></td><td>Forward a track. Hold to fast-forward.</td></tr>
@@ -191,6 +192,63 @@
     </ul>
   </div>
   <figure><div class="lcd"><img src="menu.png" width="320" height="240" alt="Card menu titled Small Hours: Link to something else, Unlink this card, Close"></div></figure>
+</div>
+
+<h2 id="settings">Wi-Fi and settings</h2>
+<h3>The Wi-Fi icon</h3>
+<div class="side">
+  <div>
+    <p>The icon in the top right corner of the screen shows how well the player hears your Wi-Fi: the more lit curves, the stronger the signal. One lit dot is a weak signal.</p>
+    <p>When it is <strong>struck through</strong>, the player is not on a network. Cards, the knob and the keys still work as normal; only the <a href="#remote">web remote</a> needs Wi-Fi.</p>
+    <p>On the <a href="#oled">small OLED screen</a> the icon is left out of lists, where there is no room for it.</p>
+  </div>
+  <figure><div class="lcd"><img src="no-wifi.png" width="320" height="240" alt="Screen: Place a card, with a struck-through Wi-Fi icon in the top right corner"></div><figcaption>No Wi-Fi.</figcaption></figure>
+</div>
+
+<h3>Settings</h3>
+<div class="side">
+  <div>
+    <p>With <strong>no card in the slot</strong>, hold the knob for 1 second. Turn to choose, push to open, and press back to go back.</p>
+    <ul>
+      <li><strong>Wi-Fi</strong> shows the network the player is on and lets you <a href="#new-wifi">connect it to a new one</a>.</li>
+      <li><strong>Volume limit</strong> sets the loudest the player can go, from the knob or the web remote.</li>
+      <li><strong>About this player</strong> shows the web remote's address, the amount of music and the free space.</li>
+      <li><strong>Restart the player</strong> starts the player program again. Cards remember their places.</li>
+    </ul>
+    <p>Putting a card in leaves the settings and plays it.</p>
+  </div>
+  <figure><div class="lcd"><img src="settings.png" width="320" height="240" alt="Settings: Wi-Fi, Home, good signal; Volume limit, No limit; About this player; Restart the player; Close"></div></figure>
+</div>
+
+<h3 id="new-wifi">Connect to a new Wi-Fi network</h3>
+<p>Use this when you move the player to another house, change your router, or change your Wi-Fi password. You need a phone (or a laptop).</p>
+<ol class="steps">
+  <li>Take out any card, hold the knob for 1 second, and choose <strong>Wi-Fi</strong>, then <strong>Connect to a new network</strong>.</li>
+  <li>The player leaves its current network and starts its own, called <strong>NFC Player Setup</strong>. The screen shows its password, made up fresh each time.</li>
+  <li>On the phone, join <strong>NFC Player Setup</strong>. The quickest way is to point the phone's camera at the code on the screen; or choose it in the phone's Wi-Fi settings and type the password.</li>
+  <li>Most phones then open the player's Wi-Fi page by themselves. If yours does not, open a browser and go to <code>http://10.42.0.1</code>. The phone may warn that this network has no internet: that is expected, stay connected.</li>
+  <li>Choose your network from the list (or type its name), type its password and press <strong>Connect</strong>.</li>
+  <li>The phone drops off the setup network and the player joins yours. Its screen says <strong>Connected to</strong> and the network's name. Push the knob to finish.</li>
+</ol>
+<div class="screens">
+  <figure><div class="lcd"><img src="settings-wifi.png" width="320" height="240" alt="Wi-Fi: Home, good signal. Connect to a new network; Back"></div><figcaption>1. The Wi-Fi page in settings.</figcaption></figure>
+  <figure><div class="lcd"><img src="wifi-join.png" width="320" height="240" alt="A QR code, then: Join this Wi-Fi, NFC Player Setup; Password h4rq7mtz2e; Then open 10.42.0.1; Back to cancel"></div><figcaption>2. Join this network from the phone. The password here is only an example.</figcaption></figure>
+  <figure><div class="lcd"><img src="wifi-joined.png" width="320" height="240" alt="Screen: Connected to Upstairs. The web remote is at http://nfcplayer.local. Push the knob to finish."></div><figcaption>3. Joined.</figcaption></figure>
+</div>
+<ul>
+  <li><strong>Wrong password, or the network was not found?</strong> The player says so at the bottom of the screen and starts its setup network again with the same password. Join it again on the phone and try once more.</li>
+  <li><strong>Changed your mind?</strong> Press back. The player closes its setup network and goes back to the network it was on.</li>
+  <li>The setup network closes by itself after 10 minutes if nobody uses it.</li>
+  <li>The player's Wi-Fi works with 2.4 GHz networks only. The new network is remembered, as well as the old ones; the player joins whichever is in range.</li>
+</ul>
+<div class="note">
+  <p><strong>Is it safe?</strong> The setup network is protected by a password that is made up fresh each time and shown only on the player's screen, so only someone standing at the player can join it. The page that takes your Wi-Fi password only works for phones on that network, and only while it is open. The password travels over that protected link and is saved by the Pi's network manager in a file only the system can read; the player program does not keep a copy.</p>
+</div>
+
+<h3>Volume limit and About</h3>
+<div class="screens">
+  <figure><div class="lcd"><img src="volume-limit.png" width="320" height="240" alt="Volume limit: No limit, chosen now; Up to 90; Up to 80; Up to 70; Up to 60"></div><figcaption>Volume limit. If the volume is above the new limit, it comes down to it.</figcaption></figure>
+  <figure><div class="lcd"><img src="about.png" width="320" height="240" alt="About this player: Wi-Fi network and signal, web remote address and IP address, number of albums and free space"></div><figcaption>About this player. Use the number address if a phone cannot open the <code>.local</code> one.</figcaption></figure>
 </div>
 
 <h2 id="music">Add music over USB</h2>
@@ -314,6 +372,7 @@
       <tr><td>Card not linked: No music yet</td><td>Add music <a href="#music">over USB</a> or from the <a href="#remote">web remote</a>.</td></tr>
       <tr><td>The music drive is connected to a computer</td><td>Eject <code>MUSIC</code> on the computer, then try again.</td></tr>
       <tr><td>An upload from the web page is still running</td><td>Wait for the upload to finish.</td></tr>
+      <tr><td>Wi-Fi setup did not work</td><td>The player could not start its setup network. Push the knob, wait a few seconds and try again. If it keeps happening, restart the player from the settings.</td></tr>
       <tr><td>Something went wrong</td><td>Read the message under it. It clears after a few seconds. If it keeps coming back, see <a href="../index.html#trouble">troubleshooting</a> in the build guide.</td></tr>
     </table>
     </div>
@@ -330,7 +389,7 @@
   <tr><td>Remove the card</td><td>Pauses and remembers the place.</td></tr>
   <tr><td>Turn the knob</td><td>Volume, or moves through a list.</td></tr>
   <tr><td>Push the knob</td><td>Pause / resume, or choose.</td></tr>
-  <tr><td>Hold the knob</td><td>Card menu. In transfer mode: finish transferring.</td></tr>
+  <tr><td>Hold the knob (1 second)</td><td>Card menu. With no card: settings. In transfer mode: finish transferring.</td></tr>
   <tr><td>Previous / next</td><td>Skip a track.</td></tr>
   <tr><td>Hold previous / next</td><td>Rewind / fast-forward.</td></tr>
   <tr><td>Back</td><td>Track list while playing; otherwise leaves a list or menu.</td></tr>
@@ -349,6 +408,7 @@
   <tr><td><kbd>Z</kbd> <kbd>X</kbd> <kbd>C</kbd></td><td>Previous, play/pause, next (hold <kbd>Z</kbd> or <kbd>C</kbd> to scan)</td></tr>
   <tr><td><kbd>Esc</kbd></td><td>Back (hold 2 seconds to start from the first track)</td></tr>
   <tr><td><kbd>1</kbd>–<kbd>4</kbd> / <kbd>0</kbd></td><td>Insert card 1–4 / remove the card</td></tr>
+  <tr><td>Wi-Fi signal buttons</td><td>Set the simulated signal, or switch Wi-Fi off. Connecting to a new network works too: open <code>http://localhost:8080</code> while the join screen is up. Any password works except <code>wrongpassword</code>.</td></tr>
 </table>
 </div>
 

@@ -936,7 +936,7 @@ function showState() {
       if (b.dataset.shows !== want) { b.dataset.shows = want; b.textContent = ""; b.append(icon(want)); }
     }
   }
-  for (const v of document.querySelectorAll("[data-volume]")) if (!(draggingVolume && v === document.activeElement)) setRange(v, state.volume ?? 0, 100);
+  for (const v of document.querySelectorAll("[data-volume]")) if (!(draggingVolume && v === document.activeElement)) setRange(v, state.volume ?? 0, state.max_volume ?? 100);
   for (const o of document.querySelectorAll("[data-volout]")) if (!draggingVolume) o.textContent = state.volume ?? "–";
   $("space").textContent = state.free_bytes != null ? `${(state.free_bytes / 1e9).toFixed(1)} GB free on the music drive.` : "";
   showTime();
@@ -1014,7 +1014,7 @@ function wireControls(root) {
   for (const v of root.querySelectorAll("[data-volume]")) {
     v.addEventListener("input", () => {
       draggingVolume = true;
-      setRange(v, +v.value, 100);
+      setRange(v, +v.value, +v.max);
       for (const o of document.querySelectorAll("[data-volout]")) o.textContent = v.value;
       clearTimeout(volumeTimer);
       volumeTimer = setTimeout(() => command("volume", +v.value), 80);

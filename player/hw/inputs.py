@@ -80,14 +80,14 @@ class Encoder:
 
 # Buttons that do something different when held: a short press is sent on release instead.
 HOLD_NAMES = {"knob": "knob_long", "back": "back_long", "prev": "prev_hold", "next": "next_hold"}
-HOLD_SECONDS = {"back": 2.0}  # restarting the album is drastic: it needs a deliberate hold
+HOLD_SECONDS = {"back": 2.0, "knob": 1.0}  # restarting the album is drastic: it needs a deliberate hold
 REPEATS = {"prev", "next"}  # these keep sending their hold event while held, to scan through a track
 
 
 class Buttons:
     """buttons maps a name (prev, play, next, back, power) to its GPIO; knob is the encoder's push switch.
 
-    The knob sends knob_long once when held for hold_seconds; back sends back_long once after 2 seconds. Previous and next send prev_hold / next_hold
+    The knob sends knob_long once after 1 second; back sends back_long once after 2 seconds. Previous and next send prev_hold / next_hold
     every scan_seconds while held, and nothing on release; a short press sends the plain name.
     """
 

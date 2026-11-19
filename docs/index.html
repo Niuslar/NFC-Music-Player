@@ -81,6 +81,7 @@
   <a href="#use">7. Use it</a>
   <a class="sub" href="manual/index.html">User manual</a>
   <a href="#web">8. Web remote</a>
+  <a href="#wifi">Changing Wi-Fi</a>
   <a href="#backup">Backups and updates</a>
   <a href="#trouble">Troubleshooting</a>
   <a href="#reference">Reference</a>
@@ -91,7 +92,7 @@
 <p class="lede">Put a card in, the album plays. This guide takes you from a bag of parts to a working player on the bench. The case comes later.</p>
 
 <div class="note">
-  <p><strong>What has and hasn't been tested.</strong> The player logic, screens and MPD playback are tested on the Mac. The web remote is tested on the Mac against the simulator. Everything that touches the Pi's hardware (display, NFC reader, knob, USB drive mode, switching the music drive to writable for uploads, the setup script) was written without the hardware and has never run on a real Pi. Each wiring step below ends with a check command, so a fault shows up one part at a time.</p>
+  <p><strong>What has been tested.</strong> Everything in this guide has been built and run on a real Pi: the setup script, the DAC, the display, the NFC reader, the knob and buttons, the power key and light, USB drive mode and the web remote. The player logic, screens and web remote are also tested on the Mac with the simulator. Joining a new Wi-Fi network from the player's settings is new and has so far been tried only in the simulator. Each wiring step below ends with a check command, so a fault shows up one part at a time.</p>
 </div>
 
 <h2 id="overview">Overview</h2>
@@ -163,7 +164,7 @@
   </li>
   <li>Write the card. Menus differ slightly between Imager versions, but these are the settings that matter.</li>
 </ol>
-<p>Wi-Fi is used for setup, updates and the web remote. The player works without it; only the web page needs it.</p>
+<p>Wi-Fi is used for setup, updates and the web remote. The player works without it; only the web page needs it. To move the player to another network later, there is no need to reflash: use <strong>Connect to a new network</strong> in the player's settings (see <a href="#wifi">Changing Wi-Fi</a>).</p>
 
 <h2 id="boot"><span class="step">Step 2</span>First boot</h2>
 <ol>
@@ -189,7 +190,7 @@
 <p>If it reports that <code>rsync</code> is missing on the Pi, install it with <code>ssh nfcplayer.local 'sudo apt-get install -y rsync'</code> and run it again.</p>
 <p>Then on the Pi (over SSH), run the setup script:</p>
 <pre><code>cd ~/nfc-player && sudo system/setup.sh</code></pre>
-<p>It installs the software, turns on SPI and USB device mode, creates the music drive using all free space except 3 GB, and installs three services. To choose the drive size yourself, use <code>sudo MUSIC_GB=100 system/setup.sh</code> the first time.</p>
+<p>It installs the software, turns on SPI and USB device mode, creates the music drive using all free space except 3 GB, installs three services, and sets up the helper the player uses to join new Wi-Fi networks. To choose the drive size yourself, use <code>sudo MUSIC_GB=100 system/setup.sh</code> the first time.</p>
 <p>It will ask for a reboot:</p>
 <pre><code>sudo reboot</code></pre>
 <p>After the reboot the player starts by itself and the <a href="#web">web remote</a> is available. If the DAC was not attached, setup says so and configures silent playback, so everything except sound can be tried straight away.</p>
@@ -530,7 +531,7 @@
   <tr><td>Hold previous / next</td><td>Rewind / fast-forward through the track while held, faster after 3 seconds. Fast-forward runs on into the next track; rewind stops at the start of the track.</td></tr>
   <tr><td>Back, while playing</td><td>Shows the tracks of what is playing, with the current one marked. Turn the knob to choose, push to play it. Back again closes the list. Playback carries on while you browse.</td></tr>
   <tr><td>Hold back for 2 seconds, while playing</td><td>Goes back to the start of the album, artist or list and plays it from the first track.</td></tr>
-  <tr><td>Hold the knob</td><td>Menu: link the card to something else, unlink it, or close.</td></tr>
+  <tr><td>Hold the knob for 1 second</td><td>With a card in: link the card to something else, unlink it, or close. With no card: settings (Wi-Fi, volume limit, the web address, restart).</td></tr>
   <tr><td>Back</td><td>Leaves a menu or list.</td></tr>
   <tr><td>Press power</td><td>Remembers where the card stopped, stops playing and shows <strong>Turning off</strong> while the Pi shuts down. When the screen goes dark, the player is off and can be unplugged. If the drive is connected to a computer, or the web page is uploading, it says so and stays on: eject or wait, then press power again.</td></tr>
   <tr><td>Press power while it is off</td><td>Turns it on. The power light comes on within a couple of seconds, then the screen shows the logo until the player is ready, in about half a minute.</td></tr>
@@ -578,6 +579,25 @@
 <div class="note">
   <p><strong>There is no password.</strong> Anyone on your Wi-Fi can open the page, change what is playing, relink the card in the slot, and add or delete music. That is fine on a home network you trust; do not use it on shared or public Wi-Fi. To turn the page off, change <code>--web-port 80</code> to <code>--web-port 0</code> in the service (see <a href="#reference">Reference</a>).</p>
   <p>The page cannot rename or move music. Do that over USB.</p>
+</div>
+
+<h2 id="wifi">Changing Wi-Fi</h2>
+<p>The Wi-Fi icon in the corner of the screen shows the signal; struck through, the player is not on a network. To join a new network without a keyboard or SSH:</p>
+<ol>
+  <li>With no card in, hold the knob for 1 second and choose <strong>Wi-Fi</strong>, then <strong>Connect to a new network</strong>.</li>
+  <li>The player looks for networks, then leaves its own and starts a setup network called <strong>NFC Player Setup</strong>. The screen shows a password made up for this time only, and a code a phone camera can join from.</li>
+  <li>Join it on a phone. The Wi-Fi page usually opens by itself; otherwise open <code>http://10.42.0.1</code>.</li>
+  <li>Choose the network, type its password and press <strong>Connect</strong>. The screen says <strong>Connected to</strong> and the name when it has joined. If it cannot, the setup network comes back for another try.</li>
+</ol>
+<p>The <a href="manual/index.html#new-wifi">user manual</a> has the screens. How it works:</p>
+<ul>
+  <li>NetworkManager, which Raspberry Pi OS Bookworm and later use for Wi-Fi, does the work. <code>setup.sh</code> installs a small root helper, <code>/usr/local/sbin/nfc-player-wifi</code>, which is the only Wi-Fi command the player may run with <code>sudo</code>.</li>
+  <li>The Zero 2 W's radio cannot be on a network and offer one at the same time, so the player is off your network (and the web remote unreachable) while the setup network is up. It closes after 10 minutes if nobody uses it, or when you press back, and the player goes back to its saved network.</li>
+  <li>The new network is saved alongside the old ones in <code>/etc/NetworkManager/system-connections/</code>, readable only by root. The player program never stores the password. To forget a network: <code>sudo nmcli connection delete "Network name"</code>.</li>
+  <li>While the setup network is up, every web address a phone asks for points at the player, so phones open its Wi-Fi page by themselves. That only applies on the setup network (<code>/etc/NetworkManager/dnsmasq-shared.d/nfc-player.conf</code>).</li>
+</ul>
+<div class="note">
+  <p><strong>Why this is safe enough.</strong> The setup network uses WPA2 with a fresh 10-character random password that appears only on the player's screen, so joining it needs someone standing at the player. The page that accepts a network only answers phones on that setup network, and only while it is open; from your home network it refuses. The Wi-Fi password is sent over that encrypted link, then handed to the helper on its input rather than its command line. For a moment it does appear on NetworkManager's own command line on the Pi, which only matters if someone else already has a login on it.</p>
 </div>
 
 <h2 id="backup">Backups and updates</h2>
@@ -642,6 +662,9 @@
   <tr><td>"Something went wrong" on the display</td><td>The message below it is the cause. The full detail is in <code>journalctl -u nfc-player -n 50</code>.</td></tr>
   <tr><td><code>http://nfcplayer.local</code> does not open</td><td>Check the phone is on the same Wi-Fi as the Pi, and type <code>http://</code> in full. Some Android phones cannot find <code>.local</code> names: run <code>hostname -I</code> on the Pi and use that address instead, for example <code>http://192.168.1.42</code>. Check <code>journalctl -u nfc-player -n 50</code> for "Web remote on port 80".</td></tr>
   <tr><td>Upload fails with a message about the drive</td><td>The drive is in use over USB, or could not be made writable. Eject it on the Mac first. If it persists, run <code>sudo /usr/local/sbin/nfc-player-usb rw</code> on the Pi and read the error.</td></tr>
+  <tr><td>The Wi-Fi icon is struck through</td><td>The player is not on a network. Check the router is on and the network is 2.4 GHz, or join another from the player's settings (<a href="#wifi">Changing Wi-Fi</a>). <code>nmcli device status</code> on the Pi shows what <code>wlan0</code> is doing.</td></tr>
+  <tr><td>"Wi-Fi setup did not work"</td><td>The setup network could not start. Check NetworkManager is in charge of Wi-Fi (<code>nmcli device status</code> lists <code>wlan0</code>), run <code>cd ~/nfc-player && sudo system/setup.sh</code> again to install the helper and its permission, and try <code>sudo /usr/local/sbin/nfc-player-wifi scan</code> to see the error.</td></tr>
+  <tr><td>The phone joins the setup network but no page opens</td><td>Open <code>http://10.42.0.1</code> in the phone's browser, with <code>http://</code> in full. If the phone switches back to another network because this one has no internet, tell it to stay connected.</td></tr>
   <tr><td>Uploads are slow</td><td>The Zero 2 W's Wi-Fi manages a few megabytes per second at best. Use USB for big batches.</td></tr>
   <tr><td>Card does nothing</td><td>Run the NFC check to see whether the reader sees it. Some bank-style and hotel cards use other standards and will not read.</td></tr>
 </table></div>
@@ -668,7 +691,8 @@
   <tr><td><code>~/nfc-player</code></td><td>The program.</td></tr>
   <tr><td><code>/srv/nfc-player/music.img</code></td><td>The music drive (one big file).</td></tr>
   <tr><td><code>/mnt/music</code></td><td>The same music as the player sees it, read-only.</td></tr>
-  <tr><td><code>/var/lib/nfc-player/state.json</code></td><td>Card links, resume positions, volume.</td></tr>
+  <tr><td><code>/var/lib/nfc-player/state.json</code></td><td>Card links, resume positions, volume and its limit.</td></tr>
+  <tr><td><code>/etc/NetworkManager/system-connections/</code></td><td>Saved Wi-Fi networks, root only.</td></tr>
   <tr><td><code>/etc/mpd.conf</code></td><td>MPD settings written by setup. The original is kept as <code>/etc/mpd.conf.dist</code>.</td></tr>
   <tr><td><code>/boot/firmware/config.txt</code></td><td>Boot settings. Setup adds a block marked <code># nfc-player</code>.</td></tr>
 </table></div>
@@ -680,8 +704,9 @@
   <tr><td><code>player/ui/render.py</code></td><td>The screens.</td></tr>
   <tr><td><code>player/main.py</code></td><td>Start-up and the pin numbers (<code>PINS</code>).</td></tr>
   <tr><td><code>player/hw/</code></td><td>Drivers: <code>st7789.py</code>, <code>pn532.py</code>, <code>inputs.py</code>, <code>usb.py</code>, and <code>check.py</code> for the tests above.</td></tr>
-  <tr><td><code>player/web/</code></td><td>The web remote: <code>server.py</code> and the page, <code>remote.html</code>.</td></tr>
-  <tr><td><code>system/</code></td><td><code>setup.sh</code>, the USB helper, the service files and <code>nfc-player-screen-off</code>, which turns the screen off at the end of a shutdown.</td></tr>
+  <tr><td><code>player/web/</code></td><td>The web remote: <code>server.py</code> and the pages, <code>remote.html</code>, <code>setup.html</code> and <code>wifi.html</code>.</td></tr>
+  <tr><td><code>player/wifi.py</code></td><td>The Wi-Fi icon's signal, and the setup network for joining a new one.</td></tr>
+  <tr><td><code>system/</code></td><td><code>setup.sh</code>, the USB and Wi-Fi helpers, the service files and <code>nfc-player-screen-off</code>, which turns the screen off at the end of a shutdown.</td></tr>
 </table></div>
 <p>To try changes without the hardware, run the simulator on the Mac: <code>.venv/bin/python -m player.main --sim</code>, then open <code>http://localhost:8137</code>. The web remote runs alongside it at <code>http://localhost:8080</code>.</p>
 

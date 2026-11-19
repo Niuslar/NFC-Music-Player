@@ -92,7 +92,7 @@
 
 <figure class="hero">
   <img src="docs/concept.jpg" width="1600" height="1200" alt="Render of the case design: a charcoal box with a brass front set inside a thin rim, a screen, four keys and a large knob, five cards in a tray on the lid and one card standing in a slot">
-  <figcaption>Render of the case design, made from the same model as its printable parts. The case has not been printed yet.</figcaption>
+  <figcaption>Render of the case design, made from the same model as its printable parts. The case has not been printed yet; the working player is still parts on a bench.</figcaption>
 </figure>
 
 <h2 id="about">About</h2>
@@ -103,6 +103,7 @@
   <li><strong>Screen and controls.</strong> A 2-inch display shows the cover, track and time. A clicky knob sets the volume and scrolls lists; four keys do previous, play/pause, next and back. Hold previous or next to scan; press back to pick a track from a list, or hold it for 2 seconds to start the album again.</li>
   <li><strong>Music over USB.</strong> Plug the player into a computer and its music appears as a drive called <code>MUSIC</code>.</li>
   <li><strong>Web remote.</strong> A page served by the player controls playback, links cards, and uploads or deletes music from any phone or computer on the same Wi-Fi.</li>
+  <li><strong>Settings on the device.</strong> A Wi-Fi icon shows the signal. Hold the knob with no card in for settings: join a new Wi-Fi network from a phone, set a volume limit, or see the web remote's address.</li>
 </ul>
 
 <h2 id="docs">Guides</h2>
@@ -110,7 +111,7 @@
   <a class="card" href="docs/manual/index.html">
     <span class="kind">Manual</span>
     <h3>User manual</h3>
-    <p>Using the player: linking cards, the knob and keys, every screen, adding music over USB, the web remote and the Setup page.</p>
+    <p>Using the player: linking cards, the knob and keys, every screen, Wi-Fi and settings, adding music over USB, the web remote and the Setup page.</p>
   </a>
   <a class="card" href="docs/index.html">
     <span class="kind">Guide</span>
@@ -144,12 +145,11 @@
 </ul>
 
 <h2 id="status">Status</h2>
-<p>This is a work in progress.</p>
+<p>The electronics and software are done. The only step left is the case.</p>
 <ul class="status">
-  <li class="done">The player logic, screens, web remote and MPD playback run and are tested on a Mac, using a browser simulator in place of the hardware.</li>
-  <li class="done">On a real Pi, setup and the web remote have been run.</li>
-  <li class="todo">The display, NFC reader, knob, buttons and USB drive mode were written without the hardware and are not yet proven.</li>
-  <li class="todo">The case is designed but not yet printed.</li>
+  <li class="done">All of the hardware has been built and tested on a real Pi: the DAC, display, NFC reader, knob, buttons, power key and light, and USB drive mode, along with setup and the web remote.</li>
+  <li class="done">The player logic, screens and web remote are also tested on a Mac, using a browser simulator in place of the hardware.</li>
+  <li class="todo">The case is designed but not yet printed and assembled.</li>
 </ul>
 
 <h2 id="hardware">Hardware</h2>
@@ -200,9 +200,9 @@
 </ul>
 
 <h2 id="simulator">Try it without any hardware</h2>
-<p>The simulator shows the display in a browser and stands in for the knob, buttons, cards and USB port.</p>
+<p>The simulator shows the display in a browser and stands in for the knob, buttons, cards, USB port and Wi-Fi.</p>
 <pre><code>python3 -m venv .venv
-.venv/bin/pip install pillow numpy python-mpd2 pytest
+.venv/bin/pip install pillow numpy python-mpd2 pytest qrcode
 .venv/bin/python -m player.demo_library demo/music
 .venv/bin/python -m player.main --sim</code></pre>
 <p>Then open <code>http://localhost:8137</code> for the simulated device and <code>http://localhost:8080</code> for the web remote. The demo library is generated sine tones, and the simulator is silent unless you run it against MPD (<code>system/mpd-dev.sh</code>, then add <code>--playback mpd</code>). Add <code>mutagen</code> to the install line to read tags from your own music with <code>--music</code>.</p>
@@ -215,7 +215,8 @@
   <tr><td><a href="https://github.com/Niuslar/NFC-Music-Player/blob/main/player/app.py"><code>player/app.py</code></a></td><td>The player's behaviour: a state machine fed with events from cards, controls, USB and the web.</td></tr>
   <tr><td><a href="https://github.com/Niuslar/NFC-Music-Player/blob/main/player/ui/render.py"><code>player/ui/render.py</code></a></td><td>Draws the screens.</td></tr>
   <tr><td><a href="https://github.com/Niuslar/NFC-Music-Player/tree/main/player/hw"><code>player/hw/</code></a></td><td>Drivers for the display, NFC reader, knob and buttons and USB drive mode, the simulator, and bring-up checks for each part.</td></tr>
-  <tr><td><a href="https://github.com/Niuslar/NFC-Music-Player/tree/main/player/web"><code>player/web/</code></a></td><td>The web remote.</td></tr>
+  <tr><td><a href="https://github.com/Niuslar/NFC-Music-Player/tree/main/player/web"><code>player/web/</code></a></td><td>The web remote, and the page a phone uses to give the player a new Wi-Fi network.</td></tr>
+  <tr><td><a href="https://github.com/Niuslar/NFC-Music-Player/blob/main/player/wifi.py"><code>player/wifi.py</code></a></td><td>The Wi-Fi signal for the screen, and the setup network for joining a new one.</td></tr>
   <tr><td><a href="https://github.com/Niuslar/NFC-Music-Player/blob/main/player/playback.py"><code>player/playback.py</code></a></td><td>Talks to <a href="https://www.musicpd.org/">MPD</a>, which does the decoding and audio output.</td></tr>
   <tr><td><a href="https://github.com/Niuslar/NFC-Music-Player/tree/main/system"><code>system/</code></a></td><td>The Raspberry Pi setup script and service files.</td></tr>
   <tr><td><a href="https://github.com/Niuslar/NFC-Music-Player/tree/main/NFC-Player-Case"><code>NFC-Player-Case/</code></a></td><td>The 3D-printed case: model, STLs, drawings and assembly guide.</td></tr>

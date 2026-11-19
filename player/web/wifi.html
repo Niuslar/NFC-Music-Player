@@ -1,0 +1,123 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>NFC Player Wi-Fi</title>
+<style>
+  :root { color-scheme: dark; --bg: #121214; --panel: #1d1d20; --ink: #f0eee8; --dim: #9a978f; --line: #303035; --accent: #e8a33d; --bad: #f0776f; --good: #8fd18a; }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--ink); font: 16px/1.45 -apple-system, "Segoe UI", system-ui, sans-serif; }
+  main { max-width: 480px; margin: 0 auto; padding: 16px 16px 64px; }
+  h1 { font-size: 22px; margin: 8px 0 4px; }
+  h2 { font-size: 13px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--dim); margin: 28px 0 10px; font-weight: 600; }
+  .panel { background: var(--panel); border-radius: 16px; padding: 8px; }
+  .hint { color: var(--dim); font-size: 14px; margin: 8px 0; }
+  .net { display: flex; width: 100%; justify-content: space-between; align-items: center; gap: 12px; text-align: left;
+         padding: 12px; border-radius: 10px; background: none; }
+  .net:hover, .net.chosen { background: #2a2a2f; }
+  .net.chosen { outline: 2px solid var(--accent); }
+  .net small { color: var(--dim); white-space: nowrap; }
+  label { display: block; font-weight: 600; margin: 14px 0 6px; }
+  input[type=text], input[type=password] { width: 100%; font: inherit; color: inherit; background: #151517; border: 1px solid var(--line);
+         border-radius: 10px; padding: 11px 12px; }
+  input:focus { outline: 2px solid var(--accent); border-color: transparent; }
+  .show { display: flex; gap: 8px; align-items: center; color: var(--dim); font-size: 14px; margin-top: 8px; font-weight: 400; }
+  .show input { accent-color: var(--accent); }
+  button { font: inherit; color: inherit; border: 0; cursor: pointer; background: #2c2c31; padding: 12px 16px; border-radius: 10px; }
+  button.main { background: var(--accent); color: #1a1407; font-weight: 600; width: 100%; margin-top: 18px; }
+  button:disabled { opacity: 0.4; cursor: default; }
+  form { background: var(--panel); border-radius: 16px; padding: 4px 16px 16px; }
+  .banner { border-radius: 10px; padding: 12px 14px; margin: 14px 0; font-size: 15px; background: #3a2c12; color: #f3d59b; }
+  .banner.bad { background: #3a1c1a; color: #f4b4ae; }
+  .banner.good { background: #1e3320; color: #bfe6bb; }
+  .empty { color: var(--dim); padding: 12px; font-size: 14px; }
+</style>
+</head>
+<body>
+<main>
+  <h1>Connect the player to Wi-Fi</h1>
+  <p class="hint">Choose your network and type its password. The player saves it and joins it from now on.</p>
+  <div class="banner" id="banner" hidden></div>
+
+  <div id="pick">
+    <h2>Networks near the player</h2>
+    <div class="panel" id="nets"><div class="empty">Looking…</div></div>
+
+    <h2>Network</h2>
+    <form id="form" autocomplete="off">
+      <label for="ssid">Name</label>
+      <input type="text" id="ssid" maxlength="32" autocapitalize="off" autocorrect="off" spellcheck="false" required>
+      <label for="password">Password</label>
+      <input type="password" id="password" maxlength="63" autocapitalize="off" autocorrect="off" spellcheck="false">
+      <label class="show"><input type="checkbox" id="reveal"> Show password</label>
+      <p class="hint">Leave the password empty for an open network. The player's Wi-Fi only works with 2.4 GHz networks.</p>
+      <button class="main" id="join" type="submit">Connect</button>
+    </form>
+  </div>
+</main>
+
+<script>
+const $ = (id) => document.getElementById(id);
+const banner = (text, kind = "") => { $("banner").textContent = text; $("banner").className = "banner " + kind; $("banner").hidden = !text; };
+const bars = (signal) => signal >= 70 ? "strong" : signal >= 45 ? "good" : signal >= 25 ? "fair" : "weak";
+
+function showNetworks(list) {
+  const box = $("nets");
+  box.textContent = "";
+  if (!list.length) { box.innerHTML = '<div class="empty">None found. Type the name below.</div>'; return; }
+  for (const n of list) {
+    const b = document.createElement("button");
+    b.type = "button"; b.className = "net";
+    const name = document.createElement("span"); name.textContent = n.ssid;
+    const info = document.createElement("small"); info.textContent = `${bars(n.signal)}${n.secure ? "" : " · open"}`;
+    b.append(name, info);
+    b.addEventListener("click", () => {
+      document.querySelectorAll(".net").forEach((x) => x.classList.toggle("chosen", x === b));
+      $("ssid").value = n.ssid;
+      $("password").value = "";
+      (n.secure ? $("password") : $("join")).focus();
+    });
+    box.append(b);
+  }
+}
+
+async function load() {
+  try {
+    const s = await (await fetch("/api/wifi", { cache: "no-store" })).json();
+    if (s.state === "closed") {
+      banner("Wi-Fi setup is not open. On the player, hold the knob with no card in, then choose Wi-Fi and Connect to a new network.", "bad");
+      $("pick").hidden = true;
+      return;
+    }
+    if (s.state === "failed" && s.message) banner(s.message + " Check the name and password and try again.", "bad");
+    showNetworks(s.networks || []);
+  } catch (e) {
+    banner("The player did not answer. Is this phone still on the NFC Player Setup network?", "bad");
+  }
+}
+
+$("reveal").addEventListener("change", (e) => { $("password").type = e.target.checked ? "text" : "password"; });
+$("form").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  $("join").disabled = true;
+  try {
+    const r = await fetch("/api/wifi", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "X-Requested-With": "nfc-player" },
+      body: JSON.stringify({ ssid: $("ssid").value, password: $("password").value }),
+    });
+    const body = await r.json();
+    if (!r.ok) { banner(body.error || "That did not work.", "bad"); $("join").disabled = false; return; }
+    $("pick").hidden = true;
+    banner(`The player is joining ${$("ssid").value}. This phone will drop off the setup network now; watch the player's screen. ` +
+           "If it cannot join, the setup network comes back: join it again and reopen this page to try again.", "good");
+  } catch (err) {
+    banner("The player did not answer. Watch its screen: it may already be joining.", "bad");
+    $("join").disabled = false;
+  }
+});
+load();
+</script>
+</body>
+</html>

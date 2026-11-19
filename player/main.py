@@ -8,6 +8,8 @@
 import argparse
 import os
 import queue
+import shutil
+import socket
 import subprocess
 import sys
 import time
@@ -21,6 +23,7 @@ from .events import LibraryChanged
 from .library import FileTags, Library
 from .playback import FakePlayback, MpdPlayback
 from .playlists import Playlists
+from .wifi import NetworkManagerBackend, NoWifi, SimBackend, Wifi
 
 # GPIO numbers (BCM). The DAC HAT owns 2, 3, 18, 19, 20 and 21.
 # GPIO 22 is the power light. The player never touches it: config.txt switches it on at boot
@@ -206,10 +209,16 @@ def main() -> None:
     events: queue.Queue = queue.Queue()
     status: dict = {}
     if args.sim:
+        wifi = Wifi(SimBackend())
+    elif shutil.which("nmcli"):
+        wifi = Wifi(NetworkManagerBackend())  # the Pi
+    else:
+        wifi = NoWifi()  # a computer running without the simulator: its Wi-Fi is not the player's to change
+    if args.sim:
         from .hw.sim import server
 
         display = server.SimDisplay()
-        server.start(events, display, args.port)
+        server.start(events, display, args.port, wifi=wifi.backend)
         print(f"Simulator: http://localhost:{args.port}")
     else:
         display = _attempt(status, "screen", lambda: open_display(config["display"], config["rotate"] == 180)) or NullDisplay()
@@ -248,7 +257,9 @@ def main() -> None:
     from .hw.selftest import InputLog, dac_test
 
     steps = 60 if args.sim else VOLUME_STEPS_PER_REV[config["encoder"]]
-    app = App(library, Store(args.state), playback, storage, volume_steps_per_rev=steps, ui=ui)
+    app = App(library, Store(args.state), playback, storage, volume_steps_per_rev=steps, ui=ui, wifi=wifi)
+    if isinstance(wifi, Wifi):
+        wifi.start()
     inputs = InputLog()
     print(f"{len(library.albums)} albums, {len(library.artists)} artists and {len(library.lists)} lists in {args.music}", flush=True)
 
@@ -269,7 +280,11 @@ def main() -> None:
             simulator=args.sim,
         )
         try:
-            web.start(events, shared, library, writer, args.web_port, bind="127.0.0.1" if args.sim else "0.0.0.0", setup=setup, playlists=playlists)
+            web.start(events, shared, library, writer, args.web_port, bind="127.0.0.1" if args.sim else "0.0.0.0", setup=setup, playlists=playlists, wifi=wifi if isinstance(wifi, Wifi) else None)
+            host = "localhost" if args.sim else f"{socket.gethostname()}.local"
+            app.web_address = f"http://{host}" + ("" if args.web_port == 80 else f":{args.web_port}")
+            if args.sim:
+                wifi.backend.portal_address = f"localhost:{args.web_port}"
             app.is_uploading = lambda: writer.busy
             print(f"Web remote on port {args.web_port}", flush=True)
         except OSError as e:

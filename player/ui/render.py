@@ -15,6 +15,7 @@ PAD = 16
 COVER = 124
 ROW_H = 38
 VISIBLE_ROWS = 5
+BADGE_W = 26  # room kept clear in the top right corner for the Wi-Fi icon
 
 
 @lru_cache(maxsize=None)
@@ -95,7 +96,7 @@ def message(title: str, body: str = "") -> Image.Image:
 def list_screen(header: str, rows: list[tuple[str, str]], selected: int) -> Image.Image:
     """rows are (title, subtitle); subtitle may be empty."""
     img, d = _canvas()
-    d.text((PAD, 12), _fit(header, font(15), W - 2 * PAD), font=font(15), fill=DIM)
+    d.text((PAD, 12), _fit(header, font(15), W - 2 * PAD - BADGE_W), font=font(15), fill=DIM)
     d.line((PAD, 38, W - PAD, 38), fill=FAINT)
     top = min(max(selected - VISIBLE_ROWS // 2, 0), max(len(rows) - VISIBLE_ROWS, 0))
     text_w = W - 2 * PAD - 20
@@ -192,4 +193,67 @@ def splash() -> Image.Image:
         d.arc((cx + 12 - r, cy - r, cx + 12 + r, cy + r), -50, 50, fill=ACCENT, width=5)
     d.text((W // 2, 160), "NFC Player", font=font(30), fill=FG, anchor="mt")
     d.text((W // 2, 202), "Starting…", font=font(16), fill=DIM, anchor="mt")
+    return img
+
+
+def wifi_badge(img: Image.Image, bars: int | None) -> Image.Image:
+    """Draws the Wi-Fi signal in the top right corner: 1 to 4 lit parts, or struck through with no connection."""
+    d = ImageDraw.Draw(img)
+    cx, by = W - PAD - 12, 20  # the fan's point, at the bottom
+    lit = FG if bars is not None else DIM
+    for i, r in enumerate((0, 8, 12.5, 17)):
+        colour = lit if bars is None or i < bars else FAINT
+        if r == 0:
+            d.ellipse((cx - 2, by - 5, cx + 2, by - 1), fill=colour)
+        else:
+            d.arc((cx - r, by - r, cx + r, by + r), 225, 315, fill=colour, width=2)
+    if bars is None:
+        d.line((cx - 11, by - 17, cx + 11, by), fill=BG, width=6)  # a gap either side of the stroke
+        d.line((cx - 11, by - 17, cx + 11, by), fill=FG, width=2)
+    return img
+
+
+@lru_cache(maxsize=2)
+def _qr(text: str, box: int) -> Image.Image | None:
+    """A QR code a phone camera can join the network from, or None without the qrcode package."""
+    try:
+        import qrcode
+    except ImportError:
+        return None
+    code = qrcode.QRCode(border=2, box_size=1, error_correction=qrcode.constants.ERROR_CORRECT_L)
+    code.add_data(text)
+    matrix = code.get_matrix()
+    scale = max(box // len(matrix), 1)
+    img = Image.new("RGB", (len(matrix) * scale, len(matrix) * scale), (255, 255, 255))
+    d = ImageDraw.Draw(img)
+    for y, row in enumerate(matrix):
+        for x, dark in enumerate(row):
+            if dark:
+                d.rectangle((x * scale, y * scale, (x + 1) * scale - 1, (y + 1) * scale - 1), fill=(0, 0, 0))
+    return img
+
+
+def _qr_escape(text: str) -> str:
+    return "".join("\\" + c if c in '\\;,:"' else c for c in text)
+
+
+def wifi_join(ssid: str, password: str, address: str, note: str = "") -> Image.Image:
+    """How to reach the setup page: join this network, then open this address. note is why the last try failed."""
+    img, d = _canvas()
+    qr = _qr(f"WIFI:T:WPA;S:{_qr_escape(ssid)};P:{_qr_escape(password)};;", 120)
+    x = PAD
+    if qr is not None:
+        img.paste(qr, (PAD, (H - qr.height) // 2 - 12))
+        x = PAD + qr.width + 14
+    col_w = W - PAD - x
+    y = 22
+    d.text((x, y), "Join this Wi-Fi", font=font(14), fill=DIM)
+    d.text((x, y + 18), _fit(ssid, font(17), col_w), font=font(17), fill=FG)
+    d.text((x, y + 46), "Password", font=font(14), fill=DIM)
+    d.text((x, y + 64), password, font=font(22), fill=ACCENT)
+    d.text((x, y + 100), "Then open", font=font(14), fill=DIM)
+    d.text((x, y + 118), _fit(address, font(17), col_w), font=font(17), fill=FG)
+    lines = _wrap(note or "Back to cancel", font(14), W - 2 * PAD, 2)
+    for i, line in enumerate(lines):
+        d.text((W // 2, H - 14 - 18 * (len(lines) - i)), line, font=font(14), fill=DIM, anchor="mt")
     return img

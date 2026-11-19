@@ -12,6 +12,7 @@ W, H = 128, 32
 ON, OFF = 255, 0
 ROW_H = 11
 LINES = (0, 11, 22)  # top of each text line
+BADGE = (115, 0, W, 10)  # the Wi-Fi icon's corner
 
 
 @lru_cache(maxsize=None)
@@ -70,7 +71,7 @@ def message(title: str, body: str = "") -> Image.Image:
     img, d = _canvas()
     body_lines = _lines(body, font(SMALL), W - 2, 2) if body else []
     top = max((H - ROW_H * (1 + len(body_lines))) // 2, 0)
-    d.text((W // 2, top), _fit(title, font(BIG), W - 2), font=font(BIG), fill=ON, anchor="mt")
+    d.text((W // 2, top), _fit(title, font(BIG), W - 24), font=font(BIG), fill=ON, anchor="mt")  # clear of the Wi-Fi icon
     for i, line in enumerate(body_lines):
         d.text((W // 2, top + ROW_H * (i + 1)), line, font=font(SMALL), fill=ON, anchor="mt")
     return img
@@ -102,7 +103,7 @@ def now_playing(name: str, details: tuple[str, str], art: bytes | None, status, 
     """Track, then the album or artist line, then time and a progress (or volume) bar."""
     img, d = _canvas()
     finished = status.state == "stop"
-    d.text((0, LINES[0]), _fit("Finished" if finished else status.title, font(BIG), W - 2), font=font(BIG), fill=ON)
+    d.text((0, LINES[0]), _fit("Finished" if finished else status.title, font(BIG), W - 13), font=font(BIG), fill=ON)
     if finished:
         d.text((0, LINES[1]), "Push to play again", font=font(SMALL), fill=ON)
         return img
@@ -151,4 +152,33 @@ def splash() -> Image.Image:
         d.arc((21 - r, 16 - r, 21 + r, 16 + r), -50, 50, fill=ON, width=2)
     d.text((40, 2), "NFC Player", font=font(BIG), fill=ON)
     d.text((40, 18), "Starting…", font=font(SMALL), fill=ON)
+    return img
+
+
+def wifi_badge(img: Image.Image, bars: int | None) -> Image.Image:
+    """The Wi-Fi signal in the top right corner, struck through with no connection.
+
+    Three short lines leave no spare corner on lists, so it is drawn only where
+    the corner is empty and never covers text.
+    """
+    if img.crop(BADGE).getbbox() is not None:
+        return img
+    d = ImageDraw.Draw(img)
+    cx, by = 122, 8
+    d.point([(cx - 1, by - 1), (cx, by - 1), (cx + 1, by - 1), (cx, by - 2)], fill=ON)  # the dot
+    for i, r in enumerate((3, 5, 7)):
+        if bars is None or i + 1 < bars:
+            d.arc((cx - r, by - 1 - r, cx + r, by - 1 + r), 225, 315, fill=ON)
+    if bars is None:
+        d.line((116, 0, 127, 9), fill=OFF, width=3)
+        d.line((116, 0, 127, 9), fill=ON)
+    return img
+
+
+def wifi_join(ssid: str, password: str, address: str, note: str = "") -> Image.Image:
+    """Join this network with this password, then open this address. A note (an error) replaces the name."""
+    img, d = _canvas()
+    rows = (note or ssid, f"Password {password}", f"Open {address}")
+    for y, text in zip(LINES, rows):
+        d.text((0, y), _fit(text, font(SMALL), W - 13 if y == 0 else W), font=font(SMALL), fill=ON)
     return img

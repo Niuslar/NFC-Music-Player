@@ -15,7 +15,7 @@ REBOOT=0
 
 echo "== Packages"
 apt-get update -q
-apt-get install -y -q mpd python3-pil python3-numpy python3-spidev python3-gpiozero python3-lgpio python3-mpd exfatprogs fdisk alsa-utils i2c-tools
+apt-get install -y -q mpd python3-pil python3-numpy python3-spidev python3-gpiozero python3-lgpio python3-mpd exfatprogs fdisk alsa-utils i2c-tools dnsmasq-base python3-qrcode
 
 echo "== Boot configuration ($CONFIG)"
 if ! grep -q "^# nfc-player" "$CONFIG"; then
@@ -64,13 +64,26 @@ install -m 755 "$APP_DIR/system/nfc-player-usb" /usr/local/sbin/nfc-player-usb
 echo "OWNER=$RUN_USER" > /etc/nfc-player.conf
 H=/usr/local/sbin/nfc-player-usb
 # The power key shuts the Pi down with systemctl poweroff.
-echo "$RUN_USER ALL=(root) NOPASSWD: $H release, $H reclaim, $H rw, $H ro, /usr/bin/systemctl poweroff" > /etc/sudoers.d/nfc-player
+# The Wi-Fi helper joins new networks from the settings menu.
+install -m 755 "$APP_DIR/system/nfc-player-wifi" /usr/local/sbin/nfc-player-wifi
+W=/usr/local/sbin/nfc-player-wifi
+echo "$RUN_USER ALL=(root) NOPASSWD: $H release, $H reclaim, $H rw, $H ro, /usr/bin/systemctl poweroff, $W scan, $W hotspot-up, $W hotspot-down, $W join" > /etc/sudoers.d/nfc-player
 chmod 440 /etc/sudoers.d/nfc-player
 visudo -cf /etc/sudoers.d/nfc-player >/dev/null
 install -m 644 "$APP_DIR/system/nfc-player-usb.service" /etc/systemd/system/
 # Turns the screen off at the very end of a shutdown, after the player has stopped.
 install -D -m 755 "$APP_DIR/system/nfc-player-screen-off" /usr/lib/systemd/system-shutdown/nfc-player-screen-off
 sed -e "s|@USER@|$RUN_USER|g" -e "s|@APP_DIR@|$APP_DIR|g" "$APP_DIR/system/nfc-player.service" > /etc/systemd/system/nfc-player.service
+
+echo "== Wi-Fi setup network"
+if ! command -v nmcli >/dev/null 2>&1; then
+  echo "NetworkManager (nmcli) was not found, so joining a new network from the player's settings will not work."
+  echo "Raspberry Pi OS Bookworm and later use NetworkManager; older releases do not."
+fi
+# While the setup network is up, every name a phone looks up points at the player,
+# so the phone opens the Wi-Fi page by itself. This only applies to that network.
+mkdir -p /etc/NetworkManager/dnsmasq-shared.d
+echo "address=/#/10.42.0.1" > /etc/NetworkManager/dnsmasq-shared.d/nfc-player.conf
 
 echo "== Audio"
 # First sound card that is not HDMI or the built-in headphone output.

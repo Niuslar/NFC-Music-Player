@@ -34,7 +34,7 @@
 <div class="device">
   <img class="screen" id="screen" alt="Player display" width="320" height="240">
   <div class="controls">
-    <button class="knob" id="knob" title="Scroll or drag to turn, click to push, hold for long push"></button>
+    <button class="knob" id="knob" title="Scroll or drag to turn, click to push, hold 1 second for a long push"></button>
     <div class="keys">
       <button class="key" data-press="prev" title="Previous">⏮</button>
       <button class="key" data-press="play" title="Play / pause">⏯</button>
@@ -61,8 +61,17 @@
   <button data-usb="unplug">Unplug</button>
 </div>
 
+<div class="panel">
+  <div class="label">Wi-Fi signal</div>
+  <button data-wifi="4">Strong</button>
+  <button data-wifi="3">Good</button>
+  <button data-wifi="2">Fair</button>
+  <button data-wifi="1">Weak</button>
+  <button data-wifi="">No Wi-Fi</button>
+</div>
+
 <p class="help">
-  <kbd>←</kbd> <kbd>→</kbd> turn knob (15° each, <kbd>Shift</kbd> for fine) · <kbd>Enter</kbd> push · <kbd>M</kbd> long push ·
+  <kbd>←</kbd> <kbd>→</kbd> turn knob (15° each, <kbd>Shift</kbd> for fine) · <kbd>Enter</kbd> push · <kbd>M</kbd> hold (settings when there is no card) ·
   <kbd>Z</kbd> <kbd>X</kbd> <kbd>C</kbd> prev / play / next (hold <kbd>Z</kbd> or <kbd>C</kbd>, or the button, to rewind or fast-forward) · <kbd>Esc</kbd> back (hold 2 s to restart the album) · ⏻ power off and on · <kbd>1</kbd>–<kbd>4</kbd> insert card · <kbd>0</kbd> remove
 </p>
 
@@ -111,7 +120,7 @@ knob.addEventListener("pointermove", (e) => {
   rotate(counts);
 });
 knob.addEventListener("pointerup", () => {
-  if (drag && drag.moved < 4) press(Date.now() - drag.at > 600 ? "knob_long" : "knob");
+  if (drag && drag.moved < 4) press(Date.now() - drag.at > 1000 ? "knob_long" : "knob");
   drag = null;
 });
 
@@ -152,6 +161,10 @@ function setCard(uid) {
   document.querySelectorAll("[data-card]").forEach((b) => b.classList.toggle("on", !!uid && b.dataset.card === uid));
 }
 document.querySelectorAll("[data-card]").forEach((b) => b.addEventListener("click", () => setCard(b.dataset.card)));
+document.querySelectorAll("[data-wifi]").forEach((b) => b.addEventListener("click", () => {
+  send({ type: "wifi", bars: b.dataset.wifi ? +b.dataset.wifi : null });
+  document.querySelectorAll("[data-wifi]").forEach((x) => x.classList.toggle("on", x === b));
+}));
 document.querySelectorAll("[data-usb]").forEach((b) => b.addEventListener("click", () => send({ type: "usb", action: b.dataset.usb })));
 
 const cardUids = [...document.querySelectorAll("[data-card]")].map((b) => b.dataset.card).filter(Boolean);

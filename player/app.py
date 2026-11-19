@@ -4,10 +4,12 @@ It never touches hardware; everything arrives as events and leaves through
 the playback, store and storage objects it is given.
 """
 
+import shutil
 from enum import Enum, auto
 
 from . import events as ev
-from .cards import Store
+from . import wifi as wifi_mod
+from .cards import VOLUME_LIMITS, Store
 from .knob import list_scaler, volume_scaler
 from .library import KINDS, Item, Library
 from .playback import Status
@@ -24,6 +26,9 @@ SCAN_LABEL_SECONDS = 0.8
 MISSING = "The music linked to this card is missing."
 TEST_SCREEN_SECONDS = 5.0
 MENU_ITEMS = ("Link to something else", "Unlink this card", "Close")
+SETTINGS_ITEMS = ("Wi-Fi", "Volume limit", "About this player", "Restart the player", "Close")
+WIFI_ITEMS = (("Connect to a new network", "Set it up from your phone"), ("Back", ""))
+SIGNAL_WORDS = {1: "weak signal", 2: "fair signal", 3: "good signal", 4: "strong signal"}
 KIND_NAMES = {"album": ("Album", "album"), "artist": ("Artist", "artist"), "list": ("List", "list")}
 
 
@@ -40,6 +45,16 @@ class Mode(Enum):
     TRACKS = auto()  # the tracks of what is playing, to jump to one
     TRANSFER = auto()  # music partition handed to the computer
     OFF = auto()  # the power key was pressed: everything is saved and the Pi is shutting down
+    # Settings, from holding the knob with no card in the slot:
+    SETTINGS = auto()
+    WIFI = auto()  # the Wi-Fi page: what it is connected to, and joining a new network
+    WIFI_SETUP = auto()  # the setup network is up (or starting, or joining): instructions for the phone
+    VOLUME_LIMIT = auto()
+    ABOUT = auto()
+
+
+SETTINGS_MODES = (Mode.SETTINGS, Mode.WIFI, Mode.WIFI_SETUP, Mode.VOLUME_LIMIT, Mode.ABOUT)
+LIST_MODES = (Mode.LINKING, Mode.MENU, Mode.TRACKS, Mode.SETTINGS, Mode.WIFI, Mode.VOLUME_LIMIT)
 
 
 class NullStorage:
@@ -53,12 +68,15 @@ class NullStorage:
 
 
 class App:
-    def __init__(self, library: Library, store: Store, playback, storage=None, volume_steps_per_rev: int = 60, ui=render):
+    def __init__(self, library: Library, store: Store, playback, storage=None, volume_steps_per_rev: int = 60, ui=render, wifi=None):
         self.ui = ui  # render (the 320x240 colour screen) or ui.tiny (the 128x32 OLED)
         self.library = library
         self.store = store
         self.playback = playback
         self.storage = storage or NullStorage()
+        self.wifi = wifi or wifi_mod.NoWifi()
+        self.web_address = ""  # where the web remote is, for the About screen; main fills it in
+        self._about: list[str] = []
         self.mode = Mode.IDLE
         self.card: str | None = None
         self.album: Item | None = None  # what is playing: an album, an artist or a list
@@ -102,6 +120,7 @@ class App:
         elif isinstance(event, ev.ListsChanged):
             self._refresh_library(rescan=False)
         elif isinstance(event, ev.CardInserted):
+            self._end_wifi_setup()  # a card always wins over the settings
             if self.card is not None and self.mode is not Mode.TRANSFER:
                 self._leave_card()
             self.card = event.uid
@@ -125,6 +144,9 @@ class App:
 
     def tick(self, now: float) -> None:
         """Called several times a second to follow what the player is doing."""
+        self.wifi.tick()
+        if self.mode is Mode.WIFI_SETUP and self.wifi.state in ("off", "closing"):
+            self.mode = Mode.IDLE  # the setup network closed itself after nobody used it
         if self.album is None or self.mode in (Mode.TRANSFER, Mode.OFF):
             return
         was_active = self.status.state != "stop"
@@ -133,17 +155,24 @@ class App:
             self.store.clear_resume(self.card)  # album played to the end
 
     def _rotate(self, counts: int, now: float) -> None:
-        if self.mode is Mode.TRANSFER or self.usb_offer:
-            return
-        if self.mode in (Mode.LINKING, Mode.MENU, Mode.TRACKS):
-            count = {Mode.LINKING: lambda: len(self._link_choices()), Mode.MENU: lambda: len(MENU_ITEMS), Mode.TRACKS: lambda: len(self.album.tracks)}[self.mode]()
+        if self.mode in (Mode.TRANSFER, Mode.ABOUT, Mode.WIFI_SETUP) or self.usb_offer:
+            return  # nowhere to show the volume on these screens, so do not change it unseen
+        if self.mode in LIST_MODES:
+            count = {
+                Mode.LINKING: lambda: len(self._link_choices()),
+                Mode.MENU: lambda: len(MENU_ITEMS),
+                Mode.TRACKS: lambda: len(self.album.tracks),
+                Mode.SETTINGS: lambda: len(SETTINGS_ITEMS),
+                Mode.WIFI: lambda: len(WIFI_ITEMS),
+                Mode.VOLUME_LIMIT: lambda: len(VOLUME_LIMITS),
+            }[self.mode]()
             steps = self._list_knob.feed(counts, now)
             self.selected = min(max(self.selected + steps, 0), count - 1)
             return
         self._set_volume(self.store.volume + self._vol_knob.feed(counts, now))
 
     def _set_volume(self, volume: int) -> None:
-        volume = min(max(int(volume), 0), 100)
+        volume = min(max(int(volume), 0), self.store.max_volume)
         if volume != self.store.volume:
             self.store.volume = volume
             self.playback.set_volume(volume)
@@ -277,6 +306,114 @@ class App:
         elif self.mode is Mode.UNLINKED:
             if button == "knob":
                 self._start_linking()
+        elif self.mode is Mode.IDLE:
+            if button == "knob_long":
+                self._open_list(Mode.SETTINGS, 0)
+        elif self.mode in SETTINGS_MODES:
+            self._settings_press(button)
+
+    # ---- settings -----------------------------------------------------------
+
+    def _settings_press(self, button: str) -> None:
+        back = button in ("back", "knob_long")
+        if self.mode is Mode.SETTINGS:
+            if back:
+                self.mode = Mode.IDLE
+            elif button == "knob":
+                self._settings_choice(self.selected)
+        elif self.mode is Mode.WIFI:
+            if back or (button == "knob" and self.selected == len(WIFI_ITEMS) - 1):
+                self._open_list(Mode.SETTINGS, 0)
+            elif button == "knob":
+                self.wifi.open_portal()
+                self.mode = Mode.WIFI_SETUP
+        elif self.mode is Mode.VOLUME_LIMIT:
+            if button == "knob":
+                self._set_limit(VOLUME_LIMITS[self.selected])
+            if button == "knob" or back:
+                self._open_list(Mode.SETTINGS, 1)
+        elif self.mode is Mode.ABOUT:
+            if button == "knob" or back:
+                self._open_list(Mode.SETTINGS, 2)
+        elif self.mode is Mode.WIFI_SETUP:
+            state = self.wifi.state
+            if state in ("joined", "error") and (button == "knob" or back):
+                self.wifi.close_portal()
+                self._open_list(Mode.SETTINGS, 0)
+            elif state in ("starting", "ready", "failed") and back:
+                self.wifi.close_portal()  # back to the saved network
+                self._open_list(Mode.WIFI, 0)
+            # while joining nothing can be cancelled: the screen says it takes up to a minute
+
+    def _settings_choice(self, index: int) -> None:
+        if index == 0:
+            self._open_list(Mode.WIFI, 0)
+        elif index == 1:
+            self._open_list(Mode.VOLUME_LIMIT, VOLUME_LIMITS.index(self.store.max_volume))
+        elif index == 2:
+            self._about = self._about_lines()
+            self.mode = Mode.ABOUT
+        elif index == 3:
+            self._restart()
+        else:
+            self.mode = Mode.IDLE
+
+    def _set_limit(self, limit: int) -> None:
+        self.store.max_volume = limit
+        if self.store.volume > limit:
+            self.store.volume = limit
+            self.playback.set_volume(limit)
+        self.store.save()
+
+    def _end_wifi_setup(self) -> None:
+        if self.mode is Mode.WIFI_SETUP:
+            self.wifi.close_portal()
+
+    def _wifi_line(self) -> str:
+        network, bars = self.wifi.network(), self.wifi.bars()
+        return f"{network} · {SIGNAL_WORDS[bars]}" if network and bars else "Not connected"
+
+    def _about_lines(self) -> list[str]:
+        """Worked out once when the screen opens: none of it changes while it is up."""
+        connected = self.wifi.bars() is not None
+        lines = [f"Wi-Fi: {self._wifi_line()}" if connected else "Wi-Fi: not connected"]
+        if connected and self.web_address:
+            lines.append(f"Web remote: {self.web_address}")
+            address = wifi_mod.local_address()
+            if address and address not in self.web_address:
+                lines.append(f"or http://{address}")
+        try:
+            free = f" · {shutil.disk_usage(self.library.root).free / 1e9:.1f} GB free"
+        except OSError:
+            free = ""
+        lines.append(f"{_count(len(self.library.albums), 'album')}{free}")
+        return lines
+
+    def _settings_screen(self):
+        if self.mode is Mode.SETTINGS:
+            limit = self.store.max_volume
+            subs = (self._wifi_line(), "No limit" if limit == 100 else f"Up to {limit}", "Web address, music and storage", "", "")
+            return self.ui.list_screen("Settings", list(zip(SETTINGS_ITEMS, subs)), self.selected)
+        if self.mode is Mode.WIFI:
+            return self.ui.list_screen(f"Wi-Fi: {self._wifi_line()}", list(WIFI_ITEMS), self.selected)
+        if self.mode is Mode.VOLUME_LIMIT:
+            rows = [("No limit" if v == 100 else f"Up to {v}", "Chosen now" if v == self.store.max_volume else "") for v in VOLUME_LIMITS]
+            return self.ui.list_screen("Volume limit: the loudest it can go", rows, self.selected)
+        if self.mode is Mode.ABOUT:
+            return self.ui.message("About this player", "\n".join(self._about))
+        w = self.wifi
+        if w.state == "starting":
+            return self.ui.message("Starting Wi-Fi setup", "Looking for networks nearby…")
+        if w.state in ("ready", "failed"):
+            return self.ui.wifi_join(wifi_mod.SETUP_SSID, w.password, w.address(), w.message if w.state == "failed" else "")
+        if w.state == "joining":
+            return self.ui.message("Joining the network", "This can take up to a minute.")
+        if w.state == "joined":
+            where = f"\nThe web remote is at {self.web_address}." if self.web_address else ""
+            return self.ui.message(f"Connected to {w.joined}", f"{where}\nPush the knob to finish.".strip())
+        if w.state == "error":
+            return self.ui.message("Wi-Fi setup did not work", f"{w.message}\nPush the knob to go back.")
+        return self.ui.message("Closing Wi-Fi setup")
 
     # ---- actions ------------------------------------------------------------
 
@@ -430,6 +567,7 @@ class App:
         if self.is_uploading():
             self.show_error("An upload from the web page is still running. Try again when it finishes.", self._now)
             return
+        self._end_wifi_setup()
         self._leave_card()  # remembers where the card stopped and saves the volume
         self.playback.stop()
         self.store.save()
@@ -445,6 +583,7 @@ class App:
         if self.is_uploading():
             self.show_error("An upload from the web page is still running. Try again when it finishes.", self._now)
             return
+        self._end_wifi_setup()
         self._leave_card()  # the card picks up where it stopped once the player is back
         self.playback.stop()
         self.store.save()
@@ -452,6 +591,7 @@ class App:
 
     def _start_transfer(self) -> None:
         self.usb_offer = False
+        self._end_wifi_setup()
         self._leave_card()
         self.playback.stop()
         self.storage.release()  # if this fails we stay idle and the error is shown
@@ -512,6 +652,8 @@ class App:
             "linked": self.store.linked_keys(),
             "remote": self.remote,
             "volume": self.store.volume,
+            "max_volume": self.store.max_volume,
+            "wifi": {"bars": self.wifi.bars(), "network": self.wifi.network()},
             "album": {"key": album.key, "title": album.title, "artist": album.artist, "kind": album.kind} if album else None,
             "details": " · ".join(filter(None, self._details())) if album else "",
             "state": st.state if album else "stop",
@@ -534,6 +676,9 @@ class App:
             return self.ui.message("Restarting")
         if now < self._test_until:
             return self.ui.test_pattern()
+        return self.ui.wifi_badge(self._screen(now), self.wifi.bars())
+
+    def _screen(self, now: float):
         if now < self._error_until:
             return self.ui.message("Something went wrong", self._error)
         if self.mode is Mode.TRANSFER:
@@ -545,6 +690,8 @@ class App:
             return self.ui.message("Connected to a computer", "Push the knob to transfer music.\nBack to keep listening.")
         if self.mode is Mode.IDLE:
             return self.ui.message("Place a card", "to start playing")
+        if self.mode in SETTINGS_MODES:
+            return self._settings_screen()
         if self.mode is Mode.UNLINKED:
             prompt = "Push the knob to choose what it plays." if self.library.albums else ""
             return self.ui.message("Card not linked", f"{self.note}\n{prompt}".strip())

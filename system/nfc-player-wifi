@@ -1,0 +1,56 @@
+#!/bin/sh
+# Root helper for Wi-Fi setup, through NetworkManager. Installed to /usr/local/sbin by setup.sh.
+#
+#   scan          list nearby networks, one "signal:security:name" line each (nmcli -t)
+#   hotspot-up    start the player's own setup network; reads its password from stdin
+#   hotspot-down  stop it and go back to a saved network, if one is in range
+#   join          read a network name, then its password (empty for an open network),
+#                 one per line from stdin; join it and save it for next time
+#
+# Names and passwords come on stdin so they never appear on a command line here.
+set -eu
+
+IFACE=wlan0
+HOTSPOT=nfc-player-setup
+SSID="NFC Player Setup"
+
+hotspot_off() {
+  nmcli connection down "$HOTSPOT" >/dev/null 2>&1 || true
+  nmcli connection delete "$HOTSPOT" >/dev/null 2>&1 || true
+}
+
+case "${1:-}" in
+  scan)
+    nmcli -t -f SIGNAL,SECURITY,SSID device wifi list ifname "$IFACE" --rescan yes
+    ;;
+  hotspot-up)
+    IFS= read -r PASS
+    hotspot_off
+    nmcli device wifi hotspot ifname "$IFACE" con-name "$HOTSPOT" ssid "$SSID" band bg password "$PASS" >/dev/null
+    # Never come back on its own after a restart or power cut.
+    nmcli connection modify "$HOTSPOT" connection.autoconnect no >/dev/null
+    ;;
+  hotspot-down)
+    hotspot_off
+    nmcli device connect "$IFACE" >/dev/null 2>&1 || true
+    ;;
+  join)
+    IFS= read -r NAME
+    IFS= read -r PASS || PASS=""
+    hotspot_off
+    # The radio has been a hotspot: look around again before asking for the network by name.
+    for _ in 1 2 3; do
+      nmcli -t -f SSID device wifi list ifname "$IFACE" --rescan yes | grep -qxF -- "$NAME" && break
+      sleep 2
+    done
+    if [ -n "$PASS" ]; then
+      nmcli --wait 45 device wifi connect "$NAME" password "$PASS" ifname "$IFACE" >/dev/null
+    else
+      nmcli --wait 45 device wifi connect "$NAME" ifname "$IFACE" >/dev/null
+    fi
+    ;;
+  *)
+    echo "usage: $0 scan|hotspot-up|hotspot-down|join" >&2
+    exit 2
+    ;;
+esac

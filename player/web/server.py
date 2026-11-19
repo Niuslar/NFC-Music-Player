@@ -4,6 +4,10 @@ There is no login: anyone on the network can use it. Two checks keep other
 web sites from driving it through your browser: requests must name this device
 in their Host header, and anything that changes state must carry a custom
 header that a cross-site page cannot send.
+
+While the player's own Wi-Fi setup network is up, phones on that network get the
+Wi-Fi page (/wifi) instead, whatever address they ask for, so they open it by themselves.
+Only they can send it a network to join.
 """
 
 import io
@@ -26,6 +30,7 @@ from ..playlists import ListError, Playlists, key_of
 
 PAGE = Path(__file__).parent / "remote.html"
 SETUP_PAGE = Path(__file__).parent / "setup.html"
+WIFI_PAGE = Path(__file__).parent / "wifi.html"
 UPLOAD_EXT = AUDIO_EXT | IMAGE_EXT
 HEADER = "X-Requested-With"
 HEADER_VALUE = "nfc-player"
@@ -286,7 +291,7 @@ def change_list(playlists: Playlists, library: Library, msg: dict) -> dict:
     return {**made, "key": key_of(made["id"])}
 
 
-def start(event_queue, shared: Shared, library: Library, writer: MusicWriter, port: int, bind: str = "0.0.0.0", setup: Setup | None = None, playlists: Playlists | None = None):
+def start(event_queue, shared: Shared, library: Library, writer: MusicWriter, port: int, bind: str = "0.0.0.0", setup: Setup | None = None, playlists: Playlists | None = None, wifi=None):
     covers: dict[str, bytes] = {}
 
     class Handler(BaseHTTPRequestHandler):
@@ -309,6 +314,10 @@ def start(event_queue, shared: Shared, library: Library, writer: MusicWriter, po
             self.close_connection = True  # the request body may not have been read
             self._json(status, {"error": message})
 
+        def _setup_visitor(self) -> bool:
+            """A phone on the player's Wi-Fi setup network."""
+            return wifi is not None and wifi.allows(self.client_address[0])
+
         def _guard(self, changes_state: bool) -> bool:
             if not _host_allowed(self.headers.get("Host", "")):
                 self._fail(403, "Open this page by the player's own name or address")
@@ -319,10 +328,23 @@ def start(event_queue, shared: Shared, library: Library, writer: MusicWriter, po
             return True
 
         def do_GET(self):
+            url = urlsplit(self.path)
+            if self._setup_visitor() and (url.path == "/" or not _host_allowed(self.headers.get("Host", ""))):
+                # Phones check for internet by asking another site for a page; every name points here
+                # on the setup network, so send them to the Wi-Fi page and they show it at once.
+                self.send_response(302)
+                self.send_header("Location", f"http://{wifi.address()}/wifi")
+                self.send_header("Content-Length", "0")
+                self.send_header("Cache-Control", "no-store")
+                self.end_headers()
+                return
             if not self._guard(False):
                 return
-            url = urlsplit(self.path)
-            if url.path == "/":
+            if url.path == "/wifi" and wifi is not None:
+                self._send(200, WIFI_PAGE.read_bytes(), "text/html; charset=utf-8")
+            elif url.path == "/api/wifi" and wifi is not None:
+                self._json(200, wifi.page_state() if self._setup_visitor() else {"state": "closed", "networks": [], "message": ""})
+            elif url.path == "/":
                 self._send(200, PAGE.read_bytes(), "text/html; charset=utf-8")
             elif url.path == "/setup" and setup is not None:
                 self._send(200, SETUP_PAGE.read_bytes(), "text/html; charset=utf-8")
@@ -398,6 +420,9 @@ def start(event_queue, shared: Shared, library: Library, writer: MusicWriter, po
             if not self._guard(True):
                 return
             path = urlsplit(self.path).path
+            if path == "/api/wifi" and wifi is not None:
+                self._wifi_join()
+                return
             if path == "/api/delete":
                 self._delete()
                 return
@@ -466,6 +491,24 @@ def start(event_queue, shared: Shared, library: Library, writer: MusicWriter, po
                 self._json(200, setup.test_dac())
             else:
                 self._fail(400, "Unknown test")
+
+        def _wifi_join(self) -> None:
+            if not self._setup_visitor():
+                self._fail(403, "Networks can only be chosen from a phone on the player's setup network, while it is open")
+                return
+            try:
+                msg = self._body()
+            except (ValueError, TypeError):
+                self._fail(400, "Bad request")
+                return
+            from ..wifi import WifiError
+
+            try:
+                wifi.join(msg.get("ssid"), msg.get("password", ""))
+            except WifiError as e:
+                self._fail(400, str(e))
+                return
+            self._json(200, {"ok": True})
 
         def _lists(self) -> None:
             try:

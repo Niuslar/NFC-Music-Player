@@ -69,7 +69,9 @@ def power_cycle(display: SimDisplay, event_queue: queue.Queue, shutdown_seconds:
     return power_off
 
 
-def start(event_queue: queue.Queue, display: SimDisplay, port: int = 8137) -> ThreadingHTTPServer:
+def start(event_queue: queue.Queue, display: SimDisplay, port: int = 8137, wifi=None) -> ThreadingHTTPServer:
+    """wifi is the simulated Wi-Fi (wifi.SimBackend); the page's Wi-Fi buttons set its signal."""
+
     class Handler(BaseHTTPRequestHandler):
         def _send(self, code: int, ctype: str, body: bytes) -> None:
             self.send_response(code)
@@ -94,6 +96,10 @@ def start(event_queue: queue.Queue, display: SimDisplay, port: int = 8137) -> Th
                 return
             try:
                 msg = json.loads(self.rfile.read(int(self.headers.get("Content-Length", 0))))
+                if msg.get("type") == "wifi" and wifi is not None and msg.get("bars") in (None, 1, 2, 3, 4):
+                    wifi.bars = msg["bars"]
+                    self._send(204, "text/plain", b"")
+                    return
                 event = _to_event(msg)
             except (ValueError, KeyError, TypeError):
                 event = None

@@ -14,6 +14,7 @@ A tabletop music player where each album is a card. Put a card in the slot and i
 - **Hi-Fi output.** A Raspberry Pi DAC Pro provides 3.5 mm and RCA outputs, with a balanced output available for a 4.4 mm socket.
 - **Screen and controls.** A 2-inch display shows the cover, track and time. A clicky knob sets the volume and scrolls lists; four buttons do previous, play/pause, next and back. A power key turns the player off safely and on again: the screen shows **Turning off** and goes dark once the Pi is off.
 - **Music over USB.** Plug the player into a computer and its music appears as a drive called `MUSIC`.
+- **Wi-Fi and settings.** An icon in the corner of the screen shows the Wi-Fi signal, struck through when there is none. Hold the knob for a second with no card in for settings: join a new Wi-Fi network, set a volume limit, see the web remote's address, or restart the player. To join a network, the player starts its own setup network with a one-time password shown on its screen; a phone joins it and sends the new network's name and password from a page the player serves there.
 - **Web remote.** A page served by the player, from any phone or computer on the same Wi-Fi: browse albums, artists and songs, play from any track, seek, link cards, upload or delete music, and make lists of songs from anywhere in the library. Lists are kept beside the card links (`lists.json`), not on the music drive, and a card can play one like an album.
 
 ## Hardware
@@ -34,19 +35,19 @@ The full parts list, wiring diagrams and step-by-step instructions are in the bu
 
 ## Status
 
-This is a work in progress.
+The electronics and software are done. The only step left is the case.
 
-- The player logic, screens, web remote and MPD playback run and are tested on a Mac, using a browser simulator in place of the hardware.
-- On a real Pi, setup and the web remote have been run. The display, NFC reader, knob, buttons and USB drive mode were written without the hardware and are not yet proven.
-- The case is designed but not yet printed. Its printable parts, drawings and assembly guide are in [NFC-Player-Case](NFC-Player-Case); open `NFC-Player-Assembly.html` there in a browser.
+- All of the hardware has been built and tested on a real Pi: the DAC, display, NFC reader, knob, buttons, power key and light, and USB drive mode, along with setup and the web remote.
+- The player logic, screens and web remote are also tested on a Mac, using a browser simulator in place of the hardware. Joining a new Wi-Fi network from the settings is new and has so far been tried only in the simulator.
+- The case is designed but not yet printed and assembled. Its printable parts, drawings and assembly guide are in [NFC-Player-Case](NFC-Player-Case); open `NFC-Player-Assembly.html` there in a browser.
 
 ## Try it without any hardware
 
-The simulator shows the display and stands in for the knob, buttons, cards and USB port.
+The simulator shows the display and stands in for the knob, buttons, cards, USB port and Wi-Fi.
 
 ```sh
 python3 -m venv .venv
-.venv/bin/pip install pillow numpy python-mpd2 pytest
+.venv/bin/pip install pillow numpy python-mpd2 pytest qrcode
 .venv/bin/python -m player.demo_library demo/music
 .venv/bin/python -m player.main --sim
 ```
@@ -68,7 +69,8 @@ Run the tests with:
 - `player/app.py` is the player's behaviour: a state machine fed with events from cards, controls, USB and the web.
 - `player/ui/render.py` draws the screens.
 - `player/hw/` holds the drivers (display, NFC reader, knob and buttons, USB drive mode), a simulator, and bring-up checks for each part.
-- `player/web/` is the web remote.
+- `player/web/` is the web remote, and the page a phone uses to give the player a new Wi-Fi network.
+- `player/wifi.py` reads the Wi-Fi signal and runs the setup network for joining a new one, through NetworkManager and a small root helper (`system/nfc-player-wifi`).
 - `player/playback.py` talks to [MPD](https://www.musicpd.org/), which does the decoding and audio output.
 - `system/` has the Raspberry Pi setup script and service files.
 - `NFC-Player-Case/` is the 3D-printed case. Every dimension is in `case.py`; Blender scripts build the STLs, pictures and assembly guide from it.
@@ -76,3 +78,5 @@ Run the tests with:
 ## A note on the web remote
 
 The web remote has no password. Anyone on the same network can control playback and add or delete music. Use it on a home network you trust, or turn it off with `--web-port 0`.
+
+Joining a new Wi-Fi network is guarded separately: the page that takes a network's password only works while the player's own setup network is open, only for phones on that network, and that network's WPA2 password is made up fresh each time and shown only on the player's screen.
