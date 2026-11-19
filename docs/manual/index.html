@@ -132,12 +132,12 @@
 <ul>
   <li><strong>Album</strong>: one album.</li>
   <li><strong>Artist</strong>: every album by that artist, oldest first.</li>
-  <li><strong>List</strong>: a folder of songs from more than one album, played in file name order. This choice appears only when your music has such a folder.</li>
+  <li><strong>List</strong>: a <a href="#lists">list you made on the web remote</a>, or a folder of songs from more than one album, played in file name order. This choice appears only when there is at least one list.</li>
 </ul>
 <ol class="steps">
   <li>Put the blank card in the slot. The player asks what to link it to.</li>
   <li>Turn the knob to <strong>Album</strong>, <strong>Artist</strong> or <strong>List</strong> and push it.</li>
-  <li>Turn the knob to choose from the list and push it. The card is linked and starts playing straight away.</li>
+  <li>Turn the knob to choose (albums are in A to Z order) and push it. The card is linked and starts playing straight away.</li>
 </ol>
 <div class="screens">
   <figure><div class="lcd"><img src="new-card.png" width="320" height="240" alt="Screen: Link this card to; Album, 7 albums; Artist, 5 artists"></div><figcaption>1. A new card in the slot.</figcaption></figure>
@@ -212,41 +212,69 @@
 <p>Albums come from the tags inside the files, so a folder of mixed songs still sorts into its real albums. Files without tags use their folders: the folder is the album and the folder above it is the artist.</p>
 
 <h2 id="remote">Web remote</h2>
-<p>On any phone or computer on the same Wi-Fi, open <a href="http://nfcplayer.local"><code>http://nfcplayer.local</code></a>. Nothing needs installing.</p>
+<p>On any phone or computer on the same Wi-Fi, open <a href="http://nfcplayer.local"><code>http://nfcplayer.local</code></a>. Nothing needs installing. The page is the easiest way to look through your music, make lists and look after the drive; the knob and keys are for listening.</p>
+<figure><img class="shot" src="remote.png" width="1000" height="700" alt="The web remote on a computer: a sidebar with Now playing, Albums, Artists, Songs, the lists Road trip (with a chain mark) and Sunday morning, New list, Add music and Setup and tests; a line saying the card in the slot plays the album Small Hours, with an Unlink button; a grid of seven album covers with Small Hours outlined and marked with a chain; and a player bar at the bottom showing 0415 from Small Hours, playing from the card, with previous, pause, next, a position bar and volume"><figcaption>Albums, A to Z. The outlined cover is playing; the chain marks music a card is linked to.</figcaption></figure>
+
+<h3>Find and play</h3>
+<ul>
+  <li>The sidebar has <strong>Albums</strong>, <strong>Artists</strong> and <strong>Songs</strong>, then your lists. On a phone it opens from the <strong>☰</strong> button.</li>
+  <li>Type in <strong>Search</strong> to narrow down albums, artists or songs.</li>
+  <li>Click a cover to open the album or artist. Click a song to play from it, with or without a card in the slot. On a computer, the round button that appears over a cover plays it straight away.</li>
+  <li>The bar along the bottom shows what is playing, with previous, play/pause, next, volume and a position bar you can click or drag to jump within the song. It follows the knob and keys, and they follow it. Click the cover in the bar for <strong>Now playing</strong>.</li>
+  <li>The card still decides: putting a linked card in plays that card, and taking it out pauses whatever is playing. Playing something from the page does not move the place a card remembers.</li>
+</ul>
+<figure><img class="shot" src="remote-album.png" width="1000" height="700" alt="The album page for Small Hours by Mika Tane, 3 tracks: a large cover, a chain mark by the title, and the buttons Play, On the card in the slot, Unlink card, Add to list and Files; below, the tracks 0300, 0415 (playing, marked with moving bars) and 0530, each with a plus button"><figcaption>An album. The song playing has moving bars instead of its number.</figcaption></figure>
+
+<h3 id="lists">Make lists</h3>
+<p>A list is any songs you like, from any albums, in the order you choose. A card can play a list just like an album. Making a list never copies or moves music, so it takes no space on the drive.</p>
+<ol class="steps">
+  <li>Press <strong>+ New list</strong> in the sidebar, type a name and press <strong>Enter</strong>. Or start from the songs: see the next step.</li>
+  <li>Press <strong>+</strong> next to any song, or <strong>Add to list</strong> on an album, artist or list, then choose a list. To start a new one from those songs, type a name under the lists and press <strong>Create</strong>.</li>
+  <li>Open the list from the sidebar to play it, link it to a card, or put it in order.</li>
+</ol>
+<figure><img class="shot" src="remote-add-to-list.png" width="1000" height="700" alt="The Add 3 songs to a list box over the album Paper Lanterns: the lists Road trip (5 songs) and Sunday morning (3 songs), a New list name box with a Create button, and Cancel"><figcaption>Adding a whole album to a list.</figcaption></figure>
+<figure><img class="shot" src="remote-list.png" width="1000" height="700" alt="The list Road trip, 5 albums and 5 tracks, with a chain mark and the buttons Play, Link card, Add to list, Rename and Delete list; each song shows its album and has plus, up, down and remove buttons"><figcaption>A list. Each song shows the album it comes from.</figcaption></figure>
+<ul>
+  <li><strong>Reorder:</strong> on a computer, drag a song up or down. On a phone, use the <strong>⌃</strong> and <strong>⌄</strong> arrows.</li>
+  <li><strong>Remove a song</strong> from the list with <strong>✕</strong>. The song stays in your library.</li>
+  <li><strong>Rename</strong> or <strong>Delete list</strong> from the buttons at the top. A card linked to a list keeps working after a rename; after a delete it needs linking again.</li>
+  <li>If you delete a song's file, lists skip it.</li>
+</ul>
+<p>Lists live on the player itself, not on the <code>MUSIC</code> drive, so they do not show up when the drive is connected to a computer. A folder that holds songs from several albums also shows in the sidebar as a list, with a folder icon; it plays in file name order and is changed by changing the folder.</p>
+
+<h3>Link cards</h3>
+<ul>
+  <li>With a card in the slot, a line at the top of the page says what it plays, with an <strong>Unlink</strong> button.</li>
+  <li>Open any album, artist or list and press <strong>Link card</strong>. It starts playing, just as if you had used the knob. The button works only with a card in the slot.</li>
+  <li>A <strong>chain</strong> next to an album, artist or list means a card is linked to it. Hover over it to see <em>Linked to card</em>. It is only a reminder: you can still link the same music to other cards.</li>
+</ul>
+
+<h3>On a phone</h3>
 <div class="side">
-  <figure><img class="shot" src="remote.png" width="900" height="1455" alt="The web remote: now playing panel with cover, track 0415 from Small Hours by Mika Tane, previous, pause and next buttons and a volume slider; a line saying the card in the slot is linked to Small Hours with an Unlink card button; then the library with Albums, Artists and Lists tabs, a search box and rows of albums each with Link card and Files buttons"></figure>
+  <figure><img class="shot" src="remote-phone.png" width="390" height="844" alt="The web remote on a phone, Now playing: the card line at the top, a large cover, the song 0415 from Small Hours by Mika Tane, a position bar, large previous, pause and next buttons, a volume bar and the start of the track list; a small player bar at the bottom" style="max-width:300px"></figure>
   <div>
-    <h3 style="margin-top:0">Control</h3>
-    <ul>
-      <li>The top panel shows what is playing, with previous, play/pause, next and volume. It follows the knob and keys, and they follow it.</li>
-      <li>Pick <strong>Albums</strong>, <strong>Artists</strong> or <strong>Lists</strong>, or search. Tap a row to play it, with or without a card in the slot.</li>
-      <li>The card still decides: putting a linked card in plays that card, and taking it out pauses whatever is playing.</li>
-      <li>Playing something from the page does not move the place a card remembers.</li>
-    </ul>
-    <h3>Link cards</h3>
-    <ul>
-      <li>With a card in the slot, a line under the controls says what it is linked to.</li>
-      <li>Press <strong>Link card</strong> next to any album, artist or list to link it. It starts playing, just as if you had used the knob.</li>
-      <li><strong>Unlink card</strong> makes it blank again.</li>
-    </ul>
+    <p>The same page fits a phone. The sidebar opens from <strong>☰</strong>, and the bar at the bottom keeps play/pause and next in reach.</p>
+    <p>Tap the bar for <strong>Now playing</strong>: big controls, volume, and the songs in what is playing. Tap a song to jump to it.</p>
+    <p>On an iPhone, <strong>Share → Add to Home Screen</strong> gives the remote its own icon.</p>
   </div>
 </div>
 
 <h3>Add music from the page</h3>
-<figure><img class="shot" src="remote-upload.png" width="900" height="442" alt="The Add music panel: a Put inside box, Choose folder and Choose files buttons, and the free space on the music drive"></figure>
+<p>Press <strong>Add music</strong> at the bottom of the sidebar.</p>
+<figure><img class="shot" src="remote-upload.png" width="1000" height="360" alt="The Add music page: a Put inside box, Choose folder and Choose files buttons, and the free space on the music drive"></figure>
 <ol class="steps">
   <li>Press <strong>Choose folder</strong> and pick an album folder. It is copied with its name.</li>
   <li>To file it under an artist, first type the artist in <strong>Put inside</strong>, for example <code>Nina Simone</code>. Picking a whole artist folder also works.</li>
   <li>On an iPhone, which cannot pick folders, use <strong>Choose files</strong> and type the full folder in <strong>Put inside</strong>, for example <code>Nina Simone/Pastel Blues</code>.</li>
-  <li>Keep the page open until every file says <em>done</em>. The album appears in the list a few seconds later.</li>
+  <li>Keep the page open until every file says <em>done</em>. The album appears under <strong>Albums</strong> a few seconds later.</li>
 </ol>
 <p>Music keeps playing during an upload. Only music and cover pictures are accepted. For a large collection, <a href="#music">USB</a> is much faster.</p>
 
 <h3>Delete music</h3>
 <ul>
-  <li>Press <strong>Files</strong> next to an album to see its files and their sizes.</li>
+  <li>Open the album and press <strong>Files</strong> to see its files and their sizes.</li>
   <li>Press <strong>Delete</strong> next to a file, or <strong>Delete whole album</strong>, and confirm.</li>
-  <li>A card linked to a deleted album stays linked to nothing; link it to something else.</li>
+  <li>A card linked to a deleted album stays linked to nothing; link it to something else. Deleted songs drop out of any list they were in.</li>
 </ul>
 <div class="note">
   <p><strong>Deleting cannot be undone.</strong> There is no bin.</p>
@@ -254,7 +282,7 @@
 </div>
 
 <h2 id="setup">Setup page</h2>
-<p>The <strong>Setup and hardware tests</strong> link at the bottom of the web remote opens <code>http://nfcplayer.local/setup</code>. You normally need it only once, after building the player, or when something seems wrong.</p>
+<p><strong>Setup and tests</strong>, at the bottom of the web remote's sidebar, opens <code>http://nfcplayer.local/setup</code>. You normally need it only once, after building the player, or when something seems wrong.</p>
 <div class="side">
   <figure><img class="shot" src="setup-hardware.png" width="900" height="1012" alt="Setup page, Hardware section: Screen (2-inch colour LCD or 0.91-inch OLED), Screen orientation (Normal or Upside down), Knob (Clicky or Smooth optical), Knob direction (Reverse), and Save and Restart the player buttons"><figcaption>Choose the parts the player is built with, press <strong>Save</strong>, then <strong>Restart the player</strong>.</figcaption></figure>
   <figure><img class="shot" src="setup-tests.png" width="900" height="1275" alt="Setup page, Tests section: Show test picture, Play test tone, buttons and knob indicators that light when pressed, the card currently in the slot, and a log of everything the player sees"><figcaption>Test each part. Buttons and knob light up as the player sees them.</figcaption></figure>
