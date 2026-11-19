@@ -76,6 +76,7 @@
   <a class="sub" href="#w-nfc">NFC reader</a>
   <a class="sub" href="#w-knob">Knob</a>
   <a class="sub" href="#w-buttons">Buttons</a>
+  <a class="sub" href="#w-light">Power light</a>
   <a href="#music">6. Add music</a>
   <a href="#use">7. Use it</a>
   <a href="#web">8. Web remote</a>
@@ -117,6 +118,7 @@
   <tr><td>Knob</td><td>Solid aluminium, 30–38 mm, with a set screw, to fit a 6 mm shaft</td><td class="num">£8</td><td>Most of the quality feel comes from this: weight, diameter and no wobble. Check your encoder's shaft (6 mm D-shaped or knurled) before buying.</td></tr>
   <tr><td>Buttons</td><td>5 push buttons. Any tactile switch for testing; Kailh Choc switches with keycaps for the final build</td><td class="num">£10</td><td>Previous, play/pause, next, back, and a power key that turns the player off safely and on again.</td></tr>
   <tr><td>Diodes</td><td>2 Schottky diodes, e.g. BAT43 or 1N5817</td><td class="num">£1</td><td>For the power key. Ordinary silicon diodes such as the 1N4148 drop too much voltage and may not register a press.</td></tr>
+  <tr><td>Power light</td><td>One 3 mm or 5 mm LED and a 330 Ω resistor</td><td class="num">£1</td><td>Lights within a couple of seconds of power, long before the screen, and goes off once the Pi has shut down.</td></tr>
   <tr><td>Bench bits</td><td>Breadboard, jumper wires (male–female and male–male)</td><td class="num">£8</td><td></td></tr>
   <tr><td>USB cable</td><td>Micro-USB to USB-C (or to USB-A) <em>data</em> cable</td><td class="num">£5</td><td>Powers the Pi from the Mac and carries the music. Charge-only cables will not work.</td></tr>
 </table>
@@ -255,8 +257,10 @@
 <text x="397" y="197.5" text-anchor="middle" font-size="10" font-weight="600" style="fill:#fff">14</text>
 <line x1="409" y1="194" x2="423" y2="194" style="stroke:var(--c-buttons)" stroke-width="1.5"/>
 <text x="427" y="198.5" text-anchor="start" font-size="13" xml:space="preserve"><tspan style="fill:var(--dim)">Ground  ·  </tspan><tspan style="fill:var(--c-buttons)" font-weight="600">Buttons, common side</tspan></text>
-<circle cx="363" cy="219" r="10" style="fill:var(--pin-idle)"/>
-<text x="363" y="222.5" text-anchor="middle" font-size="10" font-weight="600" style="fill:var(--dim)">15</text>
+<circle cx="363" cy="219" r="10" style="fill:var(--c-power)"/>
+<text x="363" y="222.5" text-anchor="middle" font-size="10" font-weight="600" style="fill:#fff">15</text>
+<line x1="351" y1="219" x2="337" y2="219" style="stroke:var(--c-power)" stroke-width="1.5"/>
+<text x="333" y="223.5" text-anchor="end" font-size="13" xml:space="preserve"><tspan style="fill:var(--c-power)" font-weight="600">Power light, via resistor</tspan><tspan style="fill:var(--dim)">  ·  GPIO 22</tspan></text>
 <circle cx="397" cy="219" r="10" style="fill:var(--pin-idle)"/>
 <text x="397" y="222.5" text-anchor="middle" font-size="10" font-weight="600" style="fill:var(--dim)">16</text>
 <circle cx="363" cy="244" r="10" style="fill:var(--c-nfc)"/>
@@ -291,8 +295,10 @@
 <text x="397" y="322.5" text-anchor="middle" font-size="10" font-weight="600" style="fill:#fff">24</text>
 <line x1="409" y1="319" x2="423" y2="319" style="stroke:var(--c-display)" stroke-width="1.5"/>
 <text x="427" y="323.5" text-anchor="start" font-size="13" xml:space="preserve"><tspan style="fill:var(--dim)">GPIO 8  ·  </tspan><tspan style="fill:var(--c-display)" font-weight="600">Display CS</tspan></text>
-<circle cx="363" cy="344" r="10" style="fill:var(--pin-idle)"/>
-<text x="363" y="347.5" text-anchor="middle" font-size="10" font-weight="600" style="fill:var(--dim)">25</text>
+<circle cx="363" cy="344" r="10" style="fill:var(--c-power)"/>
+<text x="363" y="347.5" text-anchor="middle" font-size="10" font-weight="600" style="fill:#fff">25</text>
+<line x1="351" y1="344" x2="337" y2="344" style="stroke:var(--c-power)" stroke-width="1.5"/>
+<text x="333" y="348.5" text-anchor="end" font-size="13" xml:space="preserve"><tspan style="fill:var(--c-power)" font-weight="600">Power light, short leg</tspan><tspan style="fill:var(--dim)">  ·  Ground</tspan></text>
 <circle cx="397" cy="344" r="10" style="fill:var(--c-nfc)"/>
 <text x="397" y="347.5" text-anchor="middle" font-size="10" font-weight="600" style="fill:#fff">26</text>
 <line x1="409" y1="344" x2="423" y2="344" style="stroke:var(--c-nfc)" stroke-width="1.5"/>
@@ -356,6 +362,7 @@
   <li><i style="background:var(--c-shared)"></i>Shared by display and reader</li>
   <li><i style="background:var(--c-knob)"></i>Knob</li>
   <li><i style="background:var(--c-buttons)"></i>Buttons</li>
+  <li><i style="background:var(--c-power)"></i>Power light</li>
   <li><i style="background:var(--c-dac)"></i>Used by the DAC, leave alone</li>
 </ul>
 <figcaption>The Pi's 40-pin header seen from above, with the SD card slot at the top. Pin 1 is the square pad nearest the SD card. Numbers inside the dots are physical pin numbers; "GPIO n" is what the software uses.</figcaption>
@@ -423,7 +430,7 @@
   <tr><td>Power</td><td class="num">18 and 5</td><td>GPIO 24 and GPIO 3, each through a diode (below)</td></tr>
   <tr><td>Common side of all five</td><td class="num">14</td><td>Ground</td></tr>
 </table></div>
-<p>Run the same check as for the knob. Each press should print the button's name. Holding back for 3 seconds should print <code>back_long</code> once. Holding previous or next should print <code>prev_hold</code> or <code>next_hold</code> repeatedly until you let go; a short press of either prints its name when you let go. The power key prints <code>power</code>; during the check it does not shut anything down.</p>
+<p>Run the same check as for the knob. Each press should print the button's name. Holding back for 2 seconds should print <code>back_long</code> once. Holding previous or next should print <code>prev_hold</code> or <code>next_hold</code> repeatedly until you let go; a short press of either prints its name when you let go. The power key prints <code>power</code>; during the check it does not shut anything down.</p>
 <h4>The power key</h4>
 <p>The power key turns the player off safely, so the SD card is never cut off mid-write, and turns it on again. It needs two pins: the player watches GPIO 24 to know when to shut down, and GPIO 3 is the only pin that wakes a Pi that has shut down. GPIO 3 also carries the DAC's control signals, so each pin reaches the key through its own diode. The diodes stop the DAC's signals from looking like key presses.</p>
 <ol>
@@ -474,6 +481,15 @@
 </figure>
 <div class="note"><p>Check the diodes' direction before powering up: stripes towards the key. Put the key somewhere it will not be pressed by accident, because one press turns the player off. The case does not have a hole for it yet.</p></div>
 
+<h3 id="w-light">Power light</h3>
+<p>The screen takes a while to show anything after the Pi is switched on, so a small LED shows that it has started. The Pi's firmware switches it on within a couple of seconds of power, before Linux starts, and it goes off at the very end of a shutdown, together with the screen. Off means the Pi is off and can be unplugged.</p>
+<div class="table-wrap"><table>
+  <tr><th>Part</th><th>Pi pin</th><th>Note</th></tr>
+  <tr><td>LED long leg (+), through a 330 Ω resistor</td><td class="num">15</td><td>GPIO 22</td></tr>
+  <tr><td>LED short leg (−), the flat side of the rim</td><td class="num">25</td><td>Ground</td></tr>
+</table></div>
+<p>The resistor can go on either leg and either way round; without it the LED draws too much current from the pin. The setup script adds the line <code>gpio=22=op,dh</code> to <code>/boot/firmware/config.txt</code>, which is what switches the light on, so run it again if you set up the Pi before this part was added, then reboot. To check the wiring without rebooting, run <code>pinctrl set 22 op dh</code> (on) and <code>pinctrl set 22 op dl</code> (off).</p>
+
 <h3>Start the player</h3>
 <pre><code>sudo systemctl start nfc-player</code></pre>
 <p>The display should show <strong>Place a card</strong>. To watch what the player is doing:</p>
@@ -511,11 +527,11 @@
   <tr><td>Previous / next</td><td>Skip tracks. Previous restarts the track if more than 3 seconds in.</td></tr>
   <tr><td>Hold previous / next</td><td>Rewind / fast-forward through the track while held, faster after 3 seconds. Fast-forward runs on into the next track; rewind stops at the start of the track.</td></tr>
   <tr><td>Back, while playing</td><td>Shows the tracks of what is playing, with the current one marked. Turn the knob to choose, push to play it. Back again closes the list. Playback carries on while you browse.</td></tr>
-  <tr><td>Hold back for 3 seconds, while playing</td><td>Goes back to the start of the album, artist or list and plays it from the first track.</td></tr>
+  <tr><td>Hold back for 2 seconds, while playing</td><td>Goes back to the start of the album, artist or list and plays it from the first track.</td></tr>
   <tr><td>Hold the knob</td><td>Menu: link the card to something else, unlink it, or close.</td></tr>
   <tr><td>Back</td><td>Leaves a menu or list.</td></tr>
   <tr><td>Press power</td><td>Remembers where the card stopped, stops playing and shows <strong>Turning off</strong> while the Pi shuts down. When the screen goes dark, the player is off and can be unplugged. If the drive is connected to a computer, or the web page is uploading, it says so and stays on: eject or wait, then press power again.</td></tr>
-  <tr><td>Press power while it is off</td><td>Turns it on. It is ready to play in about half a minute.</td></tr>
+  <tr><td>Press power while it is off</td><td>Turns it on. The power light comes on within a couple of seconds, then the screen shows the logo until the player is ready, in about half a minute.</td></tr>
 </table></div>
 
 <h2 id="web"><span class="step">Step 8</span>Web remote</h2>
@@ -620,6 +636,7 @@
   <tr><td>Power key shows <strong>Turning off</strong> but the Pi keeps running</td><td>The player is not allowed to shut the Pi down. Run <code>cd ~/nfc-player && sudo system/setup.sh</code> again: it adds the permission. <code>journalctl -u nfc-player -n 50</code> shows the error.</td></tr>
   <tr><td>Screen stays lit after <strong>Turning off</strong></td><td>Setup installs the step that switches the screen off at the end of a shutdown. Run <code>cd ~/nfc-player && sudo system/setup.sh</code> again.</td></tr>
   <tr><td>Power key turns the player off but not on</td><td>Check the diode to pin 5 (GPIO 3): stripe towards the key, and a Schottky type. The Pi must still have power; after a power cut it starts on its own when power returns.</td></tr>
+  <tr><td>Power light never comes on</td><td>Check the LED's direction (long leg towards pin 15) and that <code>gpio=22=op,dh</code> is in <code>/boot/firmware/config.txt</code>; run <code>cd ~/nfc-player && sudo system/setup.sh</code> and reboot if it is not. <code>pinctrl set 22 op dh</code> should light it.</td></tr>
   <tr><td>"Something went wrong" on the display</td><td>The message below it is the cause. The full detail is in <code>journalctl -u nfc-player -n 50</code>.</td></tr>
   <tr><td><code>http://nfcplayer.local</code> does not open</td><td>Check the phone is on the same Wi-Fi as the Pi, and type <code>http://</code> in full. Some Android phones cannot find <code>.local</code> names: run <code>hostname -I</code> on the Pi and use that address instead, for example <code>http://192.168.1.42</code>. Check <code>journalctl -u nfc-player -n 50</code> for "Web remote on port 80".</td></tr>
   <tr><td>Upload fails with a message about the drive</td><td>The drive is in use over USB, or could not be made writable. Eject it on the Mac first. If it persists, run <code>sudo /usr/local/sbin/nfc-player-usb rw</code> on the Pi and read the error.</td></tr>

@@ -1,6 +1,7 @@
 [Unit]
 Description=NFC album player
-After=mpd.service nfc-player-usb.service
+# Not After=mpd.service: the player starts alongside MPD so the boot logo shows sooner, and waits for MPD itself.
+After=nfc-player-usb.service
 Wants=mpd.service nfc-player-usb.service
 
 [Service]

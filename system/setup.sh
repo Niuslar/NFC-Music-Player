@@ -34,6 +34,12 @@ if ! grep -q "^dtparam=i2c_arm=on" "$CONFIG"; then
   printf '\n# nfc-player: I2C for the OLED screen\n[all]\ndtparam=i2c_arm=on\n' >> "$CONFIG"
   REBOOT=1
 fi
+# Power light on GPIO 22: the firmware switches it on within a second or two of power,
+# long before Linux or the screen is up. system/nfc-player-screen-off switches it off at the end of a shutdown.
+if ! grep -q "^gpio=22=" "$CONFIG"; then
+  printf '\n# nfc-player: power light on as soon as the Pi starts\n[all]\ngpio=22=op,dh\n' >> "$CONFIG"
+  REBOOT=1
+fi
 echo i2c-dev > /etc/modules-load.d/nfc-player-i2c.conf
 modprobe i2c-dev 2>/dev/null || true
 usermod -aG spi,gpio,audio,i2c "$RUN_USER"

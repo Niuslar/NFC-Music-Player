@@ -140,3 +140,15 @@ def test_pattern() -> Image.Image:
     d.text((80, 9), "Screen test", font=font(BIG), fill=ON, anchor="mm")
     d.text((80, 22), "128 x 32", font=font(SMALL), fill=ON, anchor="mm")
     return img
+
+
+def splash() -> Image.Image:
+    """The boot logo, shown from the moment the player starts until it can play a card."""
+    img, d = _canvas()
+    d.rounded_rectangle((1, 8, 21, 24), radius=3, outline=ON, width=2)  # a card
+    d.rectangle((5, 12, 10, 16), fill=ON)  # its chip
+    for r in (5, 9, 13):
+        d.arc((21 - r, 16 - r, 21 + r, 16 + r), -50, 50, fill=ON, width=2)
+    d.text((40, 2), "NFC Player", font=font(BIG), fill=ON)
+    d.text((40, 18), "Starting…", font=font(SMALL), fill=ON)
+    return img

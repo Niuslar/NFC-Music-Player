@@ -22,6 +22,8 @@ from .library import FileTags, Library
 from .playback import FakePlayback, MpdPlayback
 
 # GPIO numbers (BCM). The DAC HAT owns 2, 3, 18, 19, 20 and 21.
+# GPIO 22 is the power light. The player never touches it: config.txt switches it on at boot
+# (system/setup.sh adds the line) and system/nfc-player-screen-off switches it off at shutdown.
 PINS = {
     "display_dc": 25,
     "display_rst": 27,
@@ -35,6 +37,7 @@ USB_HELPER = "/usr/local/sbin/nfc-player-usb"
 I2C_BUS = 1  # GPIO 2 (SDA) and 3 (SCL), shared with the DAC
 DISPLAY_SPI = (0, 0)  # bus 0, CE0 (GPIO 8)
 NFC_SPI = (0, 1)  # bus 0, CE1 (GPIO 7)
+READER_WAIT_SECONDS = 10
 
 
 def power_off() -> None:
@@ -146,19 +149,20 @@ def _attempt(status: dict, part: str, start):
 
 
 def start_hardware(events: queue.Queue, config: dict, status: dict):
-    """Brings up every driver; returns (display, storage, keep). status gets each part's result."""
+    """Brings up every driver but the screen; returns (storage, nfc, keep). status gets each part's result."""
     from .hw.inputs import Buttons, Encoder
     from .hw.pn532 import CardWatcher
     from .hw.usb import UsbMonitor, UsbStorage
 
-    display = _attempt(status, "screen", lambda: open_display(config["display"], config["rotate"] == 180)) or NullDisplay()
-    _attempt(status, "nfc", lambda: CardWatcher(open_nfc(), events).start())
+    nfc = _attempt(status, "nfc", lambda: CardWatcher(open_nfc(), events))
+    if nfc is not None:
+        nfc.start()
     keep = [  # hold references so the callbacks stay registered
         _attempt(status, "knob", lambda: Encoder(events, PINS["encoder_a"], PINS["encoder_b"], config["encoder"], config["encoder_reverse"])),
         _attempt(status, "buttons", lambda: Buttons(events, PINS["knob_switch"], PINS["buttons"])),
     ]
     _attempt(status, "usb", lambda: UsbMonitor(events).start())
-    return display, UsbStorage(), keep
+    return UsbStorage(), nfc, keep
 
 
 def effective_config(args) -> tuple[dict, dict, list[str]]:
@@ -194,14 +198,31 @@ def main() -> None:
     saved, config, overridden = effective_config(args)
     print(f"Hardware: {config['display']} screen, {config['encoder']} knob" + (f" (from the command line: {', '.join(overridden)})" if overridden else ""), flush=True)
 
+    # The screen comes first, so the boot logo is up while MPD, the library and the reader start.
+    from .ui import render, tiny
+
+    ui = tiny if config["display"] == "ssd1306" else render
     events: queue.Queue = queue.Queue()
+    status: dict = {}
+    if args.sim:
+        from .hw.sim import server
+
+        display = server.SimDisplay()
+        server.start(events, display, args.port)
+        print(f"Simulator: http://localhost:{args.port}")
+    else:
+        display = _attempt(status, "screen", lambda: open_display(config["display"], config["rotate"] == 180)) or NullDisplay()
+    display.show(ui.splash())
+
     if args.playback == "mpd":
+        from mpd import ConnectionError as MpdConnectionError
+
         playback = MpdPlayback(port=args.mpd_port)
-        for attempt in range(30):  # MPD may still be starting at boot
+        for attempt in range(30):  # MPD starts alongside the player at boot, so it may not be up yet
             try:
                 playback.rescan()
                 break
-            except OSError:
+            except (OSError, MpdConnectionError):
                 if attempt == 29:
                     raise
                 time.sleep(1)
@@ -211,23 +232,20 @@ def main() -> None:
         library = Library(args.music, tags=files.tags, art=files.art)
         playback = FakePlayback(library)
 
-    status: dict = {}
     if args.sim:
-        from .hw.sim import server
-
-        display, storage = server.SimDisplay(), None
-        server.start(events, display, args.port)
+        storage = None
         status = {part: "simulated" for part in ("screen", "nfc", "knob", "buttons", "usb")}
-        print(f"Simulator: http://localhost:{args.port}")
     else:
-        display, storage, _keep = start_hardware(events, config, status)
+        storage, nfc, _keep = start_hardware(events, config, status)
+        # Keep the logo up until the reader answers, so "Place a card" means a card will work.
+        # A reader that never answers is reported on the Setup page; the player starts anyway.
+        if nfc is not None and not nfc.ready.wait(READER_WAIT_SECONDS):
+            print(f"NFC reader not ready after {READER_WAIT_SECONDS} s; starting without it", flush=True)
 
     from .hw.inputs import VOLUME_STEPS_PER_REV
     from .hw.selftest import InputLog, dac_test
-    from .ui import render, tiny
 
     steps = 60 if args.sim else VOLUME_STEPS_PER_REV[config["encoder"]]
-    ui = tiny if config["display"] == "ssd1306" else render
     app = App(library, Store(args.state), playback, storage, volume_steps_per_rev=steps, ui=ui)
     inputs = InputLog()
     print(f"{len(library.albums)} albums, {len(library.artists)} artists and {len(library.lists)} lists in {args.music}", flush=True)

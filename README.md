@@ -24,6 +24,7 @@ A tabletop music player where each album is a card. Put a card in the slot and i
 | NFC reader | PN532 over SPI, with NTAG215 cards |
 | Knob | 24-click rotary encoder with push switch |
 | Buttons | Five momentary push buttons: four for playback, one for power |
+| Power light | An LED and a 330 Ω resistor on GPIO 22, lit from early in boot until the Pi has shut down |
 
 A 0.91-inch 128×32 SSD1306 I2C OLED also works as a stand-in screen, with a compact layout and no cover art. Wire it to 3.3 V, GND, SDA (GPIO 2) and SCL (GPIO 3); it shares that bus with the DAC. Choose the screen and knob on the web remote's **Setup** page (`/setup`), which also tests the screen, DAC, buttons, knob and NFC reader. The settings are saved in `/var/lib/nfc-player/hardware.json` and used after a restart.
 

@@ -99,7 +99,7 @@
 <ul>
   <li><strong>Cards are albums.</strong> Blank NFC cards are linked to albums on the device itself. A card remembers where it stopped. A card can also play a whole artist, or a list: a folder of songs from different albums.</li>
   <li><strong>Hi-Fi output.</strong> A Raspberry Pi DAC Pro provides 3.5 mm and RCA outputs, with a balanced output available for a 4.4 mm socket.</li>
-  <li><strong>Screen and controls.</strong> A 2-inch display shows the cover, track and time. A clicky knob sets the volume and scrolls lists; four keys do previous, play/pause, next and back. Hold previous or next to scan; press back to pick a track from a list, or hold it for 3 seconds to start the album again.</li>
+  <li><strong>Screen and controls.</strong> A 2-inch display shows the cover, track and time. A clicky knob sets the volume and scrolls lists; four keys do previous, play/pause, next and back. Hold previous or next to scan; press back to pick a track from a list, or hold it for 2 seconds to start the album again.</li>
   <li><strong>Music over USB.</strong> Plug the player into a computer and its music appears as a drive called <code>MUSIC</code>.</li>
   <li><strong>Web remote.</strong> A page served by the player controls playback, links cards, and uploads or deletes music from any phone or computer on the same Wi-Fi.</li>
 </ul>
@@ -155,7 +155,8 @@
   <tr><td>Display</td><td>2-inch ST7789 SPI LCD, 320×240</td></tr>
   <tr><td>NFC reader</td><td>PN532 over SPI, with NTAG215 cards</td></tr>
   <tr><td>Knob</td><td>24-click rotary encoder with push switch</td></tr>
-  <tr><td>Buttons</td><td>Four momentary push buttons</td></tr>
+  <tr><td>Buttons</td><td>Five momentary push buttons: four for playback, one for power</td></tr>
+  <tr><td>Power light</td><td>An LED on GPIO 22, lit from early in boot until the Pi has shut down</td></tr>
 </table>
 </div>
 <p>Prices, alternatives and wiring are in the <a href="docs/index.html#parts">build guide's parts list</a>.</p>

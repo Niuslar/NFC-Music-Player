@@ -121,6 +121,7 @@ class CardWatcher(threading.Thread):
         self.interval, self.misses_to_remove = interval, misses_to_remove
         self.current: str | None = None
         self._misses = 0
+        self.ready = threading.Event()  # set once the reader has answered
 
     def observe(self, uid: str | None) -> None:
         if uid is None:
@@ -142,6 +143,7 @@ class CardWatcher(threading.Thread):
                 if not ready:
                     self.reader.begin()
                     ready = True
+                    self.ready.set()
                 self.observe(self.reader.read_uid())
                 time.sleep(self.interval)
             except (Pn532Error, OSError) as e:

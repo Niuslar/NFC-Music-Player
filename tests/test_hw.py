@@ -326,3 +326,21 @@ def test_simulator_power_cycle_goes_dark_and_waits_for_the_power_key(monkeypatch
     frame = Image.open(io.BytesIO(display.png()))
     assert frame.getextrema() == ((0, 0), (0, 0), (0, 0))  # dark
     assert events.empty() and len(started) == 1 and started[0][1:3] == ["-m", "player.main"]
+
+
+def test_card_watcher_says_when_the_reader_is_ready():
+    class Reader:
+        tries = 0
+
+        def begin(self):
+            self.tries += 1
+            if self.tries == 1:
+                raise Pn532Error("not awake yet")  # a reader that is slow to start at boot
+
+        def read_uid(self):
+            return None
+
+    w = CardWatcher(reader=Reader(), event_queue=queue.Queue())
+    w.start()
+    assert not w.ready.is_set()
+    assert w.ready.wait(5)

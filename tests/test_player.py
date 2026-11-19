@@ -640,3 +640,10 @@ def test_run_loop_shuts_down_once_after_drawing_the_off_screen(rig):
         run(app, events, Display(), clock=clock, power_off=lambda: log.append("power_off"))
     assert log.index("power_off") == log.index(("show", Mode.OFF)) + 1
     assert log.count("power_off") == 1
+
+
+def test_boot_logo_fits_each_screen():
+    from player.ui import render, tiny
+
+    assert render.splash().size == (render.W, render.H)
+    assert tiny.splash().size == (tiny.W, tiny.H)
