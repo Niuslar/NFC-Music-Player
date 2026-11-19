@@ -1,0 +1,330 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>NFC Album Player — user manual</title>
+<meta name="description" content="How to use the NFC Album Player: cards, the knob and keys, adding music, the web remote and the Setup page.">
+<style>
+  :root {
+    --bg: #faf9f6; --panel: #ffffff; --ink: #1d1c1a; --dim: #66635d; --line: #e2dfd8; --accent: #b86e12;
+    --code-bg: #f1eee8; --warn-bg: #fdf3e0; --warn-line: #e8b860; --ok-bg: #e9f5ee; --ok-line: #7dbf98;
+    --bezel: #2a2a2e;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #151517; --panel: #1e1e21; --ink: #ecebe6; --dim: #a09d96; --line: #333338; --accent: #e8a33d;
+      --code-bg: #26262a; --warn-bg: #2e2616; --warn-line: #7a5d1f; --ok-bg: #17271f; --ok-line: #2f6b4b;
+      --bezel: #000;
+    }
+  }
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; scroll-padding-top: 16px; }
+  body { margin: 0; background: var(--bg); color: var(--ink); font: 16px/1.6 -apple-system, "Segoe UI", system-ui, sans-serif; }
+  .layout { display: grid; grid-template-columns: 210px minmax(0, 800px); gap: 48px; max-width: 1120px; margin: 0 auto; padding: 40px 20px 96px; }
+  nav { position: sticky; top: 24px; align-self: start; font-size: 14px; }
+  nav strong { display: block; margin-bottom: 8px; }
+  nav a { display: block; color: var(--dim); text-decoration: none; padding: 3px 0; }
+  nav a:hover { color: var(--accent); }
+  nav hr { border: 0; border-top: 1px solid var(--line); margin: 10px 0; }
+  @media (max-width: 860px) {
+    .layout { grid-template-columns: minmax(0, 1fr); gap: 0; padding: 24px 16px 64px; }
+    nav { position: static; margin-bottom: 24px; display: flex; flex-wrap: wrap; gap: 4px 14px; }
+    nav strong, nav hr { display: none; }
+  }
+  h1 { font-size: 34px; line-height: 1.15; margin: 0 0 8px; letter-spacing: -0.02em; }
+  h2 { font-size: 24px; margin: 56px 0 12px; padding-top: 20px; border-top: 1px solid var(--line); letter-spacing: -0.01em; }
+  h3 { font-size: 18px; margin: 30px 0 8px; }
+  .lede { color: var(--dim); font-size: 18px; margin: 0 0 24px; }
+  a { color: var(--accent); }
+  p, li { max-width: 70ch; }
+  li { margin: 4px 0; }
+  code { font: 14px/1.5 ui-monospace, "SF Mono", Menlo, monospace; background: var(--code-bg); padding: 1px 5px; border-radius: 4px; }
+  kbd { font: 600 13px/1 -apple-system, system-ui, sans-serif; border: 1px solid var(--line); border-bottom-width: 2px; background: var(--panel); border-radius: 5px; padding: 2px 6px; white-space: nowrap; }
+  .table-wrap { overflow-x: auto; margin: 12px 0; }
+  table { border-collapse: collapse; width: 100%; font-size: 15px; }
+  th, td { text-align: left; padding: 7px 10px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  th { font-size: 13px; color: var(--dim); font-weight: 600; white-space: nowrap; }
+  td:first-child { white-space: nowrap; }
+  .note, .ok { border-radius: 8px; padding: 12px 16px; margin: 16px 0; border: 1px solid; }
+  .note { background: var(--warn-bg); border-color: var(--warn-line); }
+  .ok { background: var(--ok-bg); border-color: var(--ok-line); }
+  .note p, .ok p { margin: 4px 0; }
+  figure { margin: 20px 0; }
+  figcaption { color: var(--dim); font-size: 14px; margin-top: 8px; max-width: 70ch; }
+  img { display: block; max-width: 100%; height: auto; }
+  .shot { border-radius: 10px; border: 1px solid var(--line); }
+  /* Screens from the player, shown in a dark bezel like the real display. */
+  .screens { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 18px; margin: 18px 0; }
+  .screens figure { margin: 0; }
+  .lcd { background: var(--bezel); padding: 8px; border-radius: 10px; }
+  .lcd img { width: 100%; border-radius: 3px; }
+  .oled { background: var(--bezel); padding: 10px; border-radius: 8px; }
+  .oled img { width: 100%; image-rendering: pixelated; }
+  .side { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 24px; align-items: start; }
+  @media (max-width: 640px) { .side { grid-template-columns: minmax(0, 1fr); } }
+  .steps { padding-left: 22px; }
+  .steps li { margin: 8px 0; }
+</style>
+</head>
+<body>
+<div class="layout">
+<nav>
+  <strong>User manual</strong>
+  <a href="#controls">The controls</a>
+  <a href="#power">On and off</a>
+  <a href="#first-card">Link a new card</a>
+  <a href="#playing">Playing</a>
+  <a href="#tracks">Choose a track</a>
+  <a href="#card-menu">Change a card</a>
+  <a href="#music">Add music over USB</a>
+  <a href="#remote">Web remote</a>
+  <a href="#setup">Setup page</a>
+  <a href="#oled">Small OLED screen</a>
+  <a href="#messages">Messages</a>
+  <a href="#reference">Quick reference</a>
+  <hr>
+  <a href="../../index.html">Project home</a>
+  <a href="../index.html">Build guide</a>
+  <a href="../../NFC-Player-Case/NFC-Player-Assembly.html">Case assembly</a>
+</nav>
+<main>
+
+<h1>NFC Album Player</h1>
+<p class="lede">User manual. Each album is a card: put a card in the slot and its album plays, take it out and it pauses. This page shows what you will see on the player and what each control does.</p>
+
+<div class="note">
+  <p><strong>About the pictures.</strong> Every screen below was taken from the player's browser simulator, which draws exactly what the real display shows. The music is the demo library of generated tones, so track names are numbers like <em>0300</em>. If you are building the player, the <a href="../index.html">build guide</a> covers the wiring and installation.</p>
+</div>
+
+<h2 id="controls">The controls</h2>
+<figure>
+  <img class="shot" src="simulator.png" width="1340" height="592" alt="The simulator's front panel: the screen on the left showing the album Small Hours by Mika Tane, track 2 of 3; a large knob on the right, and below it five keys: previous, play/pause, next, back, and a red power key">
+  <figcaption>The front panel as drawn by the simulator. On the real player the card slot is on the lid.</figcaption>
+</figure>
+<div class="table-wrap">
+<table>
+  <tr><th>Control</th><th>What it is for</th></tr>
+  <tr><td><strong>Card slot</strong></td><td>Put a card in to play it. Take it out to pause.</td></tr>
+  <tr><td><strong>Knob</strong></td><td>Turn for volume, or to move through a list. Push to pause and resume, or to choose. Hold for the card menu.</td></tr>
+  <tr><td><strong>⏮ Previous</strong></td><td>Back a track. Hold to rewind.</td></tr>
+  <tr><td><strong>⏯ Play / pause</strong></td><td>Pause and resume.</td></tr>
+  <tr><td><strong>⏭ Next</strong></td><td>Forward a track. Hold to fast-forward.</td></tr>
+  <tr><td><strong>↩ Back</strong></td><td>Show the track list, or leave a list or menu. Hold for 2 seconds to start from the first track.</td></tr>
+  <tr><td><strong>⏻ Power</strong></td><td>Turn the player off safely, and on again.</td></tr>
+</table>
+</div>
+
+<h2 id="power">Turning it on and off</h2>
+<div class="screens">
+  <figure><div class="lcd"><img src="logo.png" width="320" height="240" alt="Screen: a card with radio waves, NFC Player, Starting…"></div><figcaption>Starting. The power light comes on within a couple of seconds and the logo stays up until the player is ready, in about half a minute.</figcaption></figure>
+  <figure><div class="lcd"><img src="idle.png" width="320" height="240" alt="Screen: Place a card, to start playing"></div><figcaption>Ready. Put a card in.</figcaption></figure>
+  <figure><div class="lcd"><img src="turning-off.png" width="320" height="240" alt="Screen: Turning off"></div><figcaption>After pressing power. When the screen goes dark the player is off and can be unplugged.</figcaption></figure>
+</div>
+<ul>
+  <li><strong>To turn it on,</strong> press power. If it is plugged in for the first time, it starts on its own.</li>
+  <li><strong>To turn it off,</strong> press power. The player remembers where the card stopped, stops playing and shuts down. Wait for the screen to go dark before unplugging.</li>
+  <li>If the music drive is connected to a computer, or the web page is uploading music, the player says so and stays on. Eject the drive or wait for the upload, then press power again.</li>
+</ul>
+
+<h2 id="first-card">Link a new card</h2>
+<p>A blank card does not play anything until you tell it what to play. You can link it to one of three things:</p>
+<ul>
+  <li><strong>Album</strong>: one album.</li>
+  <li><strong>Artist</strong>: every album by that artist, oldest first.</li>
+  <li><strong>List</strong>: a folder of songs from more than one album, played in file name order. This choice appears only when your music has such a folder.</li>
+</ul>
+<ol class="steps">
+  <li>Put the blank card in the slot. The player asks what to link it to.</li>
+  <li>Turn the knob to <strong>Album</strong>, <strong>Artist</strong> or <strong>List</strong> and push it.</li>
+  <li>Turn the knob to choose from the list and push it. The card is linked and starts playing straight away.</li>
+</ol>
+<div class="screens">
+  <figure><div class="lcd"><img src="new-card.png" width="320" height="240" alt="Screen: Link this card to; Album, 7 albums; Artist, 5 artists"></div><figcaption>1. A new card in the slot.</figcaption></figure>
+  <figure><div class="lcd"><img src="choose-album.png" width="320" height="240" alt="Screen: Choose an album for this card, with Small Hours by Mika Tane highlighted"></div><figcaption>2. Choosing an album. The bar on the right shows where you are in a long list.</figcaption></figure>
+  <figure><div class="lcd"><img src="choose-artist.png" width="320" height="240" alt="Screen: Choose an artist for this card, listing artists with their album and track counts"></div><figcaption>Or choosing an artist.</figcaption></figure>
+</div>
+<p>Press back at any step to go back one screen. Cards can also be linked from the <a href="#remote">web remote</a>.</p>
+
+<h2 id="playing">Playing</h2>
+<p>Put a linked card in the slot and it plays from where that card last stopped. Each card remembers its own place, so you can swap between albums and pick each one up again.</p>
+<div class="screens">
+  <figure><div class="lcd"><img src="playing.png" width="320" height="240" alt="Now playing screen: cover, track 0300, album Small Hours, artist Mika Tane, a progress bar, 0:04 of 0:20, track 1 of 3"></div><figcaption>Now playing: cover, track, album, artist, time and which track of how many.</figcaption></figure>
+  <figure><div class="lcd"><img src="volume.png" width="320" height="240" alt="Now playing screen with a Volume bar at 37"></div><figcaption>Turning the knob shows the volume for a moment.</figcaption></figure>
+  <figure><div class="lcd"><img src="paused.png" width="320" height="240" alt="Now playing screen with Paused in place of the track count"></div><figcaption>Paused.</figcaption></figure>
+  <figure><div class="lcd"><img src="scanning.png" width="320" height="240" alt="Now playing screen with Fast forward under the progress bar"></div><figcaption>Holding next to fast-forward.</figcaption></figure>
+</div>
+<div class="table-wrap">
+<table>
+  <tr><th>To</th><th>Do this</th></tr>
+  <tr><td>Change the volume</td><td>Turn the knob.</td></tr>
+  <tr><td>Pause or resume</td><td>Push the knob or press play/pause. Taking the card out also pauses.</td></tr>
+  <tr><td>Next track</td><td>Press next.</td></tr>
+  <tr><td>Previous track</td><td>Press previous. More than 3 seconds into a track, this goes to the start of the track instead; press again for the one before.</td></tr>
+  <tr><td>Rewind or fast-forward</td><td>Hold previous or next. It speeds up after 3 seconds. Fast-forward runs on into the next track; rewind stops at the start of the track.</td></tr>
+  <tr><td>Start from the beginning</td><td>Hold back for 2 seconds. The album, artist or list plays from its first track.</td></tr>
+  <tr><td>Play it again after it ends</td><td>Push the knob or press play/pause.</td></tr>
+</table>
+</div>
+
+<h2 id="tracks">Choose a track</h2>
+<div class="side">
+  <div>
+    <p>While something is playing, press <strong>back</strong> to see its tracks. The one playing is marked <em>Playing now</em>.</p>
+    <ul>
+      <li>Turn the knob to a track and push it to play it.</li>
+      <li>Press back again to close the list.</li>
+    </ul>
+    <p>Music keeps playing while you look.</p>
+  </div>
+  <figure><div class="lcd"><img src="tracks.png" width="320" height="240" alt="Track list for Small Hours: 1. 0300, marked Playing now; 2. 0415; 3. 0530"></div></figure>
+</div>
+
+<h2 id="card-menu">Change or unlink a card</h2>
+<div class="side">
+  <div>
+    <p>With the card in the slot, <strong>hold the knob</strong> for the card menu:</p>
+    <ul>
+      <li><strong>Link to something else</strong> takes you through the same steps as a new card.</li>
+      <li><strong>Unlink this card</strong> makes it blank again.</li>
+      <li><strong>Close</strong>, or press back, leaves the menu.</li>
+    </ul>
+  </div>
+  <figure><div class="lcd"><img src="menu.png" width="320" height="240" alt="Card menu titled Small Hours: Link to something else, Unlink this card, Close"></div></figure>
+</div>
+
+<h2 id="music">Add music over USB</h2>
+<p>The quickest way to add a lot of music is to plug the player into a computer with a USB cable.</p>
+<div class="screens">
+  <figure><div class="lcd"><img src="usb-plugged.png" width="320" height="240" alt="Screen: Connected to a computer. Push the knob to transfer music. Back to keep listening."></div><figcaption>1. Plugged in. Push the knob.</figcaption></figure>
+  <figure><div class="lcd"><img src="usb-transfer.png" width="320" height="240" alt="Screen: Transfer mode. Copy music to the MUSIC drive, then eject it on your computer. Or hold the knob when finished."></div><figcaption>2. The <code>MUSIC</code> drive is on your computer.</figcaption></figure>
+</div>
+<ol class="steps">
+  <li>Plug the player into the computer. The screen says <strong>Connected to a computer</strong>. Push the knob. (Press back instead to keep listening.)</li>
+  <li>A drive called <code>MUSIC</code> appears on the computer. Copy albums onto it as <code>Artist/Album/tracks</code>, for example <code>Nina Simone/Pastel Blues/01 Be My Husband.flac</code>.</li>
+  <li>For a cover, put a <code>cover.jpg</code> in the album's folder. Without one, the cover stored inside the tracks is used.</li>
+  <li>Eject <code>MUSIC</code> on the computer. The player checks the drive and finds the new music. If the screen stays on <strong>Transfer mode</strong> after ejecting, hold the knob for a second.</li>
+</ol>
+<p>FLAC, MP3, AAC/M4A, Ogg, Opus, WAV and AIFF all play. The player cannot play music while the computer has the drive.</p>
+<div class="note">
+  <p><strong>Always eject before unplugging.</strong> If the cable comes out in the middle of a copy, the drive is repaired the next time the player starts, but the file that was being copied is lost.</p>
+</div>
+<p>Albums come from the tags inside the files, so a folder of mixed songs still sorts into its real albums. Files without tags use their folders: the folder is the album and the folder above it is the artist.</p>
+
+<h2 id="remote">Web remote</h2>
+<p>On any phone or computer on the same Wi-Fi, open <a href="http://nfcplayer.local"><code>http://nfcplayer.local</code></a>. Nothing needs installing.</p>
+<div class="side">
+  <figure><img class="shot" src="remote.png" width="900" height="1455" alt="The web remote: now playing panel with cover, track 0415 from Small Hours by Mika Tane, previous, pause and next buttons and a volume slider; a line saying the card in the slot is linked to Small Hours with an Unlink card button; then the library with Albums, Artists and Lists tabs, a search box and rows of albums each with Link card and Files buttons"></figure>
+  <div>
+    <h3 style="margin-top:0">Control</h3>
+    <ul>
+      <li>The top panel shows what is playing, with previous, play/pause, next and volume. It follows the knob and keys, and they follow it.</li>
+      <li>Pick <strong>Albums</strong>, <strong>Artists</strong> or <strong>Lists</strong>, or search. Tap a row to play it, with or without a card in the slot.</li>
+      <li>The card still decides: putting a linked card in plays that card, and taking it out pauses whatever is playing.</li>
+      <li>Playing something from the page does not move the place a card remembers.</li>
+    </ul>
+    <h3>Link cards</h3>
+    <ul>
+      <li>With a card in the slot, a line under the controls says what it is linked to.</li>
+      <li>Press <strong>Link card</strong> next to any album, artist or list to link it. It starts playing, just as if you had used the knob.</li>
+      <li><strong>Unlink card</strong> makes it blank again.</li>
+    </ul>
+  </div>
+</div>
+
+<h3>Add music from the page</h3>
+<figure><img class="shot" src="remote-upload.png" width="900" height="442" alt="The Add music panel: a Put inside box, Choose folder and Choose files buttons, and the free space on the music drive"></figure>
+<ol class="steps">
+  <li>Press <strong>Choose folder</strong> and pick an album folder. It is copied with its name.</li>
+  <li>To file it under an artist, first type the artist in <strong>Put inside</strong>, for example <code>Nina Simone</code>. Picking a whole artist folder also works.</li>
+  <li>On an iPhone, which cannot pick folders, use <strong>Choose files</strong> and type the full folder in <strong>Put inside</strong>, for example <code>Nina Simone/Pastel Blues</code>.</li>
+  <li>Keep the page open until every file says <em>done</em>. The album appears in the list a few seconds later.</li>
+</ol>
+<p>Music keeps playing during an upload. Only music and cover pictures are accepted. For a large collection, <a href="#music">USB</a> is much faster.</p>
+
+<h3>Delete music</h3>
+<ul>
+  <li>Press <strong>Files</strong> next to an album to see its files and their sizes.</li>
+  <li>Press <strong>Delete</strong> next to a file, or <strong>Delete whole album</strong>, and confirm.</li>
+  <li>A card linked to a deleted album stays linked to nothing; link it to something else.</li>
+</ul>
+<div class="note">
+  <p><strong>Deleting cannot be undone.</strong> There is no bin.</p>
+  <p><strong>The page has no password.</strong> Anyone on your Wi-Fi can open it, change what is playing, relink the card in the slot, and add or delete music. Use it on a home network you trust.</p>
+</div>
+
+<h2 id="setup">Setup page</h2>
+<p>The <strong>Setup and hardware tests</strong> link at the bottom of the web remote opens <code>http://nfcplayer.local/setup</code>. You normally need it only once, after building the player, or when something seems wrong.</p>
+<div class="side">
+  <figure><img class="shot" src="setup-hardware.png" width="900" height="1012" alt="Setup page, Hardware section: Screen (2-inch colour LCD or 0.91-inch OLED), Screen orientation (Normal or Upside down), Knob (Clicky or Smooth optical), Knob direction (Reverse), and Save and Restart the player buttons"><figcaption>Choose the parts the player is built with, press <strong>Save</strong>, then <strong>Restart the player</strong>.</figcaption></figure>
+  <figure><img class="shot" src="setup-tests.png" width="900" height="1275" alt="Setup page, Tests section: Show test picture, Play test tone, buttons and knob indicators that light when pressed, the card currently in the slot, and a log of everything the player sees"><figcaption>Test each part. Buttons and knob light up as the player sees them.</figcaption></figure>
+</div>
+<ul>
+  <li><strong>Knob direction:</strong> tick <em>Reverse</em> if turning clockwise lowers the volume.</li>
+  <li><strong>Screen orientation:</strong> choose <em>Upside down</em> if the picture is the wrong way up.</li>
+  <li><strong>Screen test</strong> shows a test picture for 5 seconds. Check that the border reaches every edge.</li>
+  <li><strong>DAC test</strong> plays a quiet low tone in the left ear, then a higher one in the right. Plug in headphones or speakers first.</li>
+  <li><strong>NFC reader:</strong> put a card in and the page shows its number.</li>
+</ul>
+
+<h2 id="oled">Small OLED screen</h2>
+<p>A player built with the 0.91-inch OLED instead of the 2-inch colour screen works the same way, with a compact layout and no covers.</p>
+<div class="screens">
+  <figure><div class="oled"><img src="oled-logo.png" width="128" height="32" alt="OLED: card icon, NFC Player, Starting…"></div><figcaption>Starting.</figcaption></figure>
+  <figure><div class="oled"><img src="oled-idle.png" width="128" height="32" alt="OLED: Place a card to start playing"></div><figcaption>Ready.</figcaption></figure>
+  <figure><div class="oled"><img src="oled-playing.png" width="128" height="32" alt="OLED: track 0300, Small Hours, 0:17, progress bar, 0:20"></div><figcaption>Playing: track, album and time.</figcaption></figure>
+  <figure><div class="oled"><img src="oled-tracks.png" width="128" height="32" alt="OLED: track list with 1. 0300 highlighted, 2. 0415, 3. 0530"></div><figcaption>Track list.</figcaption></figure>
+</div>
+
+<h2 id="messages">Messages</h2>
+<div class="side">
+  <div>
+    <div class="table-wrap">
+    <table>
+      <tr><th>The screen says</th><th>What to do</th></tr>
+      <tr><td>Card not linked</td><td>Push the knob to choose what the card plays. If it adds <em>The music linked to this card is missing</em>, the album was deleted or moved; link the card again.</td></tr>
+      <tr><td>Card not linked: No music yet</td><td>Add music <a href="#music">over USB</a> or from the <a href="#remote">web remote</a>.</td></tr>
+      <tr><td>The music drive is connected to a computer</td><td>Eject <code>MUSIC</code> on the computer, then try again.</td></tr>
+      <tr><td>An upload from the web page is still running</td><td>Wait for the upload to finish.</td></tr>
+      <tr><td>Something went wrong</td><td>Read the message under it. It clears after a few seconds. If it keeps coming back, see <a href="../index.html#trouble">troubleshooting</a> in the build guide.</td></tr>
+    </table>
+    </div>
+  </div>
+  <figure><div class="lcd"><img src="not-linked.png" width="320" height="240" alt="Screen: Card not linked. Push the knob to choose what it plays."></div><figcaption>A card with nothing linked, after pressing back on the linking screen.</figcaption></figure>
+</div>
+
+<h2 id="reference">Quick reference</h2>
+<div class="table-wrap">
+<table>
+  <tr><th>You do</th><th>It does</th></tr>
+  <tr><td>Insert a new card</td><td>Asks what to link it to, then plays it.</td></tr>
+  <tr><td>Insert a linked card</td><td>Plays from where that card stopped.</td></tr>
+  <tr><td>Remove the card</td><td>Pauses and remembers the place.</td></tr>
+  <tr><td>Turn the knob</td><td>Volume, or moves through a list.</td></tr>
+  <tr><td>Push the knob</td><td>Pause / resume, or choose.</td></tr>
+  <tr><td>Hold the knob</td><td>Card menu. In transfer mode: finish transferring.</td></tr>
+  <tr><td>Previous / next</td><td>Skip a track.</td></tr>
+  <tr><td>Hold previous / next</td><td>Rewind / fast-forward.</td></tr>
+  <tr><td>Back</td><td>Track list while playing; otherwise leaves a list or menu.</td></tr>
+  <tr><td>Hold back 2 seconds</td><td>Start from the first track.</td></tr>
+  <tr><td>Power</td><td>Turns off safely; press again to turn on.</td></tr>
+</table>
+</div>
+
+<h3>In the simulator</h3>
+<p>Run the simulator (see <a href="../../index.html#simulator">Try it</a>) and open <code>http://localhost:8137</code>. The keyboard stands in for the controls:</p>
+<div class="table-wrap">
+<table>
+  <tr><th>Key</th><th>Control</th></tr>
+  <tr><td><kbd>←</kbd> <kbd>→</kbd></td><td>Turn the knob (<kbd>Shift</kbd> for small steps). You can also scroll or drag on the knob.</td></tr>
+  <tr><td><kbd>Enter</kbd> / <kbd>M</kbd></td><td>Push / hold the knob</td></tr>
+  <tr><td><kbd>Z</kbd> <kbd>X</kbd> <kbd>C</kbd></td><td>Previous, play/pause, next (hold <kbd>Z</kbd> or <kbd>C</kbd> to scan)</td></tr>
+  <tr><td><kbd>Esc</kbd></td><td>Back (hold 2 seconds to start from the first track)</td></tr>
+  <tr><td><kbd>1</kbd>–<kbd>4</kbd> / <kbd>0</kbd></td><td>Insert card 1–4 / remove the card</td></tr>
+</table>
+</div>
+
+</main>
+</div>
+</body>
+</html>

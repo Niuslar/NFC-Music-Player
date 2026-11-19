@@ -6,6 +6,8 @@ A tabletop music player where each album is a card. Put a card in the slot and i
 
 *Render of the case design, made from the same model as its printable parts. The case has not been printed yet; the real build is currently parts on a bench.*
 
+**[User manual](docs/manual/index.html)**: how to use the player, with pictures of every screen. GitHub shows it as source, so open it on the project site or in a browser from a local copy.
+
 ## What it does
 
 - **Cards are albums.** Blank NFC cards are linked to albums on the device itself. A card remembers where it stopped. A card can also play a whole artist, or a list: a folder of songs from different albums.
