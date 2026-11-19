@@ -42,6 +42,9 @@ I2C_BUS = 1  # GPIO 2 (SDA) and 3 (SCL), shared with the DAC
 DISPLAY_SPI = (0, 0)  # bus 0, CE0 (GPIO 8)
 NFC_SPI = (0, 1)  # bus 0, CE1 (GPIO 7)
 READER_WAIT_SECONDS = 10
+# Longest the shutdown waits for "Turning off" to reach the screen. The OLED shares its clock
+# line with the power key, so nothing reaches it while the key is still held down.
+OFF_SCREEN_WAIT_SECONDS = 5.0
 
 
 def power_off() -> None:
@@ -61,6 +64,7 @@ def restart() -> None:
 
 def run(app: App, event_queue: queue.Queue, display, shared=None, clock=time.monotonic, power_off=power_off, inputs=None, restart=restart) -> None:
     turning_off = False
+    off_since = None
     while True:
         try:
             pending = [event_queue.get(timeout=0.1)]
@@ -85,12 +89,16 @@ def run(app: App, event_queue: queue.Queue, display, shared=None, clock=time.mon
         if shared is not None:
             shared.snapshot = app.snapshot()
             shared.enabled = app.store.web_remote
-        display.show(app.render(now))
+        shown = display.show(app.render(now)) is not False  # only the OLED says False, when a frame did not get through
         if app.restart_requested:
             restart()  # "Restarting" is on the screen; normally this does not return
             return
-        if app.mode is Mode.OFF and not turning_off:
-            turning_off = True  # once only, and after the "Turning off" screen is up
+        if app.mode is Mode.OFF and off_since is None:
+            off_since = now
+        if app.mode is Mode.OFF and not turning_off and (shown or now - off_since >= OFF_SCREEN_WAIT_SECONDS):
+            # Once only, and after the "Turning off" screen is up: the shutdown stops this program,
+            # so a frame that did not get through would never be sent again.
+            turning_off = True
             try:
                 power_off()
             except Exception as e:

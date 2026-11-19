@@ -642,6 +642,71 @@ def test_run_loop_shuts_down_once_after_drawing_the_off_screen(rig):
     assert log.count("power_off") == 1
 
 
+def test_shutdown_waits_until_the_off_screen_gets_through(rig):
+    """The OLED misses frames while the power key is held: shut down only once one gets through."""
+    import queue
+
+    from player.main import run
+
+    app, *_ = rig
+    events = queue.Queue()
+    events.put(ev.Press("power"))
+    log = []
+    held = iter([True, True, True])  # the first three frames fail, as with the key still down
+
+    class Display:
+        def show(self, image):
+            ok = not next(held, False)
+            log.append(("show", app.mode, ok))
+            return ok
+
+    class Stop(BaseException):
+        pass
+
+    ticks = iter(range(6))
+
+    def clock():
+        try:
+            return 100.0 + next(ticks) * 0.1
+        except StopIteration:
+            raise Stop
+
+    with pytest.raises(Stop):
+        run(app, events, Display(), clock=clock, power_off=lambda: log.append("power_off"))
+    assert log.index("power_off") == log.index(("show", Mode.OFF, True)) + 1
+    assert log.count("power_off") == 1
+
+
+def test_shutdown_goes_ahead_if_the_screen_never_answers(rig):
+    import queue
+
+    from player import main
+
+    app, *_ = rig
+    events = queue.Queue()
+    events.put(ev.Press("power"))
+    log = []
+
+    class Display:
+        def show(self, image):
+            return False
+
+    class Stop(BaseException):
+        pass
+
+    ticks = iter(range(10))
+
+    def clock():
+        try:
+            return 100.0 + next(ticks)
+        except StopIteration:
+            raise Stop
+
+    with pytest.raises(Stop):
+        main.run(app, events, Display(), clock=clock, power_off=lambda: log.append(clock()))
+    assert len(log) == 1 and log[0] - 100.0 >= main.OFF_SCREEN_WAIT_SECONDS
+
+
 def test_boot_logo_fits_each_screen():
     from player.ui import render, tiny
 

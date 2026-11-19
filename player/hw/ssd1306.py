@@ -100,10 +100,11 @@ class SSD1306:
     def _command(self, *codes: int) -> None:
         self.bus.write(bytes([_COMMAND, *codes]))
 
-    def show(self, image) -> None:
+    def show(self, image) -> bool:
+        """Sends the picture; False when it did not reach the screen (it is sent again next time)."""
         data = to_pages(image)
         if data == self._last:
-            return
+            return True
         try:
             for page, first, last in changed_spans(self._last, data):
                 # Only the columns that changed on each 8-row strip: a new second is a few
@@ -118,8 +119,9 @@ class SSD1306:
             # A held power key pulls the shared clock line low; send the frame again next time.
             self.failures += 1
             self._last = None
-            return
+            return False
         self._last = data
+        return True
 
     def off(self) -> None:
         self._command(DISPLAY_OFF)
