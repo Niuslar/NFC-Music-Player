@@ -44,7 +44,8 @@ class UsbEjected:
 
 @dataclass(frozen=True)
 class WebCommand:
-    """From the web remote. action: toggle, next, prev, volume (value 0-100), play_album, link_card (value = album path), unlink_card."""
+    """From the web remote. action: toggle, next, prev, volume (value 0-100), seek (value = seconds),
+    play_album, link_card (value = album path), unlink_card, play_at (value = {"key": album path, "index": track})."""
 
     action: str
     value: object = None
@@ -53,3 +54,8 @@ class WebCommand:
 @dataclass(frozen=True)
 class LibraryChanged:
     """Files on the music drive changed (an upload finished)."""
+
+
+@dataclass(frozen=True)
+class ListsChanged:
+    """A list was made, renamed, reordered or deleted on the web remote. No files changed."""

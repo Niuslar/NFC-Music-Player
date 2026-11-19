@@ -22,6 +22,7 @@ from urllib.parse import parse_qs, urlsplit
 from .. import events as ev
 from .. import hwconfig
 from ..library import AUDIO_EXT, IMAGE_EXT, Library
+from ..playlists import ListError, Playlists, key_of
 
 PAGE = Path(__file__).parent / "remote.html"
 SETUP_PAGE = Path(__file__).parent / "setup.html"
@@ -30,7 +31,8 @@ HEADER = "X-Requested-With"
 HEADER_VALUE = "nfc-player"
 KEEP_FREE = 64 * 1024 * 1024  # never fill the music drive completely
 _BAD_CHARS = re.compile(r'[\x00-\x1f"*:<>?\\|]')  # not allowed in exFAT names
-COMMANDS = {"toggle", "next", "prev", "volume", "play_album", "link_card", "unlink_card"}
+COMMANDS = {"toggle", "next", "prev", "volume", "seek", "play_album", "play_at", "link_card", "unlink_card"}
+LIST_BODY_LIMIT = 1 << 20  # a long list's track paths
 
 
 class UploadError(Exception):
@@ -245,7 +247,46 @@ def _host_allowed(host_header: str) -> bool:
         return False
 
 
-def start(event_queue, shared: Shared, library: Library, writer: MusicWriter, port: int, bind: str = "0.0.0.0", setup: Setup | None = None):
+def _track_info(t) -> dict:
+    return {"path": t.path, "title": t.title, "artist": t.artist, "album": t.album}
+
+
+def _item_info(a) -> dict:
+    return {
+        "key": a.key,
+        "kind": a.kind,
+        "title": a.title,
+        "artist": a.artist,
+        "tracks": len(a.tracks),
+        "albums": a.albums,
+        "files": a.folder is not None,
+        "playlist": a.is_playlist,
+    }
+
+
+def change_list(playlists: Playlists, library: Library, msg: dict) -> dict:
+    """Does one change to the made lists. Returns the list as it is now ({} once deleted)."""
+    op, list_id = msg.get("op"), msg.get("id")
+    tracks = msg.get("tracks", [])
+    if isinstance(tracks, list) and op in ("create", "add") and any(library.track(t) is None for t in tracks if isinstance(t, str)):
+        raise ListError("Some of those tracks are no longer in the library")
+    if op == "create":
+        made = playlists.create(msg.get("name"), tracks)
+    elif op == "rename":
+        made = playlists.rename(list_id, msg.get("name"))
+    elif op == "add":
+        made = playlists.add(list_id, tracks)
+    elif op == "set":  # reorder or remove; paths already in the list stay allowed even if their file is gone
+        made = playlists.set_tracks(list_id, tracks)
+    elif op == "delete":
+        playlists.delete(list_id)
+        return {}
+    else:
+        raise ListError("Unknown change")
+    return {**made, "key": key_of(made["id"])}
+
+
+def start(event_queue, shared: Shared, library: Library, writer: MusicWriter, port: int, bind: str = "0.0.0.0", setup: Setup | None = None, playlists: Playlists | None = None):
     covers: dict[str, bytes] = {}
 
     class Handler(BaseHTTPRequestHandler):
@@ -302,21 +343,16 @@ def start(event_queue, shared: Shared, library: Library, writer: MusicWriter, po
                     state["free_bytes"] = None
                 self._json(200, state)
             elif url.path == "/api/library":
-                self._json(
-                    200,
-                    [
-                        {
-                            "key": a.key,
-                            "kind": a.kind,
-                            "title": a.title,
-                            "artist": a.artist,
-                            "tracks": len(a.tracks),
-                            "albums": a.albums,
-                            "files": a.folder is not None,
-                        }
-                        for a in library.albums + library.artists + library.lists
-                    ],
-                )
+                folder_lists = [a for a in library.lists if not a.is_playlist]
+                self._json(200, [_item_info(a) for a in library.albums + library.artists + folder_lists + library.playlists])
+            elif url.path == "/api/songs":
+                self._json(200, [{**_track_info(t), "key": a.key, "index": i} for a in library.albums for i, t in enumerate(a.tracks)])
+            elif url.path == "/api/item":
+                item = library.get(parse_qs(url.query).get("key", [""])[0])
+                if item is None:
+                    self._fail(404, "No such album, artist or list")
+                else:
+                    self._json(200, {**_item_info(item), "items": [_track_info(t) for t in item.tracks]})
             elif url.path == "/api/files":
                 try:
                     self._json(200, list_files(library, parse_qs(url.query).get("album", [""])[0]))
@@ -368,6 +404,9 @@ def start(event_queue, shared: Shared, library: Library, writer: MusicWriter, po
             if path in ("/api/setup", "/api/restart", "/api/test") and setup is not None:
                 self._setup(path)
                 return
+            if path == "/api/lists" and playlists is not None:
+                self._lists()
+                return
             if path != "/api/command":
                 self._fail(404, "Not found")
                 return
@@ -381,15 +420,23 @@ def start(event_queue, shared: Shared, library: Library, writer: MusicWriter, po
                     raise ValueError
                 if action == "volume":
                     value = int(value)
+                elif action == "seek":
+                    value = float(value)
+                    if value != value or value < 0:  # NaN or negative
+                        raise ValueError
+                elif action == "play_at":
+                    if not isinstance(value, dict) or not isinstance(value.get("key"), str) or type(value.get("index")) is not int:
+                        raise ValueError
+                    value = {"key": value["key"], "index": value["index"]}
             except (ValueError, KeyError, TypeError):
                 self._fail(400, "Bad command")
                 return
             event_queue.put(ev.WebCommand(action, value))
             self._json(200, {"ok": True})
 
-        def _body(self) -> dict:
+        def _body(self, limit: int = 4096) -> dict:
             length = int(self.headers.get("Content-Length", 0))
-            if length > 4096:
+            if length > limit:
                 raise ValueError
             msg = json.loads(self.rfile.read(length) or b"{}")
             if not isinstance(msg, dict):
@@ -419,6 +466,23 @@ def start(event_queue, shared: Shared, library: Library, writer: MusicWriter, po
                 self._json(200, setup.test_dac())
             else:
                 self._fail(400, "Unknown test")
+
+        def _lists(self) -> None:
+            try:
+                msg = self._body(LIST_BODY_LIMIT)
+            except (ValueError, TypeError):
+                self._fail(400, "Bad request")
+                return
+            try:
+                made = change_list(playlists, library, msg)
+            except ListError as e:
+                self._fail(400, str(e))
+                return
+            except OSError as e:
+                self._fail(500, f"Could not save the list: {e}")
+                return
+            event_queue.put(ev.ListsChanged())
+            self._json(200, {"ok": True, "list": made})
 
         def _delete(self) -> None:
             try:

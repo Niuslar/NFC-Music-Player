@@ -99,6 +99,8 @@ class App:
             self._web(event.action, event.value)
         elif isinstance(event, ev.LibraryChanged):
             self._refresh_library()
+        elif isinstance(event, ev.ListsChanged):
+            self._refresh_library(rescan=False)
         elif isinstance(event, ev.CardInserted):
             if self.card is not None and self.mode is not Mode.TRANSFER:
                 self._leave_card()
@@ -156,6 +158,15 @@ class App:
             album = self.library.get(str(value))
             if album is not None:
                 self._play_remote(album)
+        elif action == "play_at":
+            album = self.library.get(str(value.get("key"))) if isinstance(value, dict) else None
+            index = value.get("index") if album else None
+            if album is None or not isinstance(index, int) or not 0 <= index < len(album.tracks):
+                return
+            if self.album is not None and album.key == self.album.key and self.status.state != "stop":
+                self._play_track(index)  # a jump within what is playing keeps the card's claim on it
+            else:
+                self._play_remote(album, index)
         elif action == "link_card":
             album = self.library.get(str(value))
             if self.card and album is not None:
@@ -174,18 +185,24 @@ class App:
                 self.playback.next()
             elif action == "prev":
                 self.playback.prev()
+            elif action == "seek" and self.status.state != "stop":
+                self.playback.seek(min(max(float(value), 0.0), max(self.status.duration - 0.5, 0.0)))
+                self.status = self.playback.status()
 
-    def _play_remote(self, album: Item) -> None:
+    def _play_remote(self, album: Item, track: int = 0) -> None:
         if self.album is not None and self.card and not self.remote:
             st = self.playback.status()  # keep the card's own place before taking over
             if st.state != "stop":
                 self.store.set_resume(self.card, st.track_index, st.elapsed)
                 self.store.save()
         self.remote = True
-        self._play(album)
+        self._play(album, track)
 
-    def _refresh_library(self) -> None:
-        self._rescan()
+    def _refresh_library(self, rescan: bool = True) -> None:
+        if rescan:
+            self._rescan()
+        else:
+            self.library.refresh_playlists()
         if self.link_kind and not self.library.of(self.link_kind):
             self.link_kind = None
         if self.mode is Mode.LINKING:
@@ -492,6 +509,7 @@ class App:
             "mode": self.mode.name.lower(),
             "card": self.card is not None,
             "card_album": self._card_album(),
+            "linked": self.store.linked_keys(),
             "remote": self.remote,
             "volume": self.store.volume,
             "album": {"key": album.key, "title": album.title, "artist": album.artist, "kind": album.kind} if album else None,

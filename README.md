@@ -14,7 +14,7 @@ A tabletop music player where each album is a card. Put a card in the slot and i
 - **Hi-Fi output.** A Raspberry Pi DAC Pro provides 3.5 mm and RCA outputs, with a balanced output available for a 4.4 mm socket.
 - **Screen and controls.** A 2-inch display shows the cover, track and time. A clicky knob sets the volume and scrolls lists; four buttons do previous, play/pause, next and back. A power key turns the player off safely and on again: the screen shows **Turning off** and goes dark once the Pi is off.
 - **Music over USB.** Plug the player into a computer and its music appears as a drive called `MUSIC`.
-- **Web remote.** A page served by the player controls playback, links cards, and uploads or deletes music from any phone or computer on the same Wi-Fi.
+- **Web remote.** A page served by the player, from any phone or computer on the same Wi-Fi: browse albums, artists and songs, play from any track, seek, link cards, upload or delete music, and make lists of songs from anywhere in the library. Lists are kept beside the card links (`lists.json`), not on the music drive, and a card can play one like an album.
 
 ## Hardware
 

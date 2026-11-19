@@ -20,6 +20,7 @@ from .cards import Store
 from .events import LibraryChanged
 from .library import FileTags, Library
 from .playback import FakePlayback, MpdPlayback
+from .playlists import Playlists
 
 # GPIO numbers (BCM). The DAC HAT owns 2, 3, 18, 19, 20 and 21.
 # GPIO 22 is the power light. The player never touches it: config.txt switches it on at boot
@@ -214,6 +215,7 @@ def main() -> None:
         display = _attempt(status, "screen", lambda: open_display(config["display"], config["rotate"] == 180)) or NullDisplay()
     display.show(ui.splash())
 
+    playlists = Playlists(args.state.parent / "lists.json")  # lists made on the web remote, beside the card links
     if args.playback == "mpd":
         from mpd import ConnectionError as MpdConnectionError
 
@@ -226,10 +228,10 @@ def main() -> None:
                 if attempt == 29:
                     raise
                 time.sleep(1)
-        library = Library(args.music, tags=playback.tags, art=playback.art)  # MPD has already read every tag
+        library = Library(args.music, tags=playback.tags, art=playback.art, playlists=playlists.all)  # MPD has already read every tag
     else:
         files = FileTags(args.music)
-        library = Library(args.music, tags=files.tags, art=files.art)
+        library = Library(args.music, tags=files.tags, art=files.art, playlists=playlists.all)
         playback = FakePlayback(library)
 
     if args.sim:
@@ -267,7 +269,7 @@ def main() -> None:
             simulator=args.sim,
         )
         try:
-            web.start(events, shared, library, writer, args.web_port, bind="127.0.0.1" if args.sim else "0.0.0.0", setup=setup)
+            web.start(events, shared, library, writer, args.web_port, bind="127.0.0.1" if args.sim else "0.0.0.0", setup=setup, playlists=playlists)
             app.is_uploading = lambda: writer.busy
             print(f"Web remote on port {args.web_port}", flush=True)
         except OSError as e:

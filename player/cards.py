@@ -28,6 +28,10 @@ class Store:
         card = self._cards.get(uid)
         return card["album"] if card else None
 
+    def linked_keys(self) -> list[str]:
+        """Everything some card is linked to, whether or not that card is in the slot."""
+        return sorted({c["album"] for c in self._cards.values()})
+
     def link(self, uid: str, key: str) -> None:
         self._cards[uid] = {"album": key}  # the field keeps its old name so existing links still load
         self.save()

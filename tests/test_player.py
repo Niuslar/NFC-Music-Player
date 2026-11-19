@@ -376,8 +376,8 @@ def test_flat_folder_splits_into_albums_by_tag(tagged):
     assert [(a.artist, a.title) for a in library.albums] == [
         ("David Bowie", "Heroes"),
         ("David Bowie", "Low"),
-        ("Mika Tane", "Small Hours"),
         ("Nina Simone", "Pastel Blues"),
+        ("Mika Tane", "Small Hours"),
         ("Various Artists", "The Film"),
     ]
     heroes = library.albums[0]
@@ -507,7 +507,7 @@ def test_holding_prev_rewinds_to_the_start_of_the_track_but_no_further(rig):
 
 def test_scanning_speeds_up_the_longer_it_is_held(rig):
     app, send, clock, *_ = rig
-    linked(rig, album_index=4)  # Slow Rooms: five tracks, 20 to 40 s
+    linked(rig, album_index=5)  # Slow Rooms: five tracks, 20 to 40 s
     send(ev.Press("next"), ev.Press("next"), ev.Press("next"), ev.Press("next"))  # last track, 40 s
     send(ev.Press("next_hold"))
     for _ in range(8):  # 3.2 s held
@@ -519,7 +519,7 @@ def test_scanning_speeds_up_the_longer_it_is_held(rig):
 
 def test_back_shows_the_tracks_and_the_knob_picks_one(rig):
     app, send, clock, store, playback, *_ = rig
-    linked(rig, album_index=4)  # Slow Rooms: five tracks
+    linked(rig, album_index=5)  # Slow Rooms: five tracks
     per_item = round(COUNTS_PER_REV * 15 / 360) + 1
     send(ev.Press("next"), advance=2.0)
     send(ev.Press("back"))
@@ -538,7 +538,7 @@ def test_back_shows_the_tracks_and_the_knob_picks_one(rig):
 
 def test_holding_back_restarts_the_album(rig):
     app, send, clock, *_ = rig
-    linked(rig, album_index=4)  # Slow Rooms: five tracks
+    linked(rig, album_index=5)  # Slow Rooms: five tracks
     send(ev.Press("next"), ev.Press("next"), advance=5.0)
     send(ev.Press("back_long"))
     assert app.mode is Mode.PLAYING

@@ -5,13 +5,16 @@ real albums. Files without tags fall back to the folder layout: the folder is th
 album and its parent is the artist (Artist/Album/tracks, or a loose Album/ at the root).
 
 A list is a folder whose tracks span more than one album, played as it is in
-filename order. An artist is every album by that artist, one after another.
+filename order, or a list made on the web remote (see playlists.py). An artist is
+every album by that artist, one after another.
 """
 
 import re
 import wave
 from dataclasses import dataclass
 from pathlib import Path
+
+from .playlists import KEY_PREFIX as PLAYLIST_PREFIX
 
 AUDIO_EXT = {".flac", ".mp3", ".m4a", ".ogg", ".opus", ".wav", ".aiff", ".aif"}
 IMAGE_EXT = {".jpg", ".jpeg", ".png"}
@@ -63,6 +66,11 @@ class Item:
     @property
     def cover(self) -> Path | None:
         return self.tracks[0].cover if self.tracks else None
+
+    @property
+    def is_playlist(self) -> bool:
+        """Made on the web remote rather than found as a folder: it can be edited there."""
+        return self.key.startswith(PLAYLIST_PREFIX)
 
 
 def _visible(p: Path) -> bool:
@@ -164,14 +172,17 @@ class FileTags:
 
 
 class Library:
-    """tags() returns {track path: Tags}; art(track path) returns an embedded cover's bytes."""
+    """tags() returns {track path: Tags}; art(track path) returns an embedded cover's bytes;
+    playlists() returns the lists made on the web remote, [{id, name, tracks}]."""
 
-    def __init__(self, root: Path, tags=None, art=None):
+    def __init__(self, root: Path, tags=None, art=None, playlists=None):
         self.root = Path(root)
-        self._read_tags, self._read_art = tags, art
+        self._read_tags, self._read_art, self._read_playlists = tags, art, playlists
         self.albums: list[Item] = []
         self.artists: list[Item] = []
-        self.lists: list[Item] = []
+        self.lists: list[Item] = []  # what a card can link to: folder lists and made lists with tracks
+        self.playlists: list[Item] = []  # every made list, empty ones too
+        self._folder_lists: list[Item] = []
         self.version = 0  # goes up with every rescan
         self._by_key: dict[str, Item] = {}
         self._tracks: dict[str, Track] = {}
@@ -238,7 +249,7 @@ class Library:
                         Item("list", folder, d.name, rel.parent.name, in_order, folder, whole_folder=True, albums=len(groups))
                     )
 
-        albums.sort(key=lambda a: (a.artist.lower(), a.title.lower()))
+        albums.sort(key=lambda a: (a.title.casefold(), a.artist.casefold()))  # alphabetical, as the screen lists them
         lists.sort(key=lambda a: a.title.lower())
         by_artist: dict[str, list[Item]] = {}
         for a in albums:
@@ -251,10 +262,21 @@ class Library:
             artists.append(Item("artist", f"//artist//{name}", theirs[0].artist, "", tracks, albums=len(theirs)))
         artists.sort(key=lambda a: a.title.lower())
 
-        self.albums, self.artists, self.lists = albums, artists, lists
-        self._by_key = {i.key: i for i in albums + artists + lists}
+        self.albums, self.artists, self._folder_lists = albums, artists, lists
         self._tracks = {t.path: t for a in albums for t in a.tracks}
         self._folder_cover = folder_cover
+        self.refresh_playlists()
+
+    def refresh_playlists(self) -> None:
+        """Rebuilds the made lists from their tracks, without reading the music drive again."""
+        made = []
+        for raw in self._read_playlists() if self._read_playlists else []:
+            tracks = tuple(self._tracks[p] for p in raw["tracks"] if p in self._tracks)  # gone files are skipped
+            albums = len({Path(t.path).parent.as_posix() + "//" + t.album for t in tracks})
+            made.append(Item("list", PLAYLIST_PREFIX + raw["id"], raw["name"], "", tracks, albums=albums))
+        lists = sorted(self._folder_lists + [p for p in made if p.tracks], key=lambda a: a.title.lower())
+        self.lists, self.playlists = lists, made
+        self._by_key = {i.key: i for i in self.albums + self.artists + self._folder_lists + made}
         self.version += 1
 
     def of(self, kind: str) -> list[Item]:
