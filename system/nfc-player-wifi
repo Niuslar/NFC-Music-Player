@@ -26,9 +26,16 @@ case "${1:-}" in
   hotspot-up)
     IFS= read -r PASS
     hotspot_off
-    nmcli device wifi hotspot ifname "$IFACE" con-name "$HOTSPOT" ssid "$SSID" band bg password "$PASS" >/dev/null
-    # Never come back on its own after a restart or power cut.
-    nmcli connection modify "$HOTSPOT" connection.autoconnect no >/dev/null
+    # Every security setting is spelled out rather than left to NetworkManager's hotspot defaults:
+    # plain WPA2 with AES, and protected management frames off. With them on, the Pi's Wi-Fi chip
+    # turns Macs and iPhones away as if the password were wrong.
+    # autoconnect no: it never comes back on its own after a restart or power cut.
+    nmcli connection add type wifi ifname "$IFACE" con-name "$HOTSPOT" autoconnect no ssid "$SSID" \
+      802-11-wireless.mode ap 802-11-wireless.band bg \
+      ipv4.method shared ipv6.method disabled \
+      wifi-sec.key-mgmt wpa-psk wifi-sec.psk "$PASS" \
+      wifi-sec.proto rsn wifi-sec.pairwise ccmp wifi-sec.group ccmp wifi-sec.pmf disable >/dev/null
+    nmcli connection up "$HOTSPOT" >/dev/null
     ;;
   hotspot-down)
     hotspot_off
