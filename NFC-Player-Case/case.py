@@ -71,6 +71,12 @@ GUIDE_X = (121.0, 193.0)  # the guide's two floor screws
 GUIDE_Y = 44.5
 PN532_CENTRE_Z = 34.0
 PN532_PCB = (42.7, 40.4, 1.6)
+# The PN532 V3 misses cards held against it and reads best about 20 mm away (bench test).
+# READER_GAP runs from the card's centre to the reader's antenna face. The reader slides down
+# into one of three pairs of grooves, READER_SLOTS from that distance, so it can be tuned in the case.
+READER_GAP = 20.0
+READER_SLOTS = (-4.0, 0.0, 4.0)
+READER_Y = CARD_Y + READER_GAP  # antenna face of the reader in the middle grooves, at the top of the lid
 TRAY = (15.0, 20.0, 104.0, 77.0)  # x0, y0, x1, y1 of the card tray in the lid
 TRAY_DEPTH = 5.0
 TRAY_FLOOR = 2.0
@@ -269,20 +275,32 @@ def card_guide():
     stop = CARD_STOP_Z - 5
     outer, wall = CHANNEL_W + 4.4, 2.0
     lean = [(1, 0, 0, 0), (0, 1, TAN, -TAN * (H - 5)), (0, 0, 1, 0)]
-    back = gy + CHANNEL_T / 2 + wall  # rear face of the guide: the reader's antenna lies against it
-    shelf = PN532_CENTRE_Z - PN532_PCB[1] / 2 - 5 - 0.2  # the reader's lower edge rests here
+    back = gy + CHANNEL_T / 2 + wall  # rear face of the card channel
+    # Two grooved posts behind the channel hold the reader by its side edges, antenna facing the card.
+    edge = PN532_PCB[0] / 2  # board centre to its side edge
+    face = gy + READER_GAP  # antenna face in the middle grooves
+    p0, p1 = face + min(READER_SLOTS) - 2.2, face + max(READER_SLOTS) + PN532_PCB[2] + 2.2
+    post_top = PN532_CENTRE_Z + PN532_PCB[1] / 2 - 5 - 3  # below the board's top edge and its header
+    board_low = PN532_CENTRE_Z - PN532_PCB[1] / 2 - 5  # the board's lower edge rests here
     half = GUIDE_X[1] - GUIDE_X[0]
     solid = [
         box(-4, half + 2.5, -11, 7, 0, 3),
         xf(lean, box(gx - outer / 2, gx + outer / 2, gy - CHANNEL_T / 2 - wall, back, 2.9, top)),
-        xf(lean, box(gx - 22, gx + 22, back - 0.1, back + 3.5, 2.9, shelf)),
-        xf(lean, box(gx - 22, gx + 22, back + 2.2, back + 3.5, shelf - 0.1, shelf + 2)),  # lip behind the reader
+        box(gx - edge - 3.3, gx + edge + 3.3, 6.9, p1 - TAN * (H - 5) + 0.5, 0, 3),  # foot under the posts
     ]
     for s in (-1, 1):
         rx = gx + s * (outer / 2 - 2)
         solid.append(hull(box(rx - 1.5, rx + 1.5, -7, 7, 1, 3), xf(lean, box(rx - 1.5, rx + 1.5, -2, 1, 16, 17))))
+        i0, i1 = sorted((gx + s * (edge - 1.5), gx + s * (edge + 3.3)))
+        solid.append(xf(lean, box(i0, i1, p0, p1, 0, post_top)))  # post
+        w0, w1 = sorted((gx + s * (edge + 1.3), gx + s * (edge + 3.3)))
+        solid.append(xf(lean, box(w0, w1, back - 0.1, p0 + 0.1, 0, post_top)))  # web from the channel to the post
     cuts = [xf(lean, box(gx - CHANNEL_W / 2, gx + CHANNEL_W / 2, gy - CHANNEL_T / 2, gy + CHANNEL_T / 2, stop, top + 5))]
     cuts += [cylz(x, 0, -1, 4, CLEAR_M3) for x in (0, half)]
+    for o in READER_SLOTS:  # grooves 0.4 wider than the board and 0.3 past its edges
+        for s in (-1, 1):
+            g0, g1 = sorted((gx + s * (edge - 1.5 - 0.1), gx + s * (edge + 0.3)))
+            cuts.append(xf(lean, box(g0, g1, face + o - 0.2, face + o + PN532_PCB[2] + 0.2, board_low - 0.2, post_top + 5)))
     return diff(union(*solid), *cuts)
 
 

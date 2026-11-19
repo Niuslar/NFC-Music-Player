@@ -155,7 +155,7 @@ def stand_ins():
     pi_y = 62.0  # with the DAC directly above the Pi and its sockets 6.5 mm from the rear panel
     dac_z = c.FLOOR + c.STANDOFF_H + 1.6 + 11 + 1.6 + 11  # underside of the DAC board
     lean = [(1, 0, 0, 0), (0, 1, c.TAN, -c.TAN * c.H), (0, 0, 1, 0)]
-    reader_y = c.CARD_Y + c.CHANNEL_T / 2 + 2.0
+    reader_y = c.READER_Y  # antenna face, reader in the middle grooves
     out = {
         "screen board": c.box(cx - 29, cx + 29, pcb_y, pcb_y + 1.6, cz - 17.5, cz + 17.5),
         "screen glass": c.box(cx - 24, cx + 24, c.FRONT_T + 0.05, pcb_y, cz - 17.5, cz + 17.5),

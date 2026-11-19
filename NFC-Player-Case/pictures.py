@@ -50,7 +50,7 @@ RCA_X, PHONES_DAC_X = (42.0, 56.0), 71.0  # APPROXIMATE positions along the DAC'
 LCD_CX, LCD_CZ = c.cradle_centre()
 LCD_Y = c.FRONT_T + c.LCD_GLASS
 LEAN = [(1, 0, 0, 0), (0, 1, c.TAN, -c.TAN * c.H), (0, 0, 1, 0)]
-READER_Y = c.CARD_Y + c.CHANNEL_T / 2 + 2.0
+READER_Y = c.READER_Y
 B = c.box
 
 
@@ -94,11 +94,6 @@ def stand_ins():
     # NFC reader and card
     s["NFC reader"] = (c.xf(LEAN, B(c.CARD_X - 21.35, c.CARD_X + 21.35, READER_Y + 0.05, READER_Y + 1.65, c.PN532_CENTRE_Z - 20.2, c.PN532_CENTRE_Z + 20.2)), PCB_NFC, "reader")
     s["NFC reader header"] = (c.xf(LEAN, B(c.CARD_X - 10, c.CARD_X + 10, READER_Y + 1.65, READER_Y + 4.2, c.PN532_CENTRE_Z + 15, c.PN532_CENTRE_Z + 17.5)), BLACK, "reader")
-    tz, tw = c.PN532_CENTRE_Z + 8, 1.2
-    gx0, gx1 = c.CARD_X - (c.CHANNEL_W + 4.4) / 2 - 0.4, c.CARD_X + (c.CHANNEL_W + 4.4) / 2 + 0.4
-    gy0, gy1 = c.CARD_Y - c.CHANNEL_T / 2 - 2.4, READER_Y + 2.1
-    tie = [B(gx0, gx1, gy0 - 0.6, gy0, tz, tz + tw), B(gx0, gx1, gy1, gy1 + 0.6, tz, tz + tw), B(gx0 - 0.6, gx0, gy0 - 0.6, gy1 + 0.6, tz, tz + tw), B(gx1, gx1 + 0.6, gy0 - 0.6, gy1 + 0.6, tz, tz + tw)]
-    s["cable tie"] = (c.xf(LEAN, c.union(*tie)), (0.95, 0.95, 0.93), "tie")
     s["card"] = (c.xf(LEAN, B(c.CARD_X - 27, c.CARD_X + 27, c.CARD_Y - 0.38, c.CARD_Y + 0.38, c.CARD_STOP_Z + 0.05, c.CARD_STOP_Z + 85.6)), CARD, "card")
     tx, ty = (c.TRAY[0] + c.TRAY[2]) / 2, (c.TRAY[1] + c.TRAY[3]) / 2
     floor = c.H - c.TRAY_DEPTH
@@ -127,7 +122,7 @@ def wires():
     top = SPLIT_Z + 10
     return {
         "screen wires": ([(LCD_CX + 19, LCD_Y + 7, LCD_CZ), (LCD_CX + 19, 22, LCD_CZ + 2), (40, hy - 2, top + 3), (36, hy, top)], WIRES["screen"], "wires"),
-        "reader wires": ([(c.CARD_X, READER_Y + 6.5, c.PN532_CENTRE_Z + 16), (c.CARD_X - 20, 62, 40), (90, 55, top + 4), (62, hy, top)], WIRES["reader"], "wires"),
+        "reader wires": ([(c.CARD_X, READER_Y + 6.5, c.PN532_CENTRE_Z + 16), (c.CARD_X - 30, READER_Y + 4, 44), (90, 55, top + 4), (62, hy, top)], WIRES["reader"], "wires"),
         "encoder wires": ([(c.KNOB_X, 13, c.CTRL_Z - 7), (150, 22, 20), (100, 32, top), (70, hy, top)], WIRES["controls"], "wires"),
         "switch wires": ([(c.KEYS_X[1] + 9, 6, c.CTRL_Z - 7), (100, 20, 22), (60, hy - 3, top + 2), (50, hy, top)], WIRES["controls"], "wires"),
         "USB lead": ([(c.USB_X, c.D - c.REAR_T - 14, c.USB_Z), (c.USB_X - 10, 110, 14), (90, 100, 12), (c.PI_X + 41.4, PI_Y + 33, PI_Z + 3)], WIRES["usb"], "usb lead"),
@@ -264,7 +259,7 @@ ISO_FL = (-1.0, -1.25, 0.95)  # from the front left, above
 ISO_FR = (1.0, -1.25, 0.95)
 ISO_RL = (-1.0, 1.2, 1.0)  # from the rear left, above
 ISO_RR = (1.0, 1.2, 1.0)
-INSIDE = ("chassis", "standoffs", "pi", "splitter", "dac", "screen", "cradle", "guide", "reader", "tie", "wires", "usb lead", "encoder", "knob", "nut")
+INSIDE = ("chassis", "standoffs", "pi", "splitter", "dac", "screen", "cradle", "guide", "reader", "wires", "usb lead", "encoder", "knob", "nut")
 KEYS = tuple(f"switch {i}" for i in range(4)) + tuple(f"keycap {i}" for i in range(4))
 BACKS = (c.FRONT_T + 2, c.D - c.REAR_T - 2)  # just inside the panels
 SHOTS = {
@@ -292,7 +287,7 @@ SHOTS = {
             ("Four switches", (c.KEYS_X[1] + 9, 4, 40), "switch 0"),
             ("Encoder (volume knob)", (c.KNOB_X, 6, 40), "encoder"),
             ("Card guide, card slot leaning 5° back", (c.CARD_X + 24, c.CARD_Y - 3, 50), "guide"),
-            ("NFC reader on the back of the guide", (c.CARD_X - 18, READER_Y + 3, 55), "reader"),
+            ("NFC reader, held 20 mm behind the card slot", (c.CARD_X - 18, READER_Y + 3, 55), "reader"),
             ("Splitter's spare header: screen, reader, knob and switch wires", (c.PI_X + 52, sum(FREE_HEADER_Y) / 2, SPLIT_Z + 10), "splitter"),
             ("DAC on top of the stack (Pi and splitter below)", (c.PI_X + 33, PI_Y + 32, DAC_Z + 1.6), "dac"),
             ("DAC's RCA and headphone sockets, at the rear window", (c.PI_X + 33, DAC_Y1, DAC_Z + 14), "dac"),
@@ -331,7 +326,7 @@ SHOTS = {
     "step-2-controls": {
         "view": (-0.75, 1.0, 0.55),  # from behind the front panel, looking forward
         "frame": ("front", "brass", "encoder", "knob", "nut") + KEYS,
-        "hide": ("chassis", "lid", "lid screws", "rear", "standoffs", "pi", "splitter", "dac", "screen", "cradle", "guide", "reader", "tie", "wires", "usb lead", "feet", "card", "front screws", "keycap 3"),
+        "hide": ("chassis", "lid", "lid screws", "rear", "standoffs", "pi", "splitter", "dac", "screen", "cradle", "guide", "reader", "wires", "usb lead", "feet", "card", "front screws", "keycap 3"),
         "focus": ("front",),
         "move": {"switch 3": v(0, -22, 0), "encoder": v(0, 22, 0), "nut": v(0, -16, 0), "washer": v(0, -12, 0), "knob": v(0, -42, 0)},
         "arrows": [((c.KEYS_X[3], -14, c.CTRL_Z + 13), (c.KEYS_X[3], 2, c.CTRL_Z + 13)), ((c.KNOB_X, 26, c.CTRL_Z + 12), (c.KNOB_X, 10, c.CTRL_Z + 12))],
@@ -347,7 +342,7 @@ SHOTS = {
         "view": (-0.55, -1.0, 0.38),  # from the front left, so parts pulled forward move clear to the right
         "frame": ("encoder", "knob", "nut", "washer") + KEYS,
         "margin": 0.1,
-        "hide": ("chassis", "lid", "lid screws", "rear", "standoffs", "pi", "splitter", "dac", "screen", "cradle", "guide", "reader", "tie", "wires", "usb lead", "feet", "card", "front screws"),
+        "hide": ("chassis", "lid", "lid screws", "rear", "standoffs", "pi", "splitter", "dac", "screen", "cradle", "guide", "reader", "wires", "usb lead", "feet", "card", "front screws"),
         "focus": ("front",),
         "move": {"switch 3": v(0, -18, 0), "keycap 2": v(0, -16, 0), "keycap 3": v(0, -38, 0), "encoder": v(0, 18, 0), "washer": v(0, -14, 0), "nut": v(0, -26, 0), "knob": v(0, -56, 0)},
         "arrows": [((c.KEYS_X[3], -34, c.CTRL_Z + 14), (c.KEYS_X[3], -8, c.CTRL_Z + 14)), ((c.KNOB_X, -36, c.CTRL_Z - 22), (c.KNOB_X, -6, c.CTRL_Z - 22))],
@@ -364,7 +359,7 @@ SHOTS = {
         "view": (-0.55, 1.0, 0.75),
         "frame": ("cradle", "screen", "brass"),
         "extra_frame": True,
-        "hide": ("lid", "lid screws", "rear", "standoffs", "pi", "splitter", "dac", "guide", "reader", "tie", "wires", "usb lead", "card", "encoder", "knob", "nut", "feet") + KEYS,
+        "hide": ("lid", "lid screws", "rear", "standoffs", "pi", "splitter", "dac", "guide", "reader", "wires", "usb lead", "card", "encoder", "knob", "nut", "feet") + KEYS,
         "focus": ("display-cradle",),
         "move": {"screen": v(0, 0, 36)},
         "arrows": [((LCD_CX, LCD_Y + 0.8, LCD_CZ + 44), (LCD_CX, LCD_Y + 0.8, LCD_CZ + 24))],
@@ -378,7 +373,7 @@ SHOTS = {
     "step-4-stack": {
         "view": ISO_FL,
         "frame": ("chassis", "pi", "splitter", "dac"),
-        "hide": ("lid", "lid screws", "front", "brass", "front screws", "screen", "cradle", "guide", "reader", "tie", "wires", "usb lead", "card", "encoder", "knob", "nut", "rear") + KEYS,
+        "hide": ("lid", "lid screws", "front", "brass", "front screws", "screen", "cradle", "guide", "reader", "wires", "usb lead", "card", "encoder", "knob", "nut", "rear") + KEYS,
         "focus": ("chassis",),
         "move": {"pi": v(0, -30, 12), "splitter": v(0, -30, 50), "dac": v(0, -30, 92)},
         "arrows": [((c.PI_X + 72, PI_Y + 12, 128), (c.PI_X + 72, PI_Y + 38, 128)), ((c.PI_X + 72, PI_Y - 14, 112), (c.PI_X + 72, PI_Y - 14, 80))],
@@ -393,17 +388,16 @@ SHOTS = {
     },
     "step-5-reader": {
         "view": (1.0, 1.0, 0.7),
-        "frame": ("guide", "reader", "tie", "card"),
+        "frame": ("guide", "reader", "card"),
         "hide": ("lid", "lid screws", "front", "brass", "front screws", "rear", "standoffs", "pi", "splitter", "dac", "screen", "cradle", "wires", "usb lead", "encoder", "knob", "nut", "feet", "chassis") + KEYS,
         "focus": ("card-guide",),
-        "move": {"reader": v(0, 28, 0), "tie": v(0, 28, 26)},
-        "arrows": [((c.CARD_X + 26, READER_Y + 26, c.PN532_CENTRE_Z), (c.CARD_X + 26, READER_Y + 6, c.PN532_CENTRE_Z))],
+        "move": {"reader": v(0, 0, 40)},
+        "arrows": [((c.CARD_X + 30, READER_Y - 2, c.PN532_CENTRE_Z + 50), (c.CARD_X + 30, READER_Y - 2, c.PN532_CENTRE_Z + 22))],
         "marks": [
             ("Card guide: two screws into the floor bosses", (c.GUIDE_X[1], c.GUIDE_Y, 9.8), "guide"),
             ("Card slot, leaning 5° back", (c.CARD_X, c.CARD_Y, 51), "guide"),
-            ("Shelf: the reader's lower edge stands on it", (c.CARD_X + 21, READER_Y + 3, c.PN532_CENTRE_Z - 20.5), "guide"),
-            ("NFC reader, antenna side against the guide, header at the top", (c.CARD_X + 21.35, READER_Y + 1.65, c.PN532_CENTRE_Z + 5), "reader"),
-            ("One cable tie round guide and reader", (c.CARD_X - 30.5, READER_Y + 2, c.PN532_CENTRE_Z + 8.5), "tie"),
+            ("Grooved posts: three positions, 16, 20 and 24 mm behind the card", (c.CARD_X + 23, READER_Y - 3, c.PN532_CENTRE_Z + 10), "guide"),
+            ("NFC reader, antenna side toward the card, header at the top", (c.CARD_X + 21.35, READER_Y + 1.65, c.PN532_CENTRE_Z + 45), "reader"),
         ],
     },
     "step-6-rear": {

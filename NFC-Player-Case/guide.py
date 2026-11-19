@@ -22,7 +22,7 @@ sys.path.insert(0, str(HERE))
 import case as c  # noqa: E402
 
 PICS = HERE / "pictures"
-REVISION = "3.3"
+REVISION = "3.4"
 
 
 def n(v):
@@ -182,10 +182,7 @@ def page():
 </section>
 
 <section id="changes"><h2>Changes in revision {REVISION}</h2><table><tr><th>Area</th><th>Change</th><th>Why</th></tr>
-<tr><td>Headphones</td><td>The separate {n(c.PHONES_HOLE)} mm rear jack hole and its extension lead are gone. The DAC's own 3.5 mm socket comes out through the rear window, next to its RCA sockets.</td><td>On the DAC Pro the headphone socket is on the same edge as the RCA sockets, so it already faces the window. The extra socket only added a lead from one side of the rear panel to the other. Set <code>REAR_JACK = True</code> in <code>case.py</code> to bring it back.</td></tr>
-<tr><td>Screw towers</td><td>{n(c.TOWER_X)} mm wide instead of 12.</td><td>With the lid screws moved to {n(c.LID_SCREW_X[0])} mm from the sides, their pilot holes left only 0.7 mm of wall. Now there is 2.7 mm.</td></tr>
-<tr><td>Keys and knob</td><td>A new section explains what to buy for them, how they are held, and how they feel, with a section drawing through a key and the encoder.</td><td>It was not clear what was printed and what was bought, or how the encoder stays put.</td></tr>
-<tr><td>Pictures and drawings</td><td>New assembly pictures and dimensioned drawings, all generated from the same model as the STLs.</td><td>The previous diagrams were not to scale and their labels overlapped.</td></tr>
+<tr><td>NFC reader</td><td>The reader now slides into grooved posts {n(c.READER_GAP)} mm behind the card, with spare grooves at {n(c.READER_GAP + min(c.READER_SLOTS))} and {n(c.READER_GAP + max(c.READER_SLOTS))} mm. The shelf and cable tie are gone.</td><td>On the bench the PN532 missed cards held against it and read them reliably at about 20 mm. Before, the antenna sat about 3 mm from the card.</td></tr>
 </table></section>
 
 <section id="measure"><h2>Measure first</h2>
@@ -216,7 +213,7 @@ def page():
 <li>Four M2.5 standoffs 5 mm tall, four M2.5 × 6 screws from below, and four more on top for the Pi.</li>
 <li>Keys and knob: four switches, four keycaps, an encoder and a knob, all bought. See <a href="#controls">Keys and knob</a> for exactly what to get.</li>
 <li>A panel-mount USB-C socket on a short lead ending in micro-USB.</li>
-<li>{n(c.BRASS_T)} mm brass sheet and thin double-sided tape. Four feet at least 5 mm tall. Foam pads, one small cable tie, and female jumper leads for the wiring.</li>
+<li>{n(c.BRASS_T)} mm brass sheet and thin double-sided tape. Four feet at least 5 mm tall. Foam pads and female jumper leads for the wiring.</li>
 </ul></section>
 
 <section id="controls"><h2>Keys and knob</h2>
@@ -274,8 +271,8 @@ more=[("step-2-controls", "The same panel from behind (the inside), so the knob 
 "<ol><li>Screw the front panel to the chassis with four M3 × 10 screws.</li><li>Screw the cradle loosely to its two floor bosses with M3 × 6 screws.</li><li>Slide the screen board down into the grooves of both uprights, glass towards the window and connector towards you.</li><li>Look through the window and slide the cradle sideways until the lit area is centred, then tighten its screws. A foam pad between the board and the lid stops it lifting.</li></ol>")}
 {step(4, "Mount the Pi, splitter and DAC", "step-4-stack", "Chassis from the front left with the front panel off for clarity, and the three boards lifted apart.", "Chassis floor with four standoffs in two slots, and the Pi, splitter and DAC stacked above them",
 "<ol><li>Screw four standoffs up through the two floor slots and leave them loose.</li><li>Screw the Pi onto them, header at the front. Plug the splitter onto the Pi and the DAC onto the splitter's rear header, checking pin 1 each time.</li><li>Slide the whole stack back until the DAC's sockets sit just inside the rear window, then tighten the standoffs from below.</li></ol>")}
-{step(5, "Fit the card guide and the NFC reader", "step-5-reader", "Card guide from the rear right, with the reader and cable tie pulled back.", "Card guide with its shelf, the NFC reader behind it and a cable tie",
-f"<ol><li>Screw the guide to the two floor bosses with M3 × 6 screws. The slot leans back toward the top.</li><li>Set the reader's switches for SPI, then stand it on the shelf with its antenna side against the guide and its header at the top.</li><li>Hold it with one cable tie round guide and reader. The tie passes outside the card slot.</li></ol>")}
+{step(5, "Fit the card guide and the NFC reader", "step-5-reader", "Card guide from the rear right, with the reader lifted out of its grooves.", "Card guide with two grooved posts behind the card slot and the NFC reader above them",
+f"<ol><li>Screw the guide to the two floor bosses with M3 × 6 screws. The slot leans back toward the top.</li><li>Set the reader's switches for SPI. Slide it down into the middle pair of grooves in the two posts, antenna side toward the card and header at the top. That holds it {n(c.READER_GAP)} mm behind the card, where it reads best; this reader misses cards held right against it.</li><li>Try a card. If reads are unreliable, move the reader to the front or rear grooves ({n(c.READER_GAP + min(c.READER_SLOTS))} or {n(c.READER_GAP + max(c.READER_SLOTS))} mm). The lid stops it lifting out, so no tie or glue is needed.</li></ol>")}
 {step(6, "Wire it", "", "", "",
 "<p>Every wire runs to the splitter's spare header. Follow the pin tables in the build guide (<code>docs/index.html</code>, step 5); the top view under <a href=\"#inside\">What goes where</a> shows the routes.</p><ul><li>Keep wires out from under the card tray, which comes down to 52 mm over the left two thirds of the case, and clear of the card slot.</li><li>Leave enough slack that the front panel can come off with the wires attached.</li></ul>")}
 {step(7, "Fit the rear panel", "step-6-rear", "Rear of the case seen from the right, with the lid off.", "Rear panel with the window showing the DAC's RCA and headphone sockets, and the USB-C socket",
