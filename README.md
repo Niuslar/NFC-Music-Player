@@ -1,5 +1,11 @@
 # NFC Album Player
 
+![AI-assisted](https://img.shields.io/badge/development-AI--assisted-brightgreen)
+![Code written with](https://img.shields.io/badge/code%20written%20with-Claude%20Code-brightgreen)
+![Hardware](https://img.shields.io/badge/hardware%20%26%20design-human--directed-blue)
+
+> **Disclaimer:** the software in this repository was written with an AI coding assistant (Claude Code). The project's idea, hardware choices and design decisions are mine, but I did not hand-write the code, so review it before relying on it.
+
 A tabletop music player where each album is a card. Put a card in the slot and its album plays; take it out and it pauses. It is built for a Hi-Fi shelf: a proper DAC, a screen, a knob, and local storage for a whole collection.
 
 ![Render of the case design: a charcoal box with a brass front set inside a thin rim, a screen, four keys and a large knob, five cards in a tray on the lid and one card standing in a slot](NFC-Player-Case/NFC-Player-Render.png)
