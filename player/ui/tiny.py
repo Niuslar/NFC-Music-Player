@@ -78,20 +78,28 @@ def message(title: str, body: str = "") -> Image.Image:
 
 
 def list_screen(header: str, rows: list[tuple[str, str]], selected: int) -> Image.Image:
-    """Three rows; the header and subtitles do not fit and are left out."""
+    """Three rows; the header and subtitles do not fit and are left out.
+
+    A row's optional third part, a short value such as "On", is drawn at its right end.
+    """
     img, d = _canvas()
     visible = len(LINES)
     top = min(max(selected - 1, 0), max(len(rows) - visible, 0))
     marker = len(rows) > visible
     text_w = W - 6 - (3 if marker else 0)
-    for i, (title, _sub) in enumerate(rows[top : top + visible]):
+    for i, (title, _sub, *value) in enumerate(rows[top : top + visible]):
         y = LINES[i]
         if top + i == selected:
             d.rectangle((0, y, W - (4 if marker else 1), y + ROW_H - 1), fill=ON)
             colour = OFF
         else:
             colour = ON
-        d.text((3, y + ROW_H // 2), _fit(title, font(SMALL), text_w), font=font(SMALL), fill=colour, anchor="lm")
+        title_w = text_w
+        if value and value[0]:
+            right = 3 + text_w
+            d.text((right, y + ROW_H // 2), value[0], font=font(SMALL), fill=colour, anchor="rm")
+            title_w -= font(SMALL).getlength(value[0]) + 6
+        d.text((3, y + ROW_H // 2), _fit(title, font(SMALL), title_w), font=font(SMALL), fill=colour, anchor="lm")
     if marker:  # scroll position, a thin bar on the right edge
         bar_h = max(H * visible // len(rows), 4)
         bar_y = (H - bar_h) * top // (len(rows) - visible)

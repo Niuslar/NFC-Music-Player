@@ -84,6 +84,7 @@ def run(app: App, event_queue: queue.Queue, display, shared=None, clock=time.mon
             app.show_error(str(e) or type(e).__name__, now)
         if shared is not None:
             shared.snapshot = app.snapshot()
+            shared.enabled = app.store.web_remote
         display.show(app.render(now))
         if app.restart_requested:
             restart()  # "Restarting" is on the screen; normally this does not return
@@ -259,7 +260,7 @@ def main() -> None:
     steps = 60 if args.sim else VOLUME_STEPS_PER_REV[config["encoder"]]
     app = App(library, Store(args.state), playback, storage, volume_steps_per_rev=steps, ui=ui, wifi=wifi)
     if isinstance(wifi, Wifi):
-        wifi.start()
+        wifi.start(enabled=app.store.wifi)  # switched off in the settings: it stays off after a restart
     inputs = InputLog()
     print(f"{len(library.albums)} albums, {len(library.artists)} artists and {len(library.lists)} lists in {args.music}", flush=True)
 

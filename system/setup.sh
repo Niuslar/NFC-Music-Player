@@ -64,10 +64,10 @@ install -m 755 "$APP_DIR/system/nfc-player-usb" /usr/local/sbin/nfc-player-usb
 echo "OWNER=$RUN_USER" > /etc/nfc-player.conf
 H=/usr/local/sbin/nfc-player-usb
 # The power key shuts the Pi down with systemctl poweroff.
-# The Wi-Fi helper joins new networks from the settings menu.
+# The Wi-Fi helper joins new networks, and switches Wi-Fi on and off, from the settings menu.
 install -m 755 "$APP_DIR/system/nfc-player-wifi" /usr/local/sbin/nfc-player-wifi
 W=/usr/local/sbin/nfc-player-wifi
-echo "$RUN_USER ALL=(root) NOPASSWD: $H release, $H reclaim, $H rw, $H ro, /usr/bin/systemctl poweroff, $W scan, $W hotspot-up, $W hotspot-down, $W join" > /etc/sudoers.d/nfc-player
+echo "$RUN_USER ALL=(root) NOPASSWD: $H release, $H reclaim, $H rw, $H ro, /usr/bin/systemctl poweroff, $W scan, $W hotspot-up, $W hotspot-down, $W join, $W radio-on, $W radio-off" > /etc/sudoers.d/nfc-player
 chmod 440 /etc/sudoers.d/nfc-player
 visudo -cf /etc/sudoers.d/nfc-player >/dev/null
 install -m 644 "$APP_DIR/system/nfc-player-usb.service" /etc/systemd/system/

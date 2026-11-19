@@ -199,7 +199,7 @@
 <div class="side">
   <div>
     <p>The icon in the top right corner of the screen shows how well the player hears your Wi-Fi: the more lit curves, the stronger the signal. One lit dot is a weak signal.</p>
-    <p>When it is <strong>struck through</strong>, the player is not on a network. Cards, the knob and the keys still work as normal; only the <a href="#remote">web remote</a> needs Wi-Fi.</p>
+    <p>When it is <strong>struck through</strong>, the player is not on a network. When there is no icon at all, Wi-Fi is <a href="#wifi-off">switched off</a> in the settings. Cards, the knob and the keys still work as normal; only the <a href="#remote">web remote</a> needs Wi-Fi.</p>
     <p>On the <a href="#oled">small OLED screen</a> the icon is left out of lists, where there is no room for it.</p>
   </div>
   <figure><div class="lcd"><img src="no-wifi.png" width="320" height="240" alt="Screen: Place a card, with a struck-through Wi-Fi icon in the top right corner"></div><figcaption>No Wi-Fi.</figcaption></figure>
@@ -210,7 +210,7 @@
   <div>
     <p>With <strong>no card in the slot</strong>, hold the knob for 1 second. Turn to choose, push to open, and press back to go back.</p>
     <ul>
-      <li><strong>Wi-Fi</strong> shows the network the player is on and lets you <a href="#new-wifi">connect it to a new one</a>.</li>
+      <li><strong>Wi-Fi</strong> shows the network the player is on and lets you <a href="#new-wifi">connect it to a new one</a>, <a href="#wifi-off">switch Wi-Fi off</a>, or <a href="#wifi-off">turn the web remote off</a>.</li>
       <li><strong>Volume limit</strong> sets the loudest the player can go, from the knob or the web remote.</li>
       <li><strong>About this player</strong> shows the web remote's address, the amount of music and the free space.</li>
       <li><strong>Restart the player</strong> starts the player program again. Cards remember their places.</li>
@@ -231,7 +231,7 @@
   <li>The phone drops off the setup network and the player joins yours. Its screen says <strong>Connected to</strong> and the network's name. Push the knob to finish.</li>
 </ol>
 <div class="screens">
-  <figure><div class="lcd"><img src="settings-wifi.png" width="320" height="240" alt="Wi-Fi: Home, good signal. Connect to a new network; Back"></div><figcaption>1. The Wi-Fi page in settings.</figcaption></figure>
+  <figure><div class="lcd"><img src="settings-wifi.png" width="320" height="240" alt="Wi-Fi: Home, good signal. Wi-Fi, On; Connect to a new network; Show web player, On; Back"></div><figcaption>1. The Wi-Fi page in settings.</figcaption></figure>
   <figure><div class="lcd"><img src="wifi-join.png" width="320" height="240" alt="A QR code, then: Join this Wi-Fi, NFC Player Setup; Password h4rq7mtz2e; Then open 10.42.0.1; Back to cancel"></div><figcaption>2. Join this network from the phone. The password here is only an example.</figcaption></figure>
   <figure><div class="lcd"><img src="wifi-joined.png" width="320" height="240" alt="Screen: Connected to Upstairs. The web remote is at http://nfcplayer.local. Push the knob to finish."></div><figcaption>3. Joined.</figcaption></figure>
 </div>
@@ -244,6 +244,13 @@
 <div class="note">
   <p><strong>Is it safe?</strong> The setup network is protected by a password that is made up fresh each time and shown only on the player's screen, so only someone standing at the player can join it. The page that takes your Wi-Fi password only works for phones on that network, and only while it is open. The password travels over that protected link and is saved by the Pi's network manager in a file only the system can read; the player program does not keep a copy.</p>
 </div>
+
+<h3 id="wifi-off">Switching Wi-Fi and the web remote off</h3>
+<p>The Wi-Fi page in settings has two switches. Push the knob on one to change it; the line under it (or, on the small OLED screen, the word at the end of the row) says whether it is on or off. Both are kept when the player is turned off or restarted.</p>
+<ul>
+  <li><strong>Wi-Fi</strong> switches the player's Wi-Fi off altogether. It makes no attempt to connect, even after a restart, and the Wi-Fi icon disappears from the screen. Cards, the knob and the keys work as normal. Push it again to switch Wi-Fi back on; the player joins a saved network if one is in range. <strong>Connect to a new network</strong> and <strong>Show web player</strong> are hidden while Wi-Fi is off.</li>
+  <li><strong>Show web player</strong> turns the <a href="#remote">web remote</a> on or off, while Wi-Fi stays on. When it is off, the page only says that it is turned off, and nobody on the network can play, upload or delete music from a browser. Connecting to a new network still works.</li>
+</ul>
 
 <h3>Volume limit and About</h3>
 <div class="screens">

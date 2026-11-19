@@ -987,7 +987,9 @@ async function refresh() {
     state = await getJSON("/api/state");
     stateAt = performance.now();
     showState();
-  } catch (e) {}
+  } catch (e) {
+    if (e === 503) location.reload();  // turned off in the player's settings: show the page that says so
+  }
 }
 
 async function loadItems(rerender) {

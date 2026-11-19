@@ -92,6 +92,10 @@ class Backend:
             raise w.WifiError("Wrong password?")
         self.ssid = ssid
 
+    def radio(self, on):
+        self.calls.append(("radio", on))
+        self.dbm = -50 if on else None
+
 
 class Clock:
     t = 100.0
@@ -206,7 +210,7 @@ def test_connect_to_a_new_network_from_the_player(rig):
     app, send, *_ = rig
     send(ev.Press("knob_long"), ev.Press("knob"))  # Wi-Fi
     assert app.mode is Mode.WIFI
-    send(ev.Press("knob"))  # Connect to a new network
+    send(ev.Rotate(STEP), ev.Press("knob"))  # Connect to a new network
     assert app.mode is Mode.WIFI_SETUP and app.wifi.state == "ready"
     app.render(0)
     app.wifi.join("Upstairs", "rightpassword")
@@ -217,13 +221,92 @@ def test_connect_to_a_new_network_from_the_player(rig):
 
 def test_back_or_a_card_closes_the_setup_network(rig):
     app, send, *_ = rig
-    send(ev.Press("knob_long"), ev.Press("knob"), ev.Press("knob"))
+    send(ev.Press("knob_long"), ev.Press("knob"), ev.Rotate(STEP), ev.Press("knob"))
     send(ev.Press("back"))
     assert app.mode is Mode.WIFI and app.wifi.state == "off"
     send(ev.Press("knob"))
     assert app.wifi.state == "ready"
     send(ev.CardInserted("04AA"))
     assert app.wifi.state == "off" and app.mode is Mode.LINKING
+
+
+def test_switching_wifi_off_and_on(rig, tmp_path):
+    app, send, store, _ = rig
+    send(ev.Press("knob_long"), ev.Press("knob"))  # Settings, Wi-Fi
+    assert [r[0] for r in app._wifi_rows()] == ["Wi-Fi", "Connect to a new network", "Show web player", "Back"]
+    send(ev.Press("knob"))  # Wi-Fi: off
+    assert app.wifi.backend.calls[-1] == ("radio", False)
+    assert not store.wifi and Store(tmp_path / "state.json").wifi is False  # kept across restarts
+    assert app.wifi.bars() is None and app.wifi.network() is None
+    assert [r[0] for r in app._wifi_rows()] == ["Wi-Fi", "Back"]  # no network to join, no web page to show
+    app.wifi.poll()
+    assert app.wifi.bars() is None  # the signal is not followed while off
+    app.wifi.open_portal()
+    assert app.wifi.state == "off"
+    send(ev.Press("knob"))  # Wi-Fi: on
+    assert app.wifi.backend.calls[-1] == ("radio", True)
+    assert store.wifi and app.wifi.bars() == 4 and app.wifi.network() == "Home"
+
+
+def test_tiny_screen_shows_on_and_off(rig):
+    app, send, store, _ = rig
+    app.ui = tiny
+    send(ev.Press("knob_long"), ev.Press("knob"))  # Wi-Fi page
+    assert [r[2] for r in app._wifi_rows()] == ["On", "", "On", ""]
+    on = app.render(0)
+    right = (90, 0, 124, 11)  # the end of the first row, where its value goes
+    assert on.crop(right).getbbox()
+    store.web_remote = False
+    send(ev.Press("knob"))  # Wi-Fi off
+    assert [r[2] for r in app._wifi_rows()] == ["Off", ""]
+    off = app.render(0)
+    assert off.crop(right).getbbox() and off.crop(right).tobytes() != on.crop(right).tobytes()
+
+
+def test_no_icon_while_wifi_is_off(rig):
+    app, send, store, _ = rig
+    drawn = []
+    app.ui = type("UI", (), {"message": staticmethod(lambda *a: "screen"), "wifi_badge": staticmethod(lambda img, bars: drawn.append(bars) or img)})
+    app.render(0)
+    assert drawn == [4]
+    store.wifi = False
+    app.render(0)
+    assert drawn == [4]
+
+
+def test_wifi_stays_off_after_a_restart(music, tmp_path):
+    store = Store(tmp_path / "state.json")
+    store.wifi = False
+    store.save()
+    backend = Backend()
+    wifi = w.Wifi(backend, spawn=lambda work: work())
+    wifi.start_polling = lambda: None
+    app = App(Library(music), Store(tmp_path / "state.json"), FakePlayback(Library(music)), wifi=wifi)
+    wifi.start(enabled=app.store.wifi)
+    assert backend.calls == [("radio", False)] and wifi.bars() is None
+    assert app._wifi_line() == "Off" and "Off" in app._about_lines()[0]
+
+
+def test_a_radio_that_will_not_switch_says_why(rig):
+    app, send, *_ = rig
+
+    def refuse(on):
+        raise w.WifiError("helper missing")
+
+    app.wifi.backend.radio = refuse
+    send(ev.Press("knob_long"), ev.Press("knob"), ev.Press("knob"))
+    assert "helper missing" in app._wifi_rows()[0][1]
+
+
+def test_show_web_player_turns_the_remote_off_and_on(rig, tmp_path):
+    app, send, store, _ = rig
+    assert store.web_remote and app._wifi_rows()[2][1] == "On: http://nfcplayer.local"
+    send(ev.Press("knob_long"), ev.Press("knob"), ev.Rotate(STEP), ev.Rotate(STEP), ev.Press("knob"))  # Show web player
+    assert not store.web_remote and app._wifi_rows()[2][1].startswith("Off")
+    assert Store(tmp_path / "state.json").web_remote is False  # kept across restarts
+    app.render(0)
+    send(ev.Press("knob"))
+    assert store.web_remote and Store(tmp_path / "state.json").web_remote is True
 
 
 def test_volume_limit(rig):
@@ -288,7 +371,8 @@ def site(tmp_path, music):
     wifi = w.Wifi(backend, spawn=lambda work: work())
     library = Library(music)
     writer = web.MusicWriter(lambda: None, idle_seconds=0.05)
-    server = web.start(queue.Queue(), web.Shared(), library, writer, port=0, bind="127.0.0.1", wifi=wifi)
+    shared = web.Shared()
+    server = web.start(queue.Queue(), shared, library, writer, port=0, bind="127.0.0.1", wifi=wifi)
     base = f"http://127.0.0.1:{server.server_address[1]}"
 
     class NoRedirect(urllib.request.HTTPRedirectHandler):
@@ -308,13 +392,13 @@ def site(tmp_path, music):
         except urllib.error.HTTPError as e:
             return e.code, e.read(), e.headers
 
-    yield call, wifi
+    yield call, wifi, shared
     server.shutdown()
     server.server_close()
 
 
 def test_page_only_works_while_the_setup_network_is_open(site):
-    call, wifi = site
+    call, wifi, _ = site
     status, body, _ = call("GET", "/api/wifi")
     assert json.loads(body)["state"] == "closed"
     status, _, _ = call("POST", "/api/wifi", {"ssid": "Home", "password": "rightpassword"})
@@ -323,8 +407,22 @@ def test_page_only_works_while_the_setup_network_is_open(site):
     assert status == 200  # the remote, as usual
 
 
+def test_web_remote_off_refuses_all_but_the_setup_page(site):
+    call, wifi, shared = site
+    shared.enabled = False
+    status, body, _ = call("GET", "/")
+    assert status == 503 and b"turned off" in body
+    for method, path in (("GET", "/api/state"), ("GET", "/api/library"), ("POST", "/api/command"), ("PUT", "/api/upload?path=A/b.flac"), ("GET", "/setup")):
+        assert call(method, path, {"action": "toggle"})[0] == 503, path
+    wifi.open_portal()
+    status, body, _ = call("GET", "/api/wifi")
+    assert status == 200 and json.loads(body)["state"] == "ready"
+    shared.enabled = True
+    assert call("GET", "/api/state")[0] == 200
+
+
 def test_phones_on_the_setup_network_are_sent_to_the_page_and_can_join(site):
-    call, wifi = site
+    call, wifi, _ = site
     wifi.open_portal()
     status, _, headers = call("GET", "/generate_204", host="connectivitycheck.gstatic.com")
     assert status == 302 and headers["Location"].endswith("/wifi")

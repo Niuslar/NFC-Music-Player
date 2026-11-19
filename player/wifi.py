@@ -181,6 +181,9 @@ class NetworkManagerBackend:
         except WifiError as e:
             raise WifiError(friendly_error(str(e))) from None
 
+    def radio(self, on: bool) -> None:
+        self._helper("radio-on" if on else "radio-off")
+
 
 def friendly_error(raw: str) -> str:
     text = raw.lower()
@@ -232,6 +235,13 @@ class SimBackend:
             raise WifiError("Wrong password?")
         self.bars, self.ssid = 3, ssid
 
+    def radio(self, on: bool) -> None:
+        if not on and self.bars is not None:
+            self._radio_saved = self.bars
+            self.bars = None
+        elif on and self.bars is None:
+            self.bars = getattr(self, "_radio_saved", 3)
+
 
 def _spawn(work) -> None:
     threading.Thread(target=work, daemon=True).start()
@@ -256,14 +266,16 @@ class Wifi:
         self.networks: list[dict] = []
         self.message = ""
         self.joined = ""
+        self.enabled = True  # Wi-Fi switched on in the settings; off, the radio stays off and there is no icon
+        self.note = ""  # why switching Wi-Fi on or off did not work
         self._deadline = 0.0
 
     # ---- signal ------------------------------------------------------------
 
     def poll(self) -> None:
         """Reads the signal and network name. main calls this on a thread every few seconds."""
-        if self.state != "off":
-            return  # the radio is busy being the setup network
+        if self.state != "off" or not self.enabled:
+            return  # the radio is busy being the setup network, or switched off
         level = self.backend.level()
         with self._lock:
             newly = level is not None and self._level is None
@@ -291,6 +303,8 @@ class Wifi:
         threading.Thread(target=loop, daemon=True).start()
 
     def bars(self) -> int | None:
+        if not self.enabled:
+            return None
         if self.state in ("starting", "ready", "failed", "joining", "closing"):
             return None  # the radio is the setup network, not on one
         with self._lock:
@@ -300,6 +314,35 @@ class Wifi:
         with self._lock:
             return self._network if self._level is not None else None
 
+    # ---- on and off --------------------------------------------------------
+
+    def _apply_radio(self) -> None:
+        """Makes the radio match self.enabled. NetworkManager also remembers it across restarts."""
+        on = self.enabled
+        try:
+            self.backend.radio(on)
+            self.note = ""
+        except Exception as e:
+            self.note = f"Could not switch Wi-Fi {'on' if on else 'off'}: {e}"
+            print(f"wifi: {self.note}", flush=True)
+
+    def set_enabled(self, on: bool) -> None:
+        """Switches Wi-Fi on or off. Off, the player makes no attempt to connect until it is switched on again."""
+        self.enabled = on
+        if not on:
+            self.close_portal()
+            with self._lock:
+                self._level, self._network = None, None
+
+        def work():
+            with self._busy:
+                self._apply_radio()
+                if self.enabled:
+                    self.poll()
+                    self.refresh_network()
+
+        self.spawn(work)
+
     # ---- setup network -----------------------------------------------------
 
     @property
@@ -307,7 +350,7 @@ class Wifi:
         return self.state in ("ready", "failed")
 
     def open_portal(self) -> None:
-        if self.state != "off":
+        if self.state != "off" or not self.enabled:
             return
         self.state, self.message, self.joined = "starting", "", ""
         self.password = "".join(secrets.choice(PASSWORD_ALPHABET) for _ in range(PASSWORD_LENGTH))
@@ -409,8 +452,11 @@ class Wifi:
     def address(self) -> str:
         return self.backend.portal_address
 
-    def start(self) -> None:
-        """At start-up: takes down a setup network left over from before a restart, then follows the signal."""
+    def start(self, enabled: bool = True) -> None:
+        """At start-up: takes down a setup network left over from before a restart, switches the
+        radio on or off as the settings say, then follows the signal."""
+        self.enabled = enabled
+
         def work():
             with self._busy:
                 try:
@@ -418,6 +464,7 @@ class Wifi:
                         self._down()
                 except Exception as e:
                     print(f"wifi: {e}", flush=True)
+                self._apply_radio()
             self.start_polling()
 
         self.spawn(work)
@@ -435,6 +482,12 @@ class NoWifi:
 
     def network(self):
         return None
+
+    note = ""
+    enabled = True
+
+    def set_enabled(self, on):
+        self.enabled = on
 
     def open_portal(self):
         self.state = "error"

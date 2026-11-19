@@ -8,6 +8,9 @@ header that a cross-site page cannot send.
 While the player's own Wi-Fi setup network is up, phones on that network get the
 Wi-Fi page (/wifi) instead, whatever address they ask for, so they open it by themselves.
 Only they can send it a network to join.
+
+The player's settings can turn the web remote off (Wi-Fi, Show web player). The server
+keeps running, because the Wi-Fi setup page needs it, but everything else is refused.
 """
 
 import io
@@ -38,6 +41,14 @@ KEEP_FREE = 64 * 1024 * 1024  # never fill the music drive completely
 _BAD_CHARS = re.compile(r'[\x00-\x1f"*:<>?\\|]')  # not allowed in exFAT names
 COMMANDS = {"toggle", "next", "prev", "volume", "seek", "play_album", "play_at", "link_card", "unlink_card"}
 LIST_BODY_LIMIT = 1 << 20  # a long list's track paths
+WIFI_PATHS = ("/wifi", "/api/wifi")  # the setup page, which works whether or not the web remote is on
+OFF_PAGE = b"""<!doctype html><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Web remote is off</title>
+<body style="font: 17px/1.5 system-ui, sans-serif; max-width: 30em; margin: 3em auto; padding: 0 16px">
+<h1 style="font-size: 1.4em">The web remote is turned off</h1>
+<p>To turn it on, take any card out of the player, hold the knob for 1 second, and choose
+<strong>Wi-Fi</strong>, then <strong>Show web player</strong>.</p>
+"""
 
 
 class UploadError(Exception):
@@ -238,6 +249,7 @@ class Shared:
     """Latest app snapshot, written by the main loop and read by web threads."""
 
     snapshot: dict = {"mode": "idle"}
+    enabled: bool = True  # the web remote is on; set from the player's settings
 
 
 def _host_allowed(host_header: str) -> bool:
@@ -321,6 +333,13 @@ def start(event_queue, shared: Shared, library: Library, writer: MusicWriter, po
         def _guard(self, changes_state: bool) -> bool:
             if not _host_allowed(self.headers.get("Host", "")):
                 self._fail(403, "Open this page by the player's own name or address")
+                return False
+            if not shared.enabled and urlsplit(self.path).path not in WIFI_PATHS:
+                self.close_connection = True  # the request body may not have been read
+                if self.command == "GET" and urlsplit(self.path).path == "/":
+                    self._send(503, OFF_PAGE, "text/html; charset=utf-8")
+                else:
+                    self._json(503, {"error": "The web remote is turned off in the player's settings"})
                 return False
             if changes_state and self.headers.get(HEADER) != HEADER_VALUE:
                 self._fail(403, "Missing request header")

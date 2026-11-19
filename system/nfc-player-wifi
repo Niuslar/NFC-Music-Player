@@ -6,6 +6,8 @@
 #   hotspot-down  stop it and go back to a saved network, if one is in range
 #   join          read a network name, then its password (empty for an open network),
 #                 one per line from stdin; join it and save it for next time
+#   radio-off     switch Wi-Fi off; NetworkManager keeps it off, even after a restart
+#   radio-on      switch it on again; NetworkManager joins a saved network if one is in range
 #
 # Names and passwords come on stdin so they never appear on a command line here.
 set -eu
@@ -56,8 +58,15 @@ case "${1:-}" in
       nmcli --wait 45 device wifi connect "$NAME" ifname "$IFACE" >/dev/null
     fi
     ;;
+  radio-off)
+    hotspot_off
+    nmcli radio wifi off
+    ;;
+  radio-on)
+    nmcli radio wifi on
+    ;;
   *)
-    echo "usage: $0 scan|hotspot-up|hotspot-down|join" >&2
+    echo "usage: $0 scan|hotspot-up|hotspot-down|join|radio-on|radio-off" >&2
     exit 2
     ;;
 esac

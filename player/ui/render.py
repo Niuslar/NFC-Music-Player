@@ -94,13 +94,17 @@ def message(title: str, body: str = "") -> Image.Image:
 
 
 def list_screen(header: str, rows: list[tuple[str, str]], selected: int) -> Image.Image:
-    """rows are (title, subtitle); subtitle may be empty."""
+    """rows are (title, subtitle), or (title, subtitle, value); subtitle may be empty.
+
+    value is a short state such as "On" for the OLED, which has no room for subtitles;
+    here the subtitle says it already, so it is not drawn.
+    """
     img, d = _canvas()
     d.text((PAD, 12), _fit(header, font(15), W - 2 * PAD - BADGE_W), font=font(15), fill=DIM)
     d.line((PAD, 38, W - PAD, 38), fill=FAINT)
     top = min(max(selected - VISIBLE_ROWS // 2, 0), max(len(rows) - VISIBLE_ROWS, 0))
     text_w = W - 2 * PAD - 20
-    for i, (title, sub) in enumerate(rows[top : top + VISIBLE_ROWS]):
+    for i, (title, sub, *_value) in enumerate(rows[top : top + VISIBLE_ROWS]):
         y = 44 + i * ROW_H
         is_sel = top + i == selected
         if is_sel:

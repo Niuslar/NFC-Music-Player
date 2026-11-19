@@ -27,7 +27,7 @@ MISSING = "The music linked to this card is missing."
 TEST_SCREEN_SECONDS = 5.0
 MENU_ITEMS = ("Link to something else", "Unlink this card", "Close")
 SETTINGS_ITEMS = ("Wi-Fi", "Volume limit", "About this player", "Restart the player", "Close")
-WIFI_ITEMS = (("Connect to a new network", "Set it up from your phone"), ("Back", ""))
+WIFI_ITEMS = ("Wi-Fi", "Connect to a new network", "Show web player", "Back")  # only Wi-Fi and Back while it is off
 SIGNAL_WORDS = {1: "weak signal", 2: "fair signal", 3: "good signal", 4: "strong signal"}
 KIND_NAMES = {"album": ("Album", "album"), "artist": ("Artist", "artist"), "list": ("List", "list")}
 
@@ -75,6 +75,7 @@ class App:
         self.playback = playback
         self.storage = storage or NullStorage()
         self.wifi = wifi or wifi_mod.NoWifi()
+        self.wifi.enabled = store.wifi  # main also switches the radio to match, at start-up
         self.web_address = ""  # where the web remote is, for the About screen; main fills it in
         self._about: list[str] = []
         self.mode = Mode.IDLE
@@ -163,7 +164,7 @@ class App:
                 Mode.MENU: lambda: len(MENU_ITEMS),
                 Mode.TRACKS: lambda: len(self.album.tracks),
                 Mode.SETTINGS: lambda: len(SETTINGS_ITEMS),
-                Mode.WIFI: lambda: len(WIFI_ITEMS),
+                Mode.WIFI: lambda: len(self._wifi_items()),
                 Mode.VOLUME_LIMIT: lambda: len(VOLUME_LIMITS),
             }[self.mode]()
             steps = self._list_knob.feed(counts, now)
@@ -322,11 +323,19 @@ class App:
             elif button == "knob":
                 self._settings_choice(self.selected)
         elif self.mode is Mode.WIFI:
-            if back or (button == "knob" and self.selected == len(WIFI_ITEMS) - 1):
+            choice = self._wifi_items()[self.selected] if button == "knob" else None
+            if back or choice == "Back":
                 self._open_list(Mode.SETTINGS, 0)
-            elif button == "knob":
+            elif choice == "Wi-Fi":
+                self.store.wifi = not self.store.wifi
+                self.store.save()
+                self.wifi.set_enabled(self.store.wifi)
+            elif choice == "Connect to a new network":
                 self.wifi.open_portal()
                 self.mode = Mode.WIFI_SETUP
+            elif choice == "Show web player":
+                self.store.web_remote = not self.store.web_remote
+                self.store.save()
         elif self.mode is Mode.VOLUME_LIMIT:
             if button == "knob":
                 self._set_limit(VOLUME_LIMITS[self.selected])
@@ -342,7 +351,7 @@ class App:
                 self._open_list(Mode.SETTINGS, 0)
             elif state in ("starting", "ready", "failed") and back:
                 self.wifi.close_portal()  # back to the saved network
-                self._open_list(Mode.WIFI, 0)
+                self._open_list(Mode.WIFI, 1)  # on Connect to a new network, not the on/off switch
             # while joining nothing can be cancelled: the screen says it takes up to a minute
 
     def _settings_choice(self, index: int) -> None:
@@ -370,14 +379,29 @@ class App:
             self.wifi.close_portal()
 
     def _wifi_line(self) -> str:
+        if not self.store.wifi:
+            return "Off"
         network, bars = self.wifi.network(), self.wifi.bars()
         return f"{network} · {SIGNAL_WORDS[bars]}" if network and bars else "Not connected"
+
+    def _wifi_items(self) -> list[str]:
+        return [i for i in WIFI_ITEMS if self.store.wifi or i in ("Wi-Fi", "Back")]
+
+    def _wifi_rows(self) -> list[tuple[str, str]]:
+        subs = {
+            "Wi-Fi": self.wifi.note or ("On" if self.store.wifi else "Off: the player does not connect"),
+            "Connect to a new network": "Set it up from your phone",
+            "Show web player": "Off: the web page is closed" if not self.store.web_remote else f"On: {self.web_address}" if self.web_address else "On",
+            "Back": "",
+        }
+        values = {"Wi-Fi": self.store.wifi, "Show web player": self.store.web_remote}  # for the OLED, which shows no subtitles
+        return [(i, subs[i], ("On" if values[i] else "Off") if i in values else "") for i in self._wifi_items()]
 
     def _about_lines(self) -> list[str]:
         """Worked out once when the screen opens: none of it changes while it is up."""
         connected = self.wifi.bars() is not None
-        lines = [f"Wi-Fi: {self._wifi_line()}" if connected else "Wi-Fi: not connected"]
-        if connected and self.web_address:
+        lines = [f"Wi-Fi: {self._wifi_line()}" if connected or not self.store.wifi else "Wi-Fi: not connected"]
+        if connected and self.web_address and self.store.web_remote:
             lines.append(f"Web remote: {self.web_address}")
             address = wifi_mod.local_address()
             if address and address not in self.web_address:
@@ -395,7 +419,8 @@ class App:
             subs = (self._wifi_line(), "No limit" if limit == 100 else f"Up to {limit}", "Web address, music and storage", "", "")
             return self.ui.list_screen("Settings", list(zip(SETTINGS_ITEMS, subs)), self.selected)
         if self.mode is Mode.WIFI:
-            return self.ui.list_screen(f"Wi-Fi: {self._wifi_line()}", list(WIFI_ITEMS), self.selected)
+            title = f"Wi-Fi: {self._wifi_line()}" if self.store.wifi else "Wi-Fi is off"
+            return self.ui.list_screen(title, self._wifi_rows(), self.selected)
         if self.mode is Mode.VOLUME_LIMIT:
             rows = [("No limit" if v == 100 else f"Up to {v}", "Chosen now" if v == self.store.max_volume else "") for v in VOLUME_LIMITS]
             return self.ui.list_screen("Volume limit: the loudest it can go", rows, self.selected)
@@ -409,7 +434,7 @@ class App:
         if w.state == "joining":
             return self.ui.message("Joining the network", "This can take up to a minute.")
         if w.state == "joined":
-            where = f"\nThe web remote is at {self.web_address}." if self.web_address else ""
+            where = f"\nThe web remote is at {self.web_address}." if self.web_address and self.store.web_remote else ""
             return self.ui.message(f"Connected to {w.joined}", f"{where}\nPush the knob to finish.".strip())
         if w.state == "error":
             return self.ui.message("Wi-Fi setup did not work", f"{w.message}\nPush the knob to go back.")
@@ -676,6 +701,8 @@ class App:
             return self.ui.message("Restarting")
         if now < self._test_until:
             return self.ui.test_pattern()
+        if not self.store.wifi:
+            return self._screen(now)  # switched off in the settings: no icon at all
         return self.ui.wifi_badge(self._screen(now), self.wifi.bars())
 
     def _screen(self, now: float):
