@@ -471,7 +471,7 @@ class Wifi:
 
 
 class NoWifi:
-    """For when Wi-Fi is not managed by the player (tests, or a Mac running without the simulator)."""
+    """For when Wi-Fi is not managed by the player (tests, or a computer running without the simulator)."""
 
     state = "off"
     portal_open = False

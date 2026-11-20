@@ -92,7 +92,7 @@
 <p class="lede">Put a card in, the album plays. This guide takes you from a bag of parts to a working player on the bench. The case comes later.</p>
 
 <div class="note">
-  <p><strong>What has been tested.</strong> Everything in this guide has been built and run on a real Pi: the setup script, the DAC, the display, the NFC reader, the knob and buttons, the power key and light, USB drive mode and the web remote. The player logic, screens and web remote are also tested on the Mac with the simulator. Joining a new Wi-Fi network from the player's settings is new and has so far been tried only in the simulator. Each wiring step below ends with a check command, so a fault shows up one part at a time.</p>
+  <p><strong>What has been tested.</strong> Everything in this guide has been built and run on a real Pi except the 2-inch display, which so far has only run in the simulator; the screen tested on the Pi is the 0.91-inch OLED. That covers the setup script, the DAC, the NFC reader, the knob and buttons, the power key and light, USB drive mode and the web remote. The player logic, screens and web remote are also tested without the hardware, in the simulator. Joining a new Wi-Fi network from the player's settings is new and has so far been tried only in the simulator. Each wiring step below ends with a check command, so a fault shows up one part at a time.</p>
 </div>
 
 <h2 id="overview">Overview</h2>
@@ -101,7 +101,7 @@
   <li><strong>Raspberry Pi DAC Pro</strong> sits on the Pi's header and provides the 3.5 mm and RCA outputs.</li>
   <li><strong>Display and NFC reader</strong> share the Pi's SPI bus, each with its own chip-select pin.</li>
   <li><strong>Knob, four buttons and a power key</strong> connect to plain GPIO pins.</li>
-  <li><strong>Music</strong> lives in one large file on the SD card. Plug the Pi's USB port into the Mac and that file appears as a drive called <code>MUSIC</code>.</li>
+  <li><strong>Music</strong> lives in one large file on the SD card. Plug the Pi's USB port into a computer and that file appears as a drive called <code>MUSIC</code>.</li>
   <li><strong>A web page</strong> served by the Pi at <code>http://nfcplayer.local</code> controls playback and takes uploads from any phone or computer on the same Wi-Fi.</li>
 </ul>
 
@@ -110,10 +110,11 @@
 <table>
   <tr><th>Part</th><th>What to get</th><th>Approx.</th><th>Notes</th></tr>
   <tr><td>Computer</td><td>Raspberry Pi Zero 2 W</td><td class="num">£15</td><td>Needs a 2×20 pin header. Solder one on if yours has none (the "WH" version has it fitted).</td></tr>
-  <tr><td>DAC</td><td>Raspberry Pi DAC Pro</td><td class="num">£24</td><td>3.5 mm and RCA out. Balanced output is on headers P7/P9 for a later 4.4 mm socket.</td></tr>
+  <tr><td>DAC</td><td>Raspberry Pi DAC Pro</td><td class="num">£24</td><td>3.5 mm and RCA (white and red) out.</td></tr>
   <tr><td>GPIO splitter</td><td>A board that turns one 40-pin header into two or three (e.g. Pimoroni Mini Black HAT Hack3r, or a generic "GPIO 1 to 2 expansion board")</td><td class="num">£6–10</td><td>The DAC covers the whole header, so this is how the other parts reach the pins. <strong>A plain stacking header will not work here:</strong> a HAT's socket is closed on top.</td></tr>
   <tr><td>SD card</td><td>256 GB microSD, A2 rated</td><td class="num">£20</td><td>About 700 FLAC albums. 512 GB also works.</td></tr>
   <tr><td>Display</td><td>Waveshare 2inch LCD Module (ST7789, 240×320, SPI)</td><td class="num">£12</td><td>Other ST7789 240×320 boards should work with the same wiring.</td></tr>
+  <tr><td>Display (alternative)</td><td>0.91-inch 128×32 SSD1306 OLED (I2C, 4 pins)</td><td class="num">£4</td><td>Cheaper and simpler to wire, but much less nice: one colour, a compact text-only layout and no cover art. This is the screen tested on the real Pi so far. Get one or the other.</td></tr>
   <tr><td>NFC reader</td><td>PN532 NFC module V3 (the red Elechouse-style board)</td><td class="num">£8</td><td>Has two small switches to choose SPI mode.</td></tr>
   <tr><td>NFC cards</td><td>NTAG215 blank PVC cards</td><td class="num">£8</td><td>NTAG213/216 and MIFARE Classic cards also work. Only the card's ID is read.</td></tr>
   <tr><td>Knob encoder</td><td>24-click rotary encoder with push switch, from a known maker: The Pi Hut "Rotary Encoder + Extras", or a Bourns PEC11R or Alps EC11</td><td class="num">£4</td><td>Clicks as it turns. Normal-pitch pins that fit a breadboard. Avoid unbranded multi-packs; they feel loose and wear quickly.</td></tr>
@@ -122,11 +123,11 @@
   <tr><td>Diodes</td><td>2 Schottky diodes, e.g. BAT43 or 1N5817</td><td class="num">£1</td><td>For the power key. Ordinary silicon diodes such as the 1N4148 drop too much voltage and may not register a press.</td></tr>
   <tr><td>Power light</td><td>One 3 mm or 5 mm LED and a 330 Ω resistor</td><td class="num">£1</td><td>Lights within a couple of seconds of power, long before the screen, and goes off once the Pi has shut down.</td></tr>
   <tr><td>Bench bits</td><td>Breadboard, jumper wires (male–female and male–male)</td><td class="num">£8</td><td></td></tr>
-  <tr><td>USB cable</td><td>Micro-USB to USB-C (or to USB-A) <em>data</em> cable</td><td class="num">£5</td><td>Powers the Pi from the Mac and carries the music. Charge-only cables will not work.</td></tr>
+  <tr><td>USB cable</td><td>Micro-USB to USB-C (or to USB-A) <em>data</em> cable</td><td class="num">£5</td><td>Powers the Pi from the computer and carries the music. Charge-only cables will not work.</td></tr>
 </table>
 </div>
 <p>Optional later upgrade: a Bourns EM14 optical encoder turns smoothly with no clicks. It costs about £27, comes from DigiKey, Mouser or Farnell, and needs extra parts; see the note at the end of the knob section.</p>
-<p>For the case stage later: a panel-mount USB-C socket, a panel-mount 4.4 mm socket and two 3-pin headers for the DAC's balanced output.</p>
+<p>For the case stage later: a panel-mount USB-C socket.</p>
 
 <h2 id="tools">Tools and software</h2>
 <h3>Tools</h3>
@@ -134,10 +135,10 @@
   <li>Soldering iron and solder (Pi header and reader pins if not fitted).</li>
   <li>Multimeter, useful for finding pin 1 on the splitter and checking connections.</li>
 </ul>
-<h3>On the Mac</h3>
+<h3>On your computer</h3>
 <ul>
   <li><strong>Raspberry Pi Imager</strong>, free from <a href="https://www.raspberrypi.com/software/">raspberrypi.com/software</a>, to write the SD card.</li>
-  <li><strong>Terminal</strong> (built in), for SSH and copying the code.</li>
+  <li><strong>A terminal</strong> with <code>ssh</code> and <code>rsync</code>, for connecting to the Pi and copying the code. macOS and Linux have both built in; on Windows, use WSL.</li>
   <li><strong>This project folder</strong>, <code>~/Projects/nfc-player</code>.</li>
 </ul>
 <h3>On the Pi (installed for you by the setup script)</h3>
@@ -150,14 +151,14 @@
 
 <h2 id="flash"><span class="step">Step 1</span>Flash the SD card</h2>
 <ol>
-  <li>Put the microSD card in the Mac and open Raspberry Pi Imager.</li>
+  <li>Put the microSD card in your computer and open Raspberry Pi Imager.</li>
   <li>Device: <strong>Raspberry Pi Zero 2 W</strong>.</li>
   <li>Operating system: <strong>Raspberry Pi OS (other) → Raspberry Pi OS Lite (64-bit)</strong>.</li>
   <li>Storage: your SD card.</li>
   <li>When asked about customisation, edit the settings:
     <ul>
       <li>Hostname: <code>nfcplayer</code></li>
-      <li>Username and password: your choice. Using the same username as on your Mac saves typing later.</li>
+      <li>Username and password: your choice. Using the same username as on your computer saves typing later.</li>
       <li>Wi-Fi: your network name and password. The Zero 2 W only does 2.4 GHz.</li>
       <li>Services: enable <strong>SSH</strong> with password authentication.</li>
     </ul>
@@ -169,11 +170,11 @@
 <h2 id="boot"><span class="step">Step 2</span>First boot</h2>
 <ol>
   <li>Put the card in the Pi. Leave everything else disconnected for now.</li>
-  <li>Plug the micro-USB cable into the Pi port marked <strong>USB</strong> (the one nearer the middle of the board, not <strong>PWR IN</strong>) and the other end into the Mac. That one cable powers the Pi and will later carry music.</li>
+  <li>Plug the micro-USB cable into the Pi port marked <strong>USB</strong> (the one nearer the middle of the board, not <strong>PWR IN</strong>) and the other end into your computer. That one cable powers the Pi and will later carry music.</li>
   <li>Wait about two minutes for the first boot, then connect:</li>
 </ol>
 <pre><code>ssh nfcplayer.local</code></pre>
-<p>If your Pi username differs from your Mac's, use <code>ssh yourname@nfcplayer.local</code>, and add <code>yourname@</code> the same way in later commands.</p>
+<p>If your Pi username differs from your computer's, use <code>ssh yourname@nfcplayer.local</code>, and add <code>yourname@</code> the same way in later commands.</p>
 
 <h2 id="dac"><span class="step">Step 3</span>Fit the DAC</h2>
 <ol>
@@ -185,7 +186,7 @@
 <div class="note"><p>The DAC uses GPIO 2, 3, 18, 19, 20 and 21 and the two ID pins (physical pins 27 and 28). Never connect anything else to those. The one exception is the power key, which reaches GPIO 3 through a diode (<a href="#w-buttons">step 5</a>).</p></div>
 
 <h2 id="install"><span class="step">Step 4</span>Install the player</h2>
-<p>On the Mac, copy the project to the Pi:</p>
+<p>On your computer, copy the project to the Pi:</p>
 <pre><code>cd ~/Projects/nfc-player && ./deploy.sh</code></pre>
 <p>If it reports that <code>rsync</code> is missing on the Pi, install it with <code>ssh nfcplayer.local 'sudo apt-get install -y rsync'</code> and run it again.</p>
 <p>Then on the Pi (over SSH), run the setup script:</p>
@@ -384,6 +385,16 @@
 </table></div>
 <pre><code>cd ~/nfc-player && python3 -m player.hw.check display</code></pre>
 <p>You should see red, green, blue and white bars above two lines of text for ten seconds. If it is upside down, add <code>--rotate</code> to that command to confirm, then add <code>--rotate 180</code> to the service (see <a href="#reference">Reference</a>).</p>
+<p><strong>Using the 0.91-inch OLED instead?</strong> It has four pins and shares the I2C bus with the DAC:</p>
+<div class="table-wrap"><table>
+  <tr><th>OLED pin</th><th>Pi pin</th><th>Pi name</th></tr>
+  <tr><td>VCC</td><td class="num">1</td><td>3.3 V</td></tr>
+  <tr><td>GND</td><td class="num">9</td><td>Ground</td></tr>
+  <tr><td>SDA</td><td class="num">3</td><td>GPIO 2 (SDA)</td></tr>
+  <tr><td>SCL</td><td class="num">5</td><td>GPIO 3 (SCL)</td></tr>
+</table></div>
+<pre><code>cd ~/nfc-player && python3 -m player.hw.check display --ssd1306</code></pre>
+<p>Then choose the OLED on the web remote's <strong>Setup</strong> page (<code>/setup</code>) so the player uses it after a restart.</p>
 
 <h3 id="w-nfc">NFC reader</h3>
 <p>First set the module's two small switches for SPI: <strong>switch 1 off, switch 2 on</strong>. Use the 8-pin row labelled SCK, MISO, MOSI, SS.</p>
@@ -499,12 +510,12 @@
 
 <h2 id="music"><span class="step">Step 6</span>Add music</h2>
 <ol>
-  <li>With the Pi connected to the Mac by its <strong>USB</strong> port, the display shows <strong>Connected to a computer</strong>. Push the knob.</li>
-  <li>A drive called <code>MUSIC</code> appears in Finder. Copy albums onto it as <code>Artist/Album/tracks</code>, for example <code>Nina Simone/Pastel Blues/01 Be My Husband.flac</code>.</li>
+  <li>With the Pi connected to the computer by its <strong>USB</strong> port, the display shows <strong>Connected to a computer</strong>. Push the knob.</li>
+  <li>A drive called <code>MUSIC</code> appears in your file manager. Copy albums onto it as <code>Artist/Album/tracks</code>, for example <code>Nina Simone/Pastel Blues/01 Be My Husband.flac</code>.</li>
   <li>Put a <code>cover.jpg</code> in an album's folder to show its cover. Without one, the cover stored inside the tracks is used.</li>
-  <li>Eject <code>MUSIC</code> in Finder. The player takes the drive back, checks it and rescans. If the screen stays on <strong>Transfer mode</strong> after ejecting, hold the knob for a second.</li>
+  <li>Eject <code>MUSIC</code> in your file manager. The player takes the drive back, checks it and rescans. If the screen stays on <strong>Transfer mode</strong> after ejecting, hold the knob for a second.</li>
 </ol>
-<p>FLAC, MP3, AAC/M4A, Ogg, Opus, WAV and AIFF are recognised. The player cannot play while the Mac has the drive.</p>
+<p>FLAC, MP3, AAC/M4A, Ogg, Opus, WAV and AIFF are recognised. The player cannot play while the computer has the drive.</p>
 <h3>Albums, artists and lists</h3>
 <p>A card can be linked to any of three things:</p>
 <ul>
@@ -622,17 +633,17 @@
 <p>Do not upgrade from one Raspberry Pi OS release to the next in place. Back up, reflash and restore instead (below); it is more reliable.</p>
 
 <h3>Back up</h3>
-<p>Two things are worth keeping: the music, and <code>state.json</code>, which records which card plays which album and where each one stopped. Run these in the Mac's Terminal app:</p>
+<p>Two things are worth keeping: the music, and <code>state.json</code>, which records which card plays which album and where each one stopped. Run these in a terminal on your computer:</p>
 <pre><code>mkdir -p ~/nfc-player-backup &amp;&amp; rsync -a nfcplayer@nfcplayer.local:/mnt/music/ ~/nfc-player-backup/music/</code></pre>
 <pre><code>scp nfcplayer@nfcplayer.local:/var/lib/nfc-player/state.json ~/nfc-player-backup/</code></pre>
-<p>Over Wi-Fi the first command is slow for a large collection. For a big library, connect the Pi to the Mac by USB instead, accept the transfer on the player, and copy the contents of <code>MUSIC</code> in Finder.</p>
+<p>Over Wi-Fi the first command is slow for a large collection. For a big library, connect the Pi to the computer by USB instead, accept the transfer on the player, and copy the contents of <code>MUSIC</code> in your file manager.</p>
 <p>Your cards are not in the backup, but they do not need to be: each card only carries an ID, and <code>state.json</code> holds what that ID plays.</p>
 
 <h3>Reflash and restore</h3>
 <ol>
   <li>Back up as above and check <code>~/nfc-player-backup</code> has your albums.</li>
   <li>Flash the card again (<a href="#flash">step 1</a>), boot it (<a href="#boot">step 2</a>), fit the DAC if it is not already on, and install (<a href="#install">step 4</a>). Setup creates a new, empty music drive.</li>
-  <li>Put the card links back, from the Mac:
+  <li>Put the card links back, from your computer:
     <pre><code>scp ~/nfc-player-backup/state.json nfcplayer@nfcplayer.local:/tmp/state.json &amp;&amp; ssh -t nfcplayer@nfcplayer.local 'sudo systemctl stop nfc-player &amp;&amp; sudo cp /tmp/state.json /var/lib/nfc-player/state.json &amp;&amp; sudo chown nfcplayer /var/lib/nfc-player/state.json &amp;&amp; sudo systemctl start nfc-player'</code></pre>
     Use your own Pi username in place of <code>nfcplayer</code> in the <code>chown</code> if you chose a different one.
   </li>
@@ -654,14 +665,14 @@
   <tr><td>Display works alone but breaks when the reader is added</td><td>Check the reader's SS wire is on pin 26, not 24.</td></tr>
   <tr><td>"PN532 not responding"</td><td>Check the two switches (1 off, 2 on), and that MISO and MOSI are not swapped.</td></tr>
   <tr><td>Knob counts jump or go one way only</td><td>One of A or B is not reaching the Pi, or the common pin is not on ground. Recheck those three wires.</td></tr>
-  <tr><td>Mac never shows "Connected to a computer"</td><td>Use the <strong>USB</strong> port, not <strong>PWR IN</strong>, with a data cable. Run <code>python3 -m player.hw.check usb</code>: it should say <code>configured</code>.</td></tr>
+  <tr><td>The player never shows "Connected to a computer"</td><td>Use the <strong>USB</strong> port, not <strong>PWR IN</strong>, with a data cable. Run <code>python3 -m player.hw.check usb</code>: it should say <code>configured</code>.</td></tr>
   <tr><td>Power key shows <strong>Turning off</strong> but the Pi keeps running</td><td>The player is not allowed to shut the Pi down. Run <code>cd ~/nfc-player && sudo system/setup.sh</code> again: it adds the permission. <code>journalctl -u nfc-player -n 50</code> shows the error.</td></tr>
   <tr><td>Screen stays lit after <strong>Turning off</strong></td><td>Setup installs the step that switches the screen off at the end of a shutdown. Run <code>cd ~/nfc-player && sudo system/setup.sh</code> again.</td></tr>
   <tr><td>Power key turns the player off but not on</td><td>Check the diode to pin 5 (GPIO 3): stripe towards the key, and a Schottky type. The Pi must still have power; after a power cut it starts on its own when power returns.</td></tr>
   <tr><td>Power light never comes on</td><td>Check the LED's direction (long leg towards pin 15) and that <code>gpio=22=op,dh</code> is in <code>/boot/firmware/config.txt</code>; run <code>cd ~/nfc-player && sudo system/setup.sh</code> and reboot if it is not. <code>pinctrl set 22 op dh</code> should light it.</td></tr>
   <tr><td>"Something went wrong" on the display</td><td>The message below it is the cause. The full detail is in <code>journalctl -u nfc-player -n 50</code>.</td></tr>
   <tr><td><code>http://nfcplayer.local</code> does not open</td><td>Check the phone is on the same Wi-Fi as the Pi, and type <code>http://</code> in full. Some Android phones cannot find <code>.local</code> names: run <code>hostname -I</code> on the Pi and use that address instead, for example <code>http://192.168.1.42</code>. Check <code>journalctl -u nfc-player -n 50</code> for "Web remote on port 80".</td></tr>
-  <tr><td>Upload fails with a message about the drive</td><td>The drive is in use over USB, or could not be made writable. Eject it on the Mac first. If it persists, run <code>sudo /usr/local/sbin/nfc-player-usb rw</code> on the Pi and read the error.</td></tr>
+  <tr><td>Upload fails with a message about the drive</td><td>The drive is in use over USB, or could not be made writable. Eject it on your computer first. If it persists, run <code>sudo /usr/local/sbin/nfc-player-usb rw</code> on the Pi and read the error.</td></tr>
   <tr><td>The Wi-Fi icon is struck through</td><td>The player is not on a network. Check the router is on and the network is 2.4 GHz, or join another from the player's settings (<a href="#wifi">Changing Wi-Fi</a>). <code>nmcli device status</code> on the Pi shows what <code>wlan0</code> is doing.</td></tr>
   <tr><td>"Wi-Fi setup did not work"</td><td>The setup network could not start. Check NetworkManager is in charge of Wi-Fi (<code>nmcli device status</code> lists <code>wlan0</code>), run <code>cd ~/nfc-player && sudo system/setup.sh</code> again to install the helper and its permission, and try <code>sudo /usr/local/sbin/nfc-player-wifi scan</code> to see the error.</td></tr>
   <tr><td>The phone joins the setup network but no page opens</td><td>Open <code>http://10.42.0.1</code> in the phone's browser, with <code>http://</code> in full. If the phone switches back to another network because this one has no internet, tell it to stay connected.</td></tr>
@@ -708,7 +719,7 @@
   <tr><td><code>player/wifi.py</code></td><td>The Wi-Fi icon's signal, and the setup network for joining a new one.</td></tr>
   <tr><td><code>system/</code></td><td><code>setup.sh</code>, the USB and Wi-Fi helpers, the service files and <code>nfc-player-screen-off</code>, which turns the screen off at the end of a shutdown.</td></tr>
 </table></div>
-<p>To try changes without the hardware, run the simulator on the Mac: <code>.venv/bin/python -m player.main --sim</code>, then open <code>http://localhost:8137</code>. The web remote runs alongside it at <code>http://localhost:8080</code>.</p>
+<p>To try changes without the hardware, run the simulator on your computer: <code>.venv/bin/python -m player.main --sim</code>, then open <code>http://localhost:8137</code>. The web remote runs alongside it at <code>http://localhost:8080</code>.</p>
 
 <h3>Sources</h3>
 <ul>

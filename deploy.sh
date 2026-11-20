@@ -1,7 +1,7 @@
 #!/bin/sh
-# Copies the project from the Mac to the Pi over SSH.
+# Copies the project from your computer to the Pi over SSH.
 #
-#   ./deploy.sh                       # to nfcplayer.local, same user name as on the Mac
+#   ./deploy.sh                       # to nfcplayer.local, same user name as on this computer
 #   ./deploy.sh pi@nfcplayer.local
 set -eu
 cd "$(dirname "$0")"

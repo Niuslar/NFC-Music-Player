@@ -173,7 +173,7 @@ class MusicWriter:
     """Makes the music drive writable while uploads run, read-only again soon after.
 
     helper is the root script on the Pi; None means the folder is always writable
-    (the simulator on the Mac). on_change is called once uploads have settled.
+    (the simulator on a computer). on_change is called once uploads have settled.
     """
 
     def __init__(self, on_change, helper: str | None = None, idle_seconds: float = 5.0):

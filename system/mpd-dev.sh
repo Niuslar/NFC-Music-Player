@@ -1,5 +1,5 @@
 #!/bin/sh
-# Runs MPD in the foreground for development on the Mac, serving the demo library.
+# Runs MPD in the foreground for development on macOS (the osx output), serving the demo library.
 # Listens on localhost only. Pass --silent to use a null output (no sound).
 #
 #   system/mpd-dev.sh            # then: python -m player.main --sim --playback mpd

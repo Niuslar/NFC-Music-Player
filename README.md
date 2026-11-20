@@ -12,12 +12,12 @@ A tabletop music player where each album is a card. Put a card in the slot and i
 
 *Render of the case design, made from the same model as its printable parts. The case has not been printed yet; the real build is currently parts on a bench.*
 
-**[User manual](docs/manual/index.html)**: how to use the player, with pictures of every screen. GitHub shows it as source, so open it on the project site or in a browser from a local copy.
+**Guides:** the [user manual](https://niuslar.github.io/NFC-Music-Player/docs/manual/), [build guide](https://niuslar.github.io/NFC-Music-Player/docs/) and [assembly guide](https://niuslar.github.io/NFC-Music-Player/NFC-Player-Case/NFC-Player-Assembly.html) are on the [project site](https://niuslar.github.io/NFC-Music-Player/).
 
 ## What it does
 
 - **Cards are albums.** Blank NFC cards are linked to albums on the device itself. A card remembers where it stopped. A card can also play a whole artist, or a list: a folder of songs from different albums.
-- **Hi-Fi output.** A Raspberry Pi DAC Pro provides 3.5 mm and RCA outputs, with a balanced output available for a 4.4 mm socket.
+- **Hi-Fi output.** A Raspberry Pi DAC Pro provides 3.5 mm and RCA (white and red) outputs.
 - **Screen and controls.** A 2-inch display shows the cover, track and time. A clicky knob sets the volume and scrolls lists; four buttons do previous, play/pause, next and back. A power key turns the player off safely and on again: the screen shows **Turning off** and goes dark once the Pi is off.
 - **Music over USB.** Plug the player into a computer and its music appears as a drive called `MUSIC`.
 - **Wi-Fi and settings.** An icon in the corner of the screen shows the Wi-Fi signal, struck through when there is none. Hold the knob for a second with no card in for settings: join a new Wi-Fi network, set a volume limit, delete albums, artists, lists or songs, see the web remote's address, or restart the player. To join a network, the player starts its own setup network with a one-time password shown on its screen; a phone joins it and sends the new network's name and password from a page the player serves there.
@@ -37,15 +37,15 @@ A tabletop music player where each album is a card. Put a card in the slot and i
 
 A 0.91-inch 128×32 SSD1306 I2C OLED also works as a stand-in screen, with a compact layout and no cover art. Wire it to 3.3 V, GND, SDA (GPIO 2) and SCL (GPIO 3); it shares that bus with the DAC. Choose the screen and knob on the web remote's **Setup** page (`/setup`), which also tests the screen, DAC, buttons, knob and NFC reader. The settings are saved in `/var/lib/nfc-player/hardware.json` and used after a restart.
 
-The full parts list, wiring diagrams and step-by-step instructions are in the build guide, [docs/index.html](docs/index.html). GitHub shows that file as source, so open it in a browser from a local copy.
+The full parts list, wiring diagrams and step-by-step instructions are in the [build guide](https://niuslar.github.io/NFC-Music-Player/docs/).
 
 ## Status
 
 The electronics and software are done. The only step left is the case.
 
-- All of the hardware has been built and tested on a real Pi: the DAC, display, NFC reader, knob, buttons, power key and light, and USB drive mode, along with setup and the web remote.
-- The player logic, screens and web remote are also tested on a Mac, using a browser simulator in place of the hardware. Joining a new Wi-Fi network from the settings is new and has so far been tried only in the simulator.
-- The case is designed but not yet printed and assembled. Its printable parts, drawings and assembly guide are in [NFC-Player-Case](NFC-Player-Case); open `NFC-Player-Assembly.html` there in a browser.
+- The hardware has been built and tested on a real Pi: the DAC, NFC reader, knob, buttons, power key and light, and USB drive mode, along with setup and the web remote. The screen tested so far is the 0.91-inch SSD1306 OLED; the 2-inch ST7789 SPI display has not yet been tried on the real Pi, only in the simulator.
+- The player logic, screens and web remote are also tested without the hardware, using a browser simulator. Joining a new Wi-Fi network from the settings is new and has so far been tried only in the simulator.
+- The case is designed but not yet printed and assembled. Its printable parts, drawings and source files are in [NFC-Player-Case](NFC-Player-Case), and the [assembly guide](https://niuslar.github.io/NFC-Music-Player/NFC-Player-Case/NFC-Player-Assembly.html) is on the project site.
 
 ## Try it without any hardware
 
@@ -57,6 +57,8 @@ python3 -m venv .venv
 .venv/bin/python -m player.demo_library demo/music
 .venv/bin/python -m player.main --sim
 ```
+
+On Windows, use `.venv\Scripts\` in place of `.venv/bin/`.
 
 Add `--display ssd1306` to see the small OLED layout in the simulator.
 

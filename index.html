@@ -99,7 +99,7 @@
 <p>It is built for a Hi-Fi shelf: a proper DAC, a screen, a knob, and local storage for a whole collection.</p>
 <ul>
   <li><strong>Cards are albums.</strong> Blank NFC cards are linked to albums on the device itself. A card remembers where it stopped. A card can also play a whole artist, or a list: a folder of songs from different albums.</li>
-  <li><strong>Hi-Fi output.</strong> A Raspberry Pi DAC Pro provides 3.5 mm and RCA outputs, with a balanced output available for a 4.4 mm socket.</li>
+  <li><strong>Hi-Fi output.</strong> A Raspberry Pi DAC Pro provides 3.5 mm and RCA (white and red) outputs.</li>
   <li><strong>Screen and controls.</strong> A 2-inch display shows the cover, track and time. A clicky knob sets the volume and scrolls lists; four keys do previous, play/pause, next and back. Hold previous or next to scan; press back to pick a track from a list, or hold it for 2 seconds to start the album again.</li>
   <li><strong>Music over USB.</strong> Plug the player into a computer and its music appears as a drive called <code>MUSIC</code>.</li>
   <li><strong>Web remote.</strong> A page served by the player controls playback, links cards, and uploads or deletes music from any phone or computer on the same Wi-Fi.</li>
@@ -147,8 +147,9 @@
 <h2 id="status">Status</h2>
 <p>The electronics and software are done. The only step left is the case.</p>
 <ul class="status">
-  <li class="done">All of the hardware has been built and tested on a real Pi: the DAC, display, NFC reader, knob, buttons, power key and light, and USB drive mode, along with setup and the web remote.</li>
-  <li class="done">The player logic, screens and web remote are also tested on a Mac, using a browser simulator in place of the hardware.</li>
+  <li class="done">The hardware has been built and tested on a real Pi: the DAC, NFC reader, knob, buttons, power key and light, and USB drive mode, along with setup and the web remote. The screen tested so far is the 0.91-inch SSD1306 OLED.</li>
+  <li class="todo">The 2-inch ST7789 SPI display has not yet been tried on the real Pi, only in the simulator.</li>
+  <li class="done">The player logic, screens and web remote are also tested without the hardware, using a browser simulator.</li>
   <li class="todo">The case is designed but not yet printed and assembled.</li>
 </ul>
 
