@@ -324,7 +324,7 @@ def test_volume_limit(rig):
 
 def test_about_screen(rig):
     app, send, *_ = rig
-    send(ev.Press("knob_long"), ev.Rotate(STEP), ev.Rotate(STEP), ev.Press("knob"))
+    send(ev.Press("knob_long"), ev.Rotate(STEP), ev.Rotate(STEP), ev.Rotate(STEP), ev.Press("knob"))
     assert app.mode is Mode.ABOUT
     assert app._about[0] == "Wi-Fi: Home · strong signal"
     assert "Web remote: http://nfcplayer.local" in app._about

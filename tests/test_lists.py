@@ -149,7 +149,7 @@ def test_songs_and_items(site):
     songs = call("GET", "/api/songs")[1]
     assert len(songs) == sum(len(a.tracks) for a in library.albums)
     first = next(s for s in songs if s["path"] == KITE)
-    assert first == {"path": KITE, "title": "Kite String", "artist": "", "album": "Paper Lanterns", "key": "Ada Hollis/Paper Lanterns", "index": 1}
+    assert first == {"path": KITE, "title": "Kite String", "artist": "", "album": "Paper Lanterns", "disc": 0, "key": "Ada Hollis/Paper Lanterns", "index": 1}
     assert call("GET", "/api/item?key=nope")[0] == 404
 
 

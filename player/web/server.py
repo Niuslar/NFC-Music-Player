@@ -85,22 +85,29 @@ def _music_files(folder: Path) -> list[Path]:
     )
 
 
+def _album_dirs(album, folder: Path) -> list[Path]:
+    """The folder an album or list lives in, then its disc folders (CD1, CD2...) if it has any."""
+    return [folder] + [folder / d for d in album.discs if (folder / d).is_dir() and not (folder / d).is_symlink()]
+
+
 def _own_files(library: Library, album, folder: Path) -> list[Path]:
     """The files that belong to an album or list: its whole folder, or just its tracks when the folder is shared."""
+    files = [f for d in _album_dirs(album, folder) for f in _music_files(d)]
     if album.whole_folder:
-        return _music_files(folder)
-    names = {Path(t.path).name for t in album.tracks}
-    return [f for f in _music_files(folder) if f.name in names]
+        return files
+    paths = {t.path for t in album.tracks}
+    return [f for f in files if f.relative_to(library.root).as_posix() in paths]
 
 
 def list_files(library: Library, album_path: str) -> list[dict]:
     album = library.get(album_path)
     if album is None or album.folder is None:
         raise UploadError(404, "No such album")
+    folder = library.root / album.folder
     try:
         return [
-            {"name": f.name, "size": f.stat().st_size, "track": f.suffix.lower() in AUDIO_EXT}
-            for f in _own_files(library, album, library.root / album.folder)
+            {"name": f.relative_to(folder).as_posix(), "size": f.stat().st_size, "track": f.suffix.lower() in AUDIO_EXT}
+            for f in _own_files(library, album, folder)
         ]
     except OSError:
         raise UploadError(404, "No such album")
@@ -110,7 +117,8 @@ def delete_music(library: Library, writer: "MusicWriter", album_path: str, name:
     """Deletes one file from an album, or the whole album when name is None. Returns files removed.
 
     Only albums and lists the library knows about can be touched, and only files directly
-    inside their folder. An album that shares its folder with others loses only its own tracks.
+    inside their folder or its disc folders (named "CD2/01 Song.flac"). An album that shares
+    its folder with others loses only its own tracks.
     """
     album = library.get(album_path)
     if album is None or album.folder is None:
@@ -119,13 +127,22 @@ def delete_music(library: Library, writer: "MusicWriter", album_path: str, name:
     folder = (base / album.folder).resolve()
     if base not in folder.parents or not folder.is_dir():
         raise UploadError(404, "No such album")
+    dirs = _album_dirs(album, folder)
     if name is None and album.whole_folder:
-        targets = [f for f in folder.iterdir() if f.is_file() or f.is_symlink()]
+        targets = [f for d in dirs for f in d.iterdir() if f.is_file() or f.is_symlink()]
     elif name is None:
         targets = _own_files(library, album, folder)
     else:
-        target = folder / str(name)
-        if str(name) != target.name or target.name.startswith(".") or target.is_symlink() or not target.is_file():
+        parts = str(name).split("/")
+        target = folder.joinpath(*parts)
+        if (
+            len(parts) > 2
+            or (len(parts) == 2 and parts[0] not in album.discs)
+            or any(not p or p.startswith(".") for p in parts)
+            or target.parent not in dirs
+            or target.is_symlink()
+            or not target.is_file()
+        ):
             raise UploadError(404, "No such file in that album")
         if not album.whole_folder and target not in _own_files(library, album, folder):
             raise UploadError(404, "No such file in that album")
@@ -134,13 +151,16 @@ def delete_music(library: Library, writer: "MusicWriter", album_path: str, name:
     try:
         for f in targets:
             f.unlink()
-        if not any(f.suffix.lower() in AUDIO_EXT for f in _music_files(folder)):
+        if not any(f.suffix.lower() in AUDIO_EXT for d in dirs for f in _music_files(d)):
             # Last track gone: the cover and other leftovers go too, so no orphan folder remains.
-            leftovers = [f for f in folder.iterdir() if f.is_file() or f.is_symlink()]
+            leftovers = [f for d in dirs for f in d.iterdir() if f.is_file() or f.is_symlink()]
             for f in leftovers:
                 f.unlink()
             targets += leftovers
-        d = folder  # remove the album folder, then the artist folder, once each is empty
+        for d in dirs[1:]:  # empty disc folders first
+            if not any(d.iterdir()):
+                d.rmdir()
+        d = folder  # then the album folder, then the artist folder, once each is empty
         while d != base and not any(d.iterdir()):
             d.rmdir()
             d = d.parent
@@ -265,7 +285,7 @@ def _host_allowed(host_header: str) -> bool:
 
 
 def _track_info(t) -> dict:
-    return {"path": t.path, "title": t.title, "artist": t.artist, "album": t.album}
+    return {"path": t.path, "title": t.title, "artist": t.artist, "album": t.album, "disc": t.disc}
 
 
 def _item_info(a) -> dict:

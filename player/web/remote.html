@@ -111,6 +111,8 @@
 
   /* ---- track rows ---- */
   .rows { border-top: 1px solid var(--line); }
+  .rows .disc { font-size: 12.5px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--dim); font-weight: 600; padding: 18px 8px 8px; border-bottom: 1px solid var(--line); }
+  .rows .disc:first-child { padding-top: 10px; }
   .row { display: grid; grid-template-columns: 36px minmax(0, 1fr) auto; align-items: center; gap: 8px; padding: 6px 4px 6px 8px; border-bottom: 1px solid var(--line); cursor: pointer; min-height: 48px; }
   .row.songs { grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr) minmax(0, 1fr) auto; padding-left: 12px; }
   .row.songs .s { display: none; }
@@ -248,6 +250,11 @@
     .bar .ctl { flex-direction: row; }
     .bar .seekrow { position: absolute; left: 0; right: 0; top: -8px; max-width: none; }
     .np .cover { width: 46px; height: 46px; }
+    /* The now-playing page has its own controls, so the bar would only repeat them and cover its volume. */
+    body.onnow { grid-template-areas: "main"; grid-template-rows: minmax(0, 1fr); }
+    body.onnow .bar { display: none; }
+    body.onnow .content { padding-bottom: calc(32px + env(safe-area-inset-bottom)); }
+    body.onnow .toast { bottom: calc(18px + env(safe-area-inset-bottom)); }
   }
 </style>
 </head>
@@ -496,6 +503,7 @@ async function render(keepScroll) {
   const scroll = $("main").scrollTop;
   view = { name: r.name, arg: r.arg };
   document.body.classList.remove("menu");
+  document.body.classList.toggle("onnow", r.name === "now");
   markSide();
   $("addView").hidden = r.name !== "add";
   $("content").hidden = r.name === "add";
@@ -659,7 +667,16 @@ async function itemView(key) {
 function trackRows(item, compact) {
   const box = h("div", { class: "rows", "data-key": item.key });
   const editable = item.playlist && !compact;
+  // An album on several discs gets a heading per disc, and its numbers start again on each.
+  const discs = item.kind === "album" && new Set(item.items.map((t) => t.disc || 0)).size > 1;
+  let disc = null, num = 0;
   item.items.forEach((t, i) => {
+    if (discs && (t.disc || 0) !== disc) {
+      disc = t.disc || 0;
+      num = 0;
+      box.append(h("div", { class: "disc" }, disc ? `CD${disc}` : "Other tracks"));
+    }
+    num = discs ? num + 1 : i + 1;
     const sub = item.kind === "album" ? (t.artist && t.artist !== item.artist ? t.artist : "") : [t.artist, t.album].filter(Boolean).join(" · ");
     const ra = h("div", { class: "ra" });
     if (!compact) ra.append(h("button", { class: "iconbtn", title: "Add to a list", "aria-label": `Add ${t.title} to a list`, onclick: (e) => { e.stopPropagation(); pickList([t.path], t.title); } }, icon("plus")));
@@ -669,8 +686,8 @@ function trackRows(item, compact) {
         h("button", { class: "iconbtn", title: "Move down", "aria-label": `Move ${t.title} down`, disabled: i === item.items.length - 1, onclick: (e) => { e.stopPropagation(); moveTrack(item, i, i + 1); } }, icon("down")),
         h("button", { class: "iconbtn", title: "Remove from this list", "aria-label": `Remove ${t.title} from this list`, onclick: (e) => { e.stopPropagation(); removeTrack(item, i); } }, icon("close")));
     }
-    const row = h("div", { class: "row", tabindex: "0", "data-index": i, draggable: editable ? "true" : null },
-      h("div", { class: "n" }, String(i + 1)),
+    const row = h("div", { class: "row", tabindex: "0", "data-index": i, "data-num": num, draggable: editable ? "true" : null },
+      h("div", { class: "n" }, String(num)),
       h("div", { style: "min-width:0" }, h("div", { class: "t" }, t.title), sub ? h("div", { class: "s" }, sub) : null),
       ra);
     const play = () => command("play_at", { key: item.key, index: i });
@@ -976,7 +993,7 @@ function markPlaying() {
       row.classList.toggle("playing", on);
       row.classList.toggle("paused", paused);
       const n = row.querySelector(".n");
-      if (n) { n.textContent = ""; n.append(on ? h("span", { class: "eq" }, h("i"), h("i"), h("i")) : String(+row.dataset.index + 1)); }
+      if (n) { n.textContent = ""; n.append(on ? h("span", { class: "eq" }, h("i"), h("i"), h("i")) : row.dataset.num || String(+row.dataset.index + 1)); }
     }
   }
   for (const s of document.querySelectorAll(".side a.nav[data-key]")) s.classList.toggle("playing", !!a && s.dataset.key === a.key);

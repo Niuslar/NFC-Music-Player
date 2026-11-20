@@ -272,12 +272,14 @@ def main() -> None:
     inputs = InputLog()
     print(f"{len(library.albums)} albums, {len(library.artists)} artists and {len(library.lists)} lists in {args.music}", flush=True)
 
+    from .web import server as web
+
+    # On the Pi the drive is read-only until the root helper opens it; the simulator's folder is always writable.
+    # Uploads and deletes from the web remote and Manage music on the player all go through it.
+    writer = web.MusicWriter(lambda: events.put(LibraryChanged()), helper=None if args.sim else USB_HELPER)
+    app.delete_music = lambda key, name=None: web.delete_music(library, writer, key, name)
     shared = None
     if args.web_port:
-        from .web import server as web
-
-        # On the Pi the drive is read-only until the root helper opens it; the simulator's folder is always writable.
-        writer = web.MusicWriter(lambda: events.put(LibraryChanged()), helper=None if args.sim else USB_HELPER)
         shared = web.Shared()
         setup = web.Setup(
             path=args.config,

@@ -26,7 +26,8 @@ SCAN_LABEL_SECONDS = 0.8
 MISSING = "The music linked to this card is missing."
 TEST_SCREEN_SECONDS = 5.0
 MENU_ITEMS = ("Link to something else", "Unlink this card", "Close")
-SETTINGS_ITEMS = ("Wi-Fi", "Volume limit", "About this player", "Restart the player", "Close")
+SETTINGS_ITEMS = ("Wi-Fi", "Volume limit", "Manage music", "About this player", "Restart the player", "Close")
+MANAGE_KINDS = (("album", "Albums"), ("artist", "Artists"), ("list", "Lists"), ("song", "All songs"))
 WIFI_ITEMS = ("Wi-Fi", "Connect to a new network", "Show web player", "Back")  # only Wi-Fi and Back while it is off
 SIGNAL_WORDS = {1: "weak signal", 2: "fair signal", 3: "good signal", 4: "strong signal"}
 KIND_NAMES = {"album": ("Album", "album"), "artist": ("Artist", "artist"), "list": ("List", "list")}
@@ -51,10 +52,16 @@ class Mode(Enum):
     WIFI_SETUP = auto()  # the setup network is up (or starting, or joining): instructions for the phone
     VOLUME_LIMIT = auto()
     ABOUT = auto()
+    # Manage music, for deleting without a computer or the web remote:
+    MANAGE = auto()  # Albums, Artists, Lists, All songs
+    MANAGE_LIST = auto()  # the albums, artists or lists, or every song
+    MANAGE_ITEM = auto()  # one album, artist or list: delete all of it, or one of its songs
+    MANAGE_CONFIRM = auto()  # "Keep it" or "Delete"
 
 
-SETTINGS_MODES = (Mode.SETTINGS, Mode.WIFI, Mode.WIFI_SETUP, Mode.VOLUME_LIMIT, Mode.ABOUT)
-LIST_MODES = (Mode.LINKING, Mode.MENU, Mode.TRACKS, Mode.SETTINGS, Mode.WIFI, Mode.VOLUME_LIMIT)
+MANAGE_MODES = (Mode.MANAGE, Mode.MANAGE_LIST, Mode.MANAGE_ITEM, Mode.MANAGE_CONFIRM)
+SETTINGS_MODES = (Mode.SETTINGS, Mode.WIFI, Mode.WIFI_SETUP, Mode.VOLUME_LIMIT, Mode.ABOUT) + MANAGE_MODES
+LIST_MODES = (Mode.LINKING, Mode.MENU, Mode.TRACKS, Mode.SETTINGS, Mode.WIFI, Mode.VOLUME_LIMIT) + MANAGE_MODES
 
 
 class NullStorage:
@@ -88,6 +95,13 @@ class App:
         self.usb_offer = False
         self.remote = False  # the album was started from the web remote, not by the card
         self.is_uploading = lambda: False  # replaced by main when the web remote is on
+        # Deletes an album or list (key), or one of its files (name, relative to its folder); main fills it in.
+        self.delete_music = None
+        self.manage_kind: str | None = None  # album | artist | list | song, while managing music
+        self.manage_item: Item | None = None  # the album, artist or list opened there
+        self._confirm: tuple | None = None  # what Delete would remove: ("item", Item) or ("song", Track)
+        self._confirm_back = (Mode.MANAGE_LIST, 0)  # where Keep it returns to
+        self._entry_at = 0  # where the opened item was in its section's list
         self._now = 0.0
         self._volume_until = 0.0
         self._error = ""
@@ -166,9 +180,13 @@ class App:
                 Mode.SETTINGS: lambda: len(SETTINGS_ITEMS),
                 Mode.WIFI: lambda: len(self._wifi_items()),
                 Mode.VOLUME_LIMIT: lambda: len(VOLUME_LIMITS),
+                Mode.MANAGE: lambda: len(self._manage_kinds()) + 1,
+                Mode.MANAGE_LIST: lambda: len(self._manage_entries()),
+                Mode.MANAGE_ITEM: lambda: len(self._manage_rows()),
+                Mode.MANAGE_CONFIRM: lambda: 2,
             }[self.mode]()
             steps = self._list_knob.feed(counts, now)
-            self.selected = min(max(self.selected + steps, 0), count - 1)
+            self.selected = min(max(self.selected + steps, 0), max(count - 1, 0))
             return
         self._set_volume(self.store.volume + self._vol_knob.feed(counts, now))
 
@@ -237,6 +255,8 @@ class App:
             self.link_kind = None
         if self.mode is Mode.LINKING:
             self.selected = min(self.selected, max(len(self._link_choices()) - 1, 0))
+        if self.mode in MANAGE_MODES:
+            self._manage_refresh()
         if self.album is None:
             return
         fresh = self.library.get(self.album.key)
@@ -317,7 +337,9 @@ class App:
 
     def _settings_press(self, button: str) -> None:
         back = button in ("back", "knob_long")
-        if self.mode is Mode.SETTINGS:
+        if self.mode in MANAGE_MODES:
+            self._manage_press(button, back)
+        elif self.mode is Mode.SETTINGS:
             if back:
                 self.mode = Mode.IDLE
             elif button == "knob":
@@ -340,10 +362,10 @@ class App:
             if button == "knob":
                 self._set_limit(VOLUME_LIMITS[self.selected])
             if button == "knob" or back:
-                self._open_list(Mode.SETTINGS, 1)
+                self._open_list(Mode.SETTINGS, SETTINGS_ITEMS.index("Volume limit"))
         elif self.mode is Mode.ABOUT:
             if button == "knob" or back:
-                self._open_list(Mode.SETTINGS, 2)
+                self._open_list(Mode.SETTINGS, SETTINGS_ITEMS.index("About this player"))
         elif self.mode is Mode.WIFI_SETUP:
             state = self.wifi.state
             if state in ("joined", "error") and (button == "knob" or back):
@@ -355,17 +377,120 @@ class App:
             # while joining nothing can be cancelled: the screen says it takes up to a minute
 
     def _settings_choice(self, index: int) -> None:
-        if index == 0:
+        choice = SETTINGS_ITEMS[index]
+        if choice == "Wi-Fi":
             self._open_list(Mode.WIFI, 0)
-        elif index == 1:
+        elif choice == "Volume limit":
             self._open_list(Mode.VOLUME_LIMIT, VOLUME_LIMITS.index(self.store.max_volume))
-        elif index == 2:
+        elif choice == "Manage music":
+            self._open_list(Mode.MANAGE, 0)
+        elif choice == "About this player":
             self._about = self._about_lines()
             self.mode = Mode.ABOUT
-        elif index == 3:
+        elif choice == "Restart the player":
             self._restart()
         else:
             self.mode = Mode.IDLE
+
+    # ---- manage music: deleting from the player itself ------------------------
+
+    def _manage_kinds(self) -> list[tuple[str, str]]:
+        """The sections there is something in."""
+        return [(k, name) for k, name in MANAGE_KINDS if (self.library.albums if k == "song" else self.library.of(k))]
+
+    def _manage_entries(self) -> list:
+        """The albums, artists or lists of the open section, or every song."""
+        if self.manage_kind == "song":
+            return [t for a in self.library.albums for t in a.tracks]
+        return list(self.library.of(self.manage_kind)) if self.manage_kind else []
+
+    def _manage_rows(self) -> list:
+        """The open item's page: delete all of it (not a made list, which is not a folder), then its songs."""
+        item = self.manage_item
+        whole = [None] if item.kind == "artist" or item.folder is not None else []
+        return whole + list(item.tracks)
+
+    def _manage_press(self, button: str, back: bool) -> None:
+        if self.mode is Mode.MANAGE:
+            kinds = self._manage_kinds()
+            if back or (button == "knob" and self.selected >= len(kinds)):
+                self._open_list(Mode.SETTINGS, SETTINGS_ITEMS.index("Manage music"))
+            elif button == "knob":
+                self.manage_kind = kinds[self.selected][0]
+                self._open_list(Mode.MANAGE_LIST, 0)
+        elif self.mode is Mode.MANAGE_LIST:
+            if back:
+                kinds = [k for k, _ in self._manage_kinds()]
+                self._open_list(Mode.MANAGE, kinds.index(self.manage_kind) if self.manage_kind in kinds else 0)
+            elif button == "knob":
+                entry = self._manage_entries()[self.selected]
+                if self.manage_kind == "song":
+                    self._ask_delete(("song", entry), (Mode.MANAGE_LIST, self.selected))
+                else:
+                    self.manage_item, self._entry_at = entry, self.selected
+                    self._open_list(Mode.MANAGE_ITEM, 0)
+        elif self.mode is Mode.MANAGE_ITEM:
+            if back:
+                self._back_to_entries()
+            elif button == "knob":
+                row = self._manage_rows()[self.selected]
+                what = ("item", self.manage_item) if row is None else ("song", row)
+                self._ask_delete(what, (Mode.MANAGE_ITEM, self.selected))
+        elif self.mode is Mode.MANAGE_CONFIRM:
+            if button == "knob" and self.selected == 1:
+                self._delete_confirmed()
+            elif button == "knob" or back:
+                self._open_list(*self._confirm_back)
+
+    def _manage_refresh(self) -> None:
+        """Keeps the manage screens in step with a library that changed under them."""
+        if self.manage_item is not None:
+            self.manage_item = self.library.get(self.manage_item.key)
+        if self.mode is Mode.MANAGE_ITEM and (self.manage_item is None or not self.manage_item.tracks):
+            self._back_to_entries()
+        if self.mode is Mode.MANAGE_LIST and not self._manage_entries():
+            self._open_list(Mode.MANAGE, 0)
+        count = {Mode.MANAGE: lambda: len(self._manage_kinds()) + 1, Mode.MANAGE_LIST: lambda: len(self._manage_entries()),
+                 Mode.MANAGE_ITEM: lambda: len(self._manage_rows())}.get(self.mode)
+        if count:
+            self.selected = min(self.selected, max(count() - 1, 0))
+
+    def _ask_delete(self, what: tuple, back: tuple) -> None:
+        self._confirm, self._confirm_back = what, back
+        self._open_list(Mode.MANAGE_CONFIRM, 0)  # Keep it comes first, so a stray push deletes nothing
+
+    def _back_to_entries(self) -> None:
+        entries = self._manage_entries()
+        if not entries:
+            self._open_list(Mode.MANAGE, 0)
+            return
+        at = entries.index(self.manage_item) if self.manage_item in entries else self._entry_at
+        self.manage_item = None
+        self._open_list(Mode.MANAGE_LIST, min(at, len(entries) - 1))
+
+    def _delete_confirmed(self) -> None:
+        kind, target = self._confirm
+        self._confirm = None
+        if self.delete_music is None:
+            self.show_error("Deleting is not available on this player.", self._now)
+            self._open_list(*self._confirm_back)
+            return
+        try:
+            if kind == "song":
+                album = self.library.album_of(target.path)
+                if album is None or album.folder is None:
+                    raise OSError("That song is no longer on the player.")
+                self.delete_music(album.key, target.path[len(album.folder) + 1 :])
+            elif target.kind == "artist":
+                for album in self.library.albums_by(target):
+                    self.delete_music(album.key, None)
+            else:
+                self.delete_music(target.key, None)
+        except Exception as e:  # a read-only drive, a file already gone: say so and stay put
+            self.show_error(f"Could not delete it. {getattr(e, 'message', None) or e}", self._now)
+        # Back to where the deleted thing was listed; the refresh moves further back if that is gone too.
+        self._open_list(*self._confirm_back)
+        self._refresh_library()
 
     def _set_limit(self, limit: int) -> None:
         self.store.max_volume = limit
@@ -416,7 +541,14 @@ class App:
     def _settings_screen(self):
         if self.mode is Mode.SETTINGS:
             limit = self.store.max_volume
-            subs = (self._wifi_line(), "No limit" if limit == 100 else f"Up to {limit}", "Web address, music and storage", "", "")
+            subs = (
+                self._wifi_line(),
+                "No limit" if limit == 100 else f"Up to {limit}",
+                "Delete albums, artists, lists or songs",
+                "Web address, music and storage",
+                "",
+                "",
+            )
             return self.ui.list_screen("Settings", list(zip(SETTINGS_ITEMS, subs)), self.selected)
         if self.mode is Mode.WIFI:
             title = f"Wi-Fi: {self._wifi_line()}" if self.store.wifi else "Wi-Fi is off"
@@ -426,6 +558,8 @@ class App:
             return self.ui.list_screen("Volume limit: the loudest it can go", rows, self.selected)
         if self.mode is Mode.ABOUT:
             return self.ui.message("About this player", "\n".join(self._about))
+        if self.mode in MANAGE_MODES:
+            return self._manage_screen()
         w = self.wifi
         if w.state == "starting":
             return self.ui.message("Starting Wi-Fi setup", "Looking for networks nearby…")
@@ -439,6 +573,46 @@ class App:
         if w.state == "error":
             return self.ui.message("Wi-Fi setup did not work", f"{w.message}\nPush the knob to go back.")
         return self.ui.message("Closing Wi-Fi setup")
+
+    def _manage_screen(self):
+        lib = self.library
+        if self.mode is Mode.MANAGE:
+            counts = {"album": len(lib.albums), "artist": len(lib.artists), "list": len(lib.lists), "song": sum(len(a.tracks) for a in lib.albums)}
+            nouns = {"album": "album", "artist": "artist", "list": "list", "song": "song"}
+            rows = [(name, _count(counts[k], nouns[k])) for k, name in self._manage_kinds()] + [("Back", "")]
+            return self.ui.list_screen("Manage music" if lib.albums else "No music on the player", rows, self.selected)
+        if self.mode is Mode.MANAGE_LIST:
+            if self.manage_kind == "song":
+                rows = [(t.title, " · ".join(filter(None, (t.artist, t.album)))) for t in self._manage_entries()]
+                return self.ui.list_screen("Choose a song to delete", rows, self.selected)
+            items = self._manage_entries()
+            if self.manage_kind == "album":
+                rows = [(a.title, a.artist) for a in items]
+            elif self.manage_kind == "artist":
+                rows = [(a.title, f"{_count(a.albums, 'album')} · {_count(len(a.tracks), 'track')}") for a in items]
+            else:
+                rows = [(a.title, _count(len(a.tracks), "track")) for a in items]
+            return self.ui.list_screen(dict(MANAGE_KINDS)[self.manage_kind], rows, self.selected)
+        if self.mode is Mode.MANAGE_ITEM:
+            item, entries = self.manage_item, self._manage_rows()
+            first = 0 if entries and entries[0] is None else 1  # song numbers start at 1 either way
+            rows = []
+            for i, row in enumerate(entries):
+                if row is None:
+                    noun = "all music by this artist" if item.kind == "artist" else f"whole {KIND_NAMES[item.kind][1]}"
+                    rows.append((f"Delete {noun}", _count(len(item.tracks), "song")))
+                else:
+                    rows.append((f"{i + first}. {row.title}", "Push to delete this song"))
+            return self.ui.list_screen(item.title, rows, self.selected)
+        kind, target = self._confirm
+        if kind == "song":
+            name, what = target.title, "this song"
+        elif target.kind == "artist":
+            name, what = target.title, f"all {_count(len(target.tracks), 'song')}"
+        else:
+            name, what = target.title, f"this {KIND_NAMES[target.kind][1]}"
+        rows = [("Keep it", ""), (f"Delete {what}", "This cannot be undone")]
+        return self.ui.list_screen(f"Delete {name}?", rows, self.selected)
 
     # ---- actions ------------------------------------------------------------
 

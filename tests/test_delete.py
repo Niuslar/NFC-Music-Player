@@ -127,6 +127,45 @@ def test_delete_never_follows_a_symlink_out_of_the_album(lib):
     assert secret.exists() and not (music / LANTERNS).exists()
 
 
+def _two_discs(music):
+    album = music / "Test Artist" / "Double"
+    for disc in ("CD1", "CD2"):
+        (album / disc).mkdir(parents=True)
+        for name in ("01 a.wav", "02 b.wav"):
+            (album / disc / name).write_bytes(b"x")
+    (album / "cover.jpg").write_bytes(b"x")
+    return "Test Artist/Double"
+
+
+def test_disc_folders_make_one_album_with_numbered_discs(lib):
+    library, music = lib
+    key = _two_discs(music)
+    library.rescan()
+    double = library.get(key)
+    assert double.kind == "album" and double.title == "Double" and double.artist == "Test Artist"
+    assert [(t.disc, t.path.split("/", 2)[2]) for t in double.tracks] == [
+        (1, "CD1/01 a.wav"), (1, "CD1/02 b.wav"), (2, "CD2/01 a.wav"), (2, "CD2/02 b.wav")
+    ]
+    assert double.cover == music / key / "cover.jpg"
+    assert library.get(key + "/CD1") is None and not library.lists
+
+
+def test_disc_album_files_can_be_listed_and_deleted(lib):
+    library, music = lib
+    key = _two_discs(music)
+    library.rescan()
+    assert [f["name"] for f in web.list_files(library, key)] == [
+        "cover.jpg", "CD1/01 a.wav", "CD1/02 b.wav", "CD2/01 a.wav", "CD2/02 b.wav"
+    ]
+    for bad in ("CD3/01 a.wav", "../Double/CD1/01 a.wav", "CD1/../CD2/01 a.wav", "CD1/x/01 a.wav"):
+        with pytest.raises(web.UploadError):
+            web.delete_music(library, Writer(), key, bad)
+    assert web.delete_music(library, Writer(), key, "CD2/01 a.wav") == 1
+    assert not (music / key / "CD2" / "01 a.wav").exists() and (music / key / "CD1" / "01 a.wav").exists()
+    assert web.delete_music(library, Writer(), key) == 4  # three tracks and the cover
+    assert not (music / "Test Artist").exists()
+
+
 # ---- over HTTP ---------------------------------------------------------------
 
 

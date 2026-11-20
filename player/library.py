@@ -4,6 +4,9 @@ Albums come from the files' tags, so a flat folder of mixed songs splits into it
 real albums. Files without tags fall back to the folder layout: the folder is the
 album and its parent is the artist (Artist/Album/tracks, or a loose Album/ at the root).
 
+An album split into disc folders (Album/CD1, Album/CD2, or Disc 1, Disc 2) is one
+album: its discs play in order and the web remote shows a heading for each.
+
 A list is a folder whose tracks span more than one album, played as it is in
 filename order, or a list made on the web remote (see playlists.py). An artist is
 every album by that artist, one after another.
@@ -11,7 +14,7 @@ every album by that artist, one after another.
 
 import re
 import wave
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from pathlib import Path
 
 from .playlists import KEY_PREFIX as PLAYLIST_PREFIX
@@ -22,6 +25,8 @@ COVER_STEMS = ("cover", "folder", "front")
 UNKNOWN_DURATION = 180.0
 VARIOUS = "Various Artists"
 KINDS = ("album", "artist", "list")
+DISC_DIR = re.compile(r"^(?:cd|dis[ck])[\s._-]*(\d{1,3})$", re.I)  # CD1, CD 2, Disc 3, disk_4
+DISC_SUFFIX = re.compile(r"[\s,:_-]*[(\[]?\s*(?:cd|dis[ck])[\s._-]*\d{1,3}\s*[)\]]?$", re.I)  # "Album (Disc 2)"
 
 
 @dataclass(frozen=True)
@@ -44,6 +49,7 @@ class Track:
     artist: str = ""  # the track's own artist, when tagged
     album: str = ""  # title of the album it belongs to
     cover: Path | None = None  # image file in its folder, when that folder is a single album
+    disc: int = 0  # disc number, from its disc folder (CD2) or its tags; 0 when unknown
 
 
 @dataclass(frozen=True)
@@ -62,6 +68,7 @@ class Item:
     folder: str | None = None  # where its files live; None for an artist
     whole_folder: bool = False  # it owns every file in that folder
     albums: int = 1  # how many albums it spans
+    discs: tuple[str, ...] = ()  # disc folders inside folder (CD1, CD2...) that also hold its files
 
     @property
     def cover(self) -> Path | None:
@@ -81,6 +88,12 @@ def _visible(p: Path) -> bool:
 def _track_title(stem: str) -> str:
     cleaned = re.sub(r"^\d+[\s.\-_]+", "", stem).strip()
     return cleaned or stem
+
+
+def disc_number(name: str) -> int:
+    """The disc a folder holds, from a name like CD2 or Disc 2; 0 for any other folder."""
+    m = DISC_DIR.match(name.strip())
+    return int(m.group(1)) if m else 0
 
 
 def _find_cover(images: list[Path]) -> Path | None:
@@ -186,6 +199,7 @@ class Library:
         self.version = 0  # goes up with every rescan
         self._by_key: dict[str, Item] = {}
         self._tracks: dict[str, Track] = {}
+        self._album_of: dict[str, str] = {}
         self._folder_cover: dict[str, Path] = {}
         self.rescan()
 
@@ -197,35 +211,57 @@ class Library:
         keys: set[str] = set()
         folder_cover: dict[str, Path] = {}
         if self.root.is_dir():
+            # Gather each album folder's audio. A disc folder (CD1, Disc 2) adds its files to its parent.
+            homes: dict[Path, dict] = {}
             dirs = sorted(d for d in self.root.rglob("*") if d.is_dir() and _visible(d))
             for d in dirs:
                 files = sorted((f for f in d.iterdir() if f.is_file() and _visible(f)), key=lambda f: f.name.lower())
                 audio = [f for f in files if f.suffix.lower() in AUDIO_EXT]
+                image = _find_cover([f for f in files if f.suffix.lower() in IMAGE_EXT])
+                if image and audio:
+                    folder_cover[d.relative_to(self.root).as_posix()] = image
+                disc = disc_number(d.name) if d.parent != self.root else 0
+                home = homes.setdefault(d.parent if disc else d, {"audio": [], "image": None, "discs": []})
+                if not disc and image:
+                    home["image"] = image  # the album folder's own cover comes first
+                if audio:
+                    home["audio"] += [(f, disc) for f in audio]
+                    if disc:
+                        home["discs"].append(d.name)
+                        if home["image"] is None:
+                            home["image"] = image
+
+            for d, home in homes.items():
+                audio = sorted(home["audio"], key=lambda m: (m[1], m[0].name.lower()))
                 if not audio:
                     continue
-                image = _find_cover([f for f in files if f.suffix.lower() in IMAGE_EXT])
+                image = home["image"]
                 rel = d.relative_to(self.root)
                 folder = rel.as_posix()
-                if image:
-                    folder_cover[folder] = image
+                discs = tuple(sorted(home["discs"], key=lambda n: (disc_number(n), n.lower())))
+                if image:  # a disc folder without its own picture shows the album's
+                    for name in discs:
+                        folder_cover.setdefault(f"{folder}/{name}", image)
 
-                groups: dict[tuple, list[tuple[Path, Tags]]] = {}
-                for f in audio:
+                groups: dict[tuple, list[tuple[Path, Tags, int]]] = {}
+                for f, disc in audio:
                     t = tags.get(f.relative_to(self.root).as_posix()) or Tags()
+                    if disc and t.album:  # "Album (Disc 2)" in a disc folder belongs with "Album (Disc 1)"
+                        t = replace(t, album=DISC_SUFFIX.sub("", t.album).strip() or t.album)
                     ident = (t.album.casefold(), t.albumartist.casefold()) if t.album else ()
-                    groups.setdefault(ident, []).append((f, t))
+                    groups.setdefault(ident, []).append((f, t, disc or t.disc))
                 alone = len(groups) == 1
 
                 made: dict[str, Track] = {}
                 for ident, members in groups.items():
                     title = members[0][1].album or d.name
-                    artists = {t.artist for _, t in members if t.artist}
+                    artists = {t.artist for _, t, _ in members if t.artist}
                     artist = (
                         members[0][1].albumartist
                         or (artists.pop() if len(artists) == 1 else VARIOUS if artists else rel.parent.name)
                     )
                     if ident:  # tagged: disc and track number decide the order
-                        members.sort(key=lambda m: (m[1].disc, m[1].track or 10**6, m[0].name.lower()))
+                        members.sort(key=lambda m: (m[2], m[1].track or 10**6, m[0].name.lower()))
                     tracks = tuple(
                         Track(
                             path=f.relative_to(self.root).as_posix(),
@@ -233,20 +269,27 @@ class Library:
                             artist=t.artist,
                             album=title,
                             cover=image if alone else None,
+                            disc=disc,
                         )
-                        for f, t in members
+                        for f, t, disc in members
                     )
                     made.update((t.path, t) for t in tracks)
                     key = folder if alone else f"{folder}//{artist}//{title}"
                     while key in keys:
                         key += " (2)"
                     keys.add(key)
-                    albums.append(Item("album", key, title, artist, tracks, folder=folder, whole_folder=alone))
-                    years[key] = min((t.year for _, t in members if t.year), default=0)
+                    album_discs = tuple(n for n in discs if any(t.path.startswith(f"{folder}/{n}/") for t in tracks))
+                    albums.append(
+                        Item("album", key, title, artist, tracks, folder=folder, whole_folder=alone, discs=album_discs)
+                    )
+                    years[key] = min((t.year for _, t, _ in members if t.year), default=0)
                 if not alone:
-                    in_order = tuple(made[f.relative_to(self.root).as_posix()] for f in audio)
+                    in_order = tuple(made[f.relative_to(self.root).as_posix()] for f, _ in audio)
                     lists.append(
-                        Item("list", folder, d.name, rel.parent.name, in_order, folder, whole_folder=True, albums=len(groups))
+                        Item(
+                            "list", folder, d.name, rel.parent.name, in_order, folder,
+                            whole_folder=True, albums=len(groups), discs=discs,
+                        )
                     )
 
         albums.sort(key=lambda a: (a.title.casefold(), a.artist.casefold()))  # alphabetical, as the screen lists them
@@ -264,6 +307,7 @@ class Library:
 
         self.albums, self.artists, self._folder_lists = albums, artists, lists
         self._tracks = {t.path: t for a in albums for t in a.tracks}
+        self._album_of = {t.path: a.key for a in albums for t in a.tracks}
         self._folder_cover = folder_cover
         self.refresh_playlists()
 
@@ -272,7 +316,7 @@ class Library:
         made = []
         for raw in self._read_playlists() if self._read_playlists else []:
             tracks = tuple(self._tracks[p] for p in raw["tracks"] if p in self._tracks)  # gone files are skipped
-            albums = len({Path(t.path).parent.as_posix() + "//" + t.album for t in tracks})
+            albums = len({self._album_of.get(t.path) for t in tracks})
             made.append(Item("list", PLAYLIST_PREFIX + raw["id"], raw["name"], "", tracks, albums=albums))
         lists = sorted(self._folder_lists + [p for p in made if p.tracks], key=lambda a: a.title.lower())
         self.lists, self.playlists = lists, made
@@ -287,6 +331,15 @@ class Library:
 
     def track(self, path: str) -> Track | None:
         return self._tracks.get(path)
+
+    def album_of(self, path: str) -> Item | None:
+        """The album a track belongs to."""
+        key = self._album_of.get(path)
+        return self._by_key.get(key) if key else None
+
+    def albums_by(self, artist: Item) -> list[Item]:
+        """Every album an artist item is made of."""
+        return [a for a in self.albums if a.artist.casefold() == artist.title.casefold()]
 
     def art_source(self, track: Track) -> Path:
         """The file a track's cover comes from first: its folder's image, or the track itself."""
