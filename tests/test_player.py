@@ -58,13 +58,19 @@ def rig(music, tmp_path):
     return app, send, clock, store, playback, storage, tmp_path / "state.json"
 
 
-def linked(rig, album_index=0):
+PER_ITEM = round(COUNTS_PER_REV * 15 / 360) + 1  # knob counts that move a list by one row
+
+
+def linked(rig, album_index=0, from_start=False):
     """Insert CARD and link it to an album through the UI."""
     app, send, *_ = rig
     send(ev.CardInserted(CARD), ev.Press("knob"))  # the first screen asks what kind; Album is first
-    per_item = round(COUNTS_PER_REV * 15 / 360) + 1
     for _ in range(album_index):
-        send(ev.Rotate(per_item), advance=0.5)
+        send(ev.Rotate(PER_ITEM), advance=0.5)
+    send(ev.Press("knob"))
+    assert app.mode is Mode.LINK_START and app.selected == 0  # carry on where it stopped comes first
+    if from_start:
+        send(ev.Rotate(PER_ITEM), advance=0.5)
     send(ev.Press("knob"))
     return app.library.albums[album_index]
 
@@ -217,7 +223,8 @@ def test_menu_unlink_and_relink(rig):
     assert app.mode is Mode.MENU
     send(ev.Press("back"))
     assert app.mode is Mode.PLAYING
-    send(ev.Press("knob_long"), ev.Rotate(11), ev.Press("knob"))  # "Unlink this card"
+    send(ev.Press("knob_long"), ev.Rotate(PER_ITEM), advance=0.5)
+    send(ev.Rotate(PER_ITEM), ev.Press("knob"))  # "Unlink this card"
     assert app.mode is Mode.UNLINKED and store.album_for(CARD) is None
     assert playback.status().state == "stop"
     send(ev.Press("knob"))
@@ -237,6 +244,63 @@ def test_relink_can_be_cancelled_without_interrupting(rig):
     assert app.mode is Mode.LINKING and app.link_kind is None
     send(ev.Press("back"))
     assert app.mode is Mode.PLAYING and app.album == album and app.status.state == "play"
+
+
+def test_card_linked_to_start_from_the_beginning(rig):
+    app, send, clock, store, *_ = rig
+    linked(rig, from_start=True)
+    assert store.from_start(CARD) and app.status.track_index == 0
+    send(ev.Press("next"), advance=7.0)
+    send(ev.CardRemoved(), ev.CardInserted(CARD))
+    assert (app.status.track_index, app.status.state) == (0, "play") and app.status.elapsed < 0.5
+    assert Store(rig[6]).from_start(CARD)  # saved
+
+
+def test_back_from_the_start_question_returns_to_the_list(rig):
+    app, send, clock, store, *_ = rig
+    send(ev.CardInserted(CARD), ev.Press("knob"), ev.Rotate(PER_ITEM), advance=0.5)
+    send(ev.Press("knob"))
+    assert app.mode is Mode.LINK_START and store.album_for(CARD) is None  # nothing linked yet
+    send(ev.Press("back"))
+    assert app.mode is Mode.LINKING and app.link_kind == "album" and app.selected == 1
+
+
+def test_menu_toggles_start_from_the_beginning(rig):
+    app, send, clock, store, *_ = rig
+    linked(rig)
+    send(ev.Press("next"), advance=4.0)
+    send(ev.Press("knob_long"), ev.Rotate(PER_ITEM), ev.Press("knob"))
+    assert app.mode is Mode.MENU and store.from_start(CARD)  # the menu stays open to show it is on
+    assert app._menu_rows()[1][2] == "On"
+    app.render(clock.t)
+    send(ev.Press("back"), ev.CardRemoved(), ev.CardInserted(CARD))
+    assert app.status.track_index == 0 and app.status.elapsed < 0.5
+    send(ev.Press("knob_long"), ev.Rotate(PER_ITEM), ev.Press("knob"))
+    assert not store.from_start(CARD)
+
+
+def test_cards_on_the_same_album_keep_their_own_choice(rig):
+    app, send, clock, store, *_ = rig
+    album = linked(rig, from_start=True)
+    send(ev.CardRemoved())
+    store.link(OTHER, album.key)
+    assert store.from_start(CARD) and not store.from_start(OTHER)
+    send(ev.CardInserted(OTHER), ev.Press("next"), advance=6.0)
+    send(ev.CardRemoved(), ev.CardInserted(OTHER))
+    assert app.status.track_index == 1  # OTHER carries on
+    send(ev.CardRemoved(), ev.CardInserted(CARD))
+    assert app.status.track_index == 0  # CARD starts over
+
+
+def test_relinking_offers_the_cards_current_choice_and_web_links_keep_it(rig):
+    app, send, clock, store, *_ = rig
+    linked(rig, from_start=True)
+    send(ev.Press("knob_long"), ev.Press("knob"), ev.Press("knob"), ev.Press("knob"))  # something else: an album
+    assert app.mode is Mode.LINK_START and app.selected == 1
+    send(ev.Press("knob"))
+    assert store.from_start(CARD)
+    send(ev.WebCommand("link_card", app.library.albums[2].key))
+    assert store.album_for(CARD) == app.library.albums[2].key and store.from_start(CARD)
 
 
 def test_missing_album(rig):
@@ -292,6 +356,8 @@ def test_every_screen_renders(rig):
     send(ev.Press("back"), ev.Rotate(-11), ev.Press("knob"))
     shot()  # linking: albums
     send(ev.Press("knob"))
+    shot()  # linking: where it starts next time
+    send(ev.Press("knob"))
     shot()  # now playing
     send(ev.Rotate(20))
     shot()  # volume overlay
@@ -301,7 +367,7 @@ def test_every_screen_renders(rig):
     shot()  # usb offer
     send(ev.Press("knob"))
     shot()  # transfer
-    assert len(seen) == 10
+    assert len(seen) == 11
 
 
 def test_transfer_can_be_ended_by_holding_the_knob(rig):
@@ -410,7 +476,8 @@ def test_card_links_to_a_list_from_the_device_and_resumes(tagged):
     send(ev.Rotate(per_item), advance=0.5)
     send(ev.Press("knob"))
     assert app.link_kind == "list"
-    send(ev.Press("knob"), advance=25.0)  # the first song is 20 seconds long
+    send(ev.Press("knob"))  # the list
+    send(ev.Press("knob"), advance=25.0)  # carry on where it stopped  # the first song is 20 seconds long
     assert store.album_for(CARD) == "From iTunes" and app.album.kind == "list"
     assert app.status.track_index == 1 and app.status.path == "From iTunes/Heroes.wav"
     assert app.snapshot()["details"] == "David Bowie · From iTunes"

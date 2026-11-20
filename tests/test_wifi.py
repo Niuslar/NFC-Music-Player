@@ -201,7 +201,7 @@ def test_holding_the_knob_with_no_card_opens_settings(rig):
 
 def test_settings_are_not_the_card_menu(rig):
     app, send, *_ = rig
-    send(ev.CardInserted("04AA"), ev.Press("knob"), ev.Press("knob"))  # link the first album
+    send(ev.CardInserted("04AA"), ev.Press("knob"), ev.Press("knob"), ev.Press("knob"))  # link the first album
     send(ev.Press("knob_long"))
     assert app.mode is Mode.MENU
 

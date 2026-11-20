@@ -25,7 +25,11 @@ SCAN_GAP = 1.0
 SCAN_LABEL_SECONDS = 0.8
 MISSING = "The music linked to this card is missing."
 TEST_SCREEN_SECONDS = 5.0
-MENU_ITEMS = ("Link to something else", "Unlink this card", "Close")
+MENU_ITEMS = ("Link to something else", "Always start over", "Unlink this card", "Close")
+START_CHOICES = (  # the question after choosing what a card plays: index 1 means always from the beginning
+    ("Carry on where it left off", "Picks up at the same song and place"),
+    ("Always start over", "Plays from the first song every time"),
+)
 SETTINGS_ITEMS = ("Wi-Fi", "Volume limit", "Manage music", "About this player", "Restart the player", "Close")
 MANAGE_KINDS = (("album", "Albums"), ("artist", "Artists"), ("list", "Lists"), ("song", "All songs"))
 WIFI_ITEMS = ("Wi-Fi", "Connect to a new network", "Show web player", "Back")  # only Wi-Fi and Back while it is off
@@ -42,6 +46,7 @@ class Mode(Enum):
     PLAYING = auto()  # linked card in the slot (playing, paused or finished)
     UNLINKED = auto()  # card in the slot with nothing to play
     LINKING = auto()  # choosing what the card plays: first the kind, then the album, artist or list
+    LINK_START = auto()  # then whether it carries on where it stopped or always starts from the beginning
     MENU = auto()
     TRACKS = auto()  # the tracks of what is playing, to jump to one
     TRANSFER = auto()  # music partition handed to the computer
@@ -61,7 +66,7 @@ class Mode(Enum):
 
 MANAGE_MODES = (Mode.MANAGE, Mode.MANAGE_LIST, Mode.MANAGE_ITEM, Mode.MANAGE_CONFIRM)
 SETTINGS_MODES = (Mode.SETTINGS, Mode.WIFI, Mode.WIFI_SETUP, Mode.VOLUME_LIMIT, Mode.ABOUT) + MANAGE_MODES
-LIST_MODES = (Mode.LINKING, Mode.MENU, Mode.TRACKS, Mode.SETTINGS, Mode.WIFI, Mode.VOLUME_LIMIT) + MANAGE_MODES
+LIST_MODES = (Mode.LINKING, Mode.LINK_START, Mode.MENU, Mode.TRACKS, Mode.SETTINGS, Mode.WIFI, Mode.VOLUME_LIMIT) + MANAGE_MODES
 
 
 class NullStorage:
@@ -89,6 +94,7 @@ class App:
         self.card: str | None = None
         self.album: Item | None = None  # what is playing: an album, an artist or a list
         self.link_kind: str | None = None  # while linking: the kind being browsed, None while choosing the kind
+        self._link_to: Item | None = None  # while asking where it starts: what the card is being linked to
         self.status = Status()
         self.selected = 0
         self.note = ""
@@ -175,6 +181,7 @@ class App:
         if self.mode in LIST_MODES:
             count = {
                 Mode.LINKING: lambda: len(self._link_choices()),
+                Mode.LINK_START: lambda: len(START_CHOICES),
                 Mode.MENU: lambda: len(MENU_ITEMS),
                 Mode.TRACKS: lambda: len(self.album.tracks),
                 Mode.SETTINGS: lambda: len(SETTINGS_ITEMS),
@@ -255,6 +262,10 @@ class App:
             self.link_kind = None
         if self.mode is Mode.LINKING:
             self.selected = min(self.selected, max(len(self._link_choices()) - 1, 0))
+        if self.mode is Mode.LINK_START:
+            self._link_to = self.library.get(self._link_to.key)
+            if self._link_to is None:  # what was being linked has been deleted: choose again
+                self._start_linking()
         if self.mode in MANAGE_MODES:
             self._manage_refresh()
         if self.album is None:
@@ -319,11 +330,16 @@ class App:
             if button == "knob" and self.link_kind is None:
                 self._browse(self._kinds()[self.selected])
             elif button == "knob":
-                self._link(self.library.of(self.link_kind)[self.selected])
+                self._ask_start(self.library.of(self.link_kind)[self.selected])
             elif button == "back" and self.link_kind is not None:
                 self._start_linking(self.link_kind)  # back to choosing the kind
             elif button == "back":
                 self.mode = Mode.PLAYING if self.album else Mode.UNLINKED
+        elif self.mode is Mode.LINK_START:
+            if button == "knob":
+                self._link(self._link_to, from_start=self.selected == 1)
+            elif button == "back":
+                self._browse(self.link_kind, self._link_to)  # back to the list, on what was chosen
         elif self.mode is Mode.UNLINKED:
             if button == "knob":
                 self._start_linking()
@@ -685,7 +701,7 @@ class App:
         if album is None:
             self.mode, self.note = Mode.UNLINKED, MISSING
             return
-        track, elapsed = self.store.resume_point(self.card)
+        track, elapsed = (0, 0.0) if self.store.from_start(self.card) else self.store.resume_point(self.card)
         if track >= len(album.tracks):
             track, elapsed = 0, 0.0
         self.remote = False
@@ -732,23 +748,40 @@ class App:
         self.link_kind = None
         self._open_list(Mode.LINKING, kinds.index(kind) if kind in kinds else 0)
 
-    def _browse(self, kind: str) -> None:
+    def _browse(self, kind: str, at: Item | None = None) -> None:
         items = self.library.of(kind)
+        at = at or self.album
         self.link_kind = kind
-        self._open_list(Mode.LINKING, items.index(self.album) if self.album in items else 0)
+        self._open_list(Mode.LINKING, items.index(at) if at in items else 0)
 
-    def _link(self, album: Item) -> None:
-        self.store.link(self.card, album.key)
+    def _ask_start(self, album: Item) -> None:
+        """Asks whether the card carries on where it stopped (chosen first, the default) or starts over."""
+        self._link_to = album
+        linked = self.store.album_for(self.card) is not None
+        self._open_list(Mode.LINK_START, 1 if linked and self.store.from_start(self.card) else 0)
+
+    def _link(self, album: Item, from_start: bool | None = None) -> None:
+        self.store.link(self.card, album.key, from_start)
+        self._link_to = None
         self.remote = False
         self._play(album)
 
     def _menu_choice(self, index: int) -> None:
-        if index == 0:
+        choice = MENU_ITEMS[index]
+        if choice == "Link to something else":
             self._start_linking()
-        elif index == 1:
+        elif choice == "Always start over":
+            self.store.set_from_start(self.card, not self.store.from_start(self.card))  # stays in the menu
+        elif choice == "Unlink this card":
             self._unlink()
         else:
             self.mode = Mode.PLAYING
+
+    def _menu_rows(self) -> list[tuple[str, str, str]]:
+        on = self.store.from_start(self.card)
+        subs = {"Always start over": "On: plays from the first song every time" if on else "Off: carries on where it left off"}
+        values = {"Always start over": "On" if on else "Off"}  # for the OLED, which shows no subtitles
+        return [(i, subs.get(i, ""), values.get(i, "")) for i in MENU_ITEMS]
 
     def _unlink(self) -> None:
         self.store.unlink(self.card)
@@ -909,8 +942,10 @@ class App:
                 rows = [(a.title, _count(len(a.tracks), "track")) for a in items]
             article = "an" if self.link_kind[0] == "a" else "a"
             return self.ui.list_screen(f"Choose {article} {self.link_kind} for this card", rows, self.selected)
+        if self.mode is Mode.LINK_START:
+            return self.ui.list_screen("When the card goes back in", list(START_CHOICES), self.selected)
         if self.mode is Mode.MENU:
-            return self.ui.list_screen(self.album.title, [(item, "") for item in MENU_ITEMS], self.selected)
+            return self.ui.list_screen(self.album.title, self._menu_rows(), self.selected)
         if self.mode is Mode.TRACKS:
             playing = self.status.track_index if self.status.state != "stop" else -1
             rows = []

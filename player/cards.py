@@ -1,4 +1,5 @@
-"""Persistent state on the small data partition: card links, resume positions, volume and its limit,
+"""Persistent state on the small data partition: card links (each with its own choice of starting
+from the beginning or where it stopped), resume positions, volume and its limit,
 and whether Wi-Fi and the web remote are on.
 
 Every save is atomic (write temp, fsync, rename) so a power cut never corrupts it.
@@ -41,8 +42,27 @@ class Store:
         """Everything some card is linked to, whether or not that card is in the slot."""
         return sorted({c["album"] for c in self._cards.values()})
 
-    def link(self, uid: str, key: str) -> None:
+    def link(self, uid: str, key: str, from_start: bool | None = None) -> None:
+        """Links the card to key, forgetting its old place. from_start None keeps the card's current choice."""
+        if from_start is None:
+            from_start = self.from_start(uid)
         self._cards[uid] = {"album": key}  # the field keeps its old name so existing links still load
+        if from_start:
+            self._cards[uid]["from_start"] = True
+        self.save()
+
+    def from_start(self, uid: str) -> bool:
+        """Whether the card always plays from the beginning; by default it carries on where it stopped."""
+        return self._cards.get(uid, {}).get("from_start") is True
+
+    def set_from_start(self, uid: str, on: bool) -> None:
+        card = self._cards.get(uid)
+        if card is None:
+            return
+        if on:
+            card["from_start"] = True
+        else:
+            card.pop("from_start", None)
         self.save()
 
     def unlink(self, uid: str) -> None:
