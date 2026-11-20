@@ -84,6 +84,13 @@ fi
 # so the phone opens the Wi-Fi page by itself. This only applies to that network.
 mkdir -p /etc/NetworkManager/dnsmasq-shared.d
 echo "address=/#/10.42.0.1" > /etc/NetworkManager/dnsmasq-shared.d/nfc-player.conf
+# Wi-Fi power saving off. On the Zero's small onboard antenna it makes joins fail and drops
+# the connection. 2 means off; it applies to every network that doesn't set its own value,
+# so networks joined later get it too. It takes effect the next time a network connects.
+mkdir -p /etc/NetworkManager/conf.d
+printf '[connection]\nwifi.powersave = 2\n' > /etc/NetworkManager/conf.d/nfc-player-powersave.conf
+# Also switch it off now, so the current connection doesn't wait for a reconnect.
+iw dev wlan0 set power_save off 2>/dev/null || true
 
 echo "== Audio"
 # First sound card that is not HDMI or the built-in headphone output.
