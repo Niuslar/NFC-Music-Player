@@ -375,6 +375,135 @@ def controls_section():
     return s.svg()
 
 
+# ---- key close-up -----------------------------------------------------------------
+# Kailh CPG135001S30 socket and PG1350 pins, from the same drawings as the board's footprint.
+SOCKET_T = 1.85  # socket body behind the board
+SOCKET_U = (-8.0, -1.6)  # across the key, from its centre (footprint y, flipped)
+PINS_U = (-5.9, -3.8)
+PIN_LEN, POST_LEN, POST_D = 3.0, 2.65, 3.2
+
+
+def key_closeup():
+    """One key cut through its middle, front of the case at the top: pulled apart, then put together.
+
+    Drawn with u across the key (sheet x) and d into the case from the brass face (sheet y, down)."""
+    K = 4.0
+    plate_front, plate_back = c.BRASS_T, c.BRASS_T + c.KEY_PLATE
+    top = plate_front - CHOC_TOP  # front of the switch's top housing
+    bottom = plate_back + CHOC_BELOW  # back of the switch = inside face of the panel = front of the board
+    W = 10.5  # half the width drawn
+    s = Sheet(360, 204, "NFC Player: close-up of one key cut through its middle, front of the case at the top, four times full size. Left: pulled apart in the order it goes together. Right: assembled. Millimetres.")
+    PANEL, PART, PIN = "#c9ccc8", "#4a4f4d", "#b9b7ad"
+
+    def R(u0, d0, u1, d1, fill, stroke=INK, sw=0.3, extra=""):
+        s.rect(u0, -d0, u1, -d1, fill, stroke, sw, extra=extra)
+
+    def P(pts, fill, stroke=INK, sw=0.3):
+        s.poly([(u, -d) for u, d in pts], fill, stroke, sw)
+
+    def keycap(o):
+        R(-8.25, top - CHOC_TRAVEL - KEYCAP_T + o, 8.25, top - CHOC_TRAVEL + o, "#2b2f31")
+
+    def switch(o):
+        R(-1.5, top - CHOC_TRAVEL + o, 1.5, top + o, "#8e3b2e", "none")  # stem
+        R(-7.5, top + o, 7.5, plate_front + o, PART)  # top housing, sits on the plate
+        R(-6.9, plate_front + o, 6.9, bottom + o, PART)  # bottom housing, through the plate
+        for d in (-1, 1):  # spring clips
+            P([(d * 6.9, plate_back + o), (d * 7.6, plate_back + 0.4 + o), (d * 6.9, plate_back + 1.6 + o)], PART)
+        R(-POST_D / 2, bottom + o, POST_D / 2, bottom + POST_LEN + o, PART)  # centre post
+        for u in PINS_U:
+            R(u - 0.6, bottom + o, u + 0.6, bottom + PIN_LEN + o, PIN, DIM, 0.15)
+
+    def panel():
+        for sgn in (-1, 1):
+            R(sgn * 8.25, 0, sgn * W, c.BRASS_T, BRASS, "#8a6a2e", 0.2)  # brass, with its slot round the key
+            R(sgn * 8.5, plate_front, sgn * W, c.FRONT_T, PANEL, DIM, 0.2)
+            R(sgn * c.KEY_HOLE / 2, plate_front, sgn * 8.5, plate_back, PANEL, DIM, 0.2)  # the plate
+
+    def board(o):
+        b0, b1 = bottom + o, bottom + c.BOARD_T + o
+        R(-W, b0, W, b1, "#1d5a35", DIM, 0.15)
+        for u0, u1 in ((-POST_D / 2 - 0.1, POST_D / 2 + 0.1), (min(PINS_U) - 1.5, max(PINS_U) + 1.5)):  # holes, as hidden lines
+            R(u0, b0, u1, b1, "#163f27", "#9fc2ad", 0.15, extra='stroke-dasharray="0.6 0.4"')
+        R(SOCKET_U[0] + 0.5, b1, SOCKET_U[1] - 0.5, b1 + 0.15, "#e2e2dc", DIM, 0.1)  # solder
+        R(SOCKET_U[0], b1 + 0.15, SOCKET_U[1], b1 + SOCKET_T, "#e9e6dc", DIM, 0.15)  # socket body
+        for u in PINS_U:  # the spring sleeves the pins push into
+            R(u - 0.75, b1 + 0.15, u + 0.75, b1 + SOCKET_T - 0.35, "#8f8c80", "none")
+
+    def callouts(items, x_text, side):
+        """items: (u, d, text) anchors. Labels stack in a column at sheet x x_text, never closer than 5.4."""
+        items = sorted(items, key=lambda i: s.Y(-i[1]))
+        ys = [s.Y(-d) for _, d, _ in items]
+        for i in range(1, len(ys)):
+            ys[i] = max(ys[i], ys[i - 1] + 5.4)
+        for (u, d, text), y in zip(items, ys):
+            s.line(s.X(u), s.Y(-d), x_text - side * 0.8, y - 1.0, FAINT, 0.18)
+            s.circle(u, -d, 0.9 / K, DIM, stroke="none")
+            s.text(x_text, y, text, 3.5, "start" if side > 0 else "end")
+
+    def arrow(u, d0, d1, label):
+        y0, y1 = s.Y(-d0), s.Y(-d1)
+        s.line(s.X(u), y0, s.X(u), y1 - 1.6, "#d2452d", 0.5)
+        s.out.append(f'<polygon points="{n(s.X(u))},{n(y1)} {n(s.X(u) - 1.3)},{n(y1 - 2.6)} {n(s.X(u) + 1.3)},{n(y1 - 2.6)}" fill="#d2452d"/>')
+        s.text(s.X(u) + 2.2, (y0 + y1) / 2 + 1.2, label, 3.5, "start", "#b3361f", 650)
+
+    # ---- pulled apart ----
+    CAP, SW, BD = -16.0, -10.0, 7.0  # how far each part is drawn from where it ends up
+    s.place(128, 16 - K * (top - CHOC_TRAVEL - KEYCAP_T + CAP), 0, K)
+    s.text(8, 8, "Pulled apart, in the order it goes together", 4.6, "start", INK, 650)
+    panel()
+    board(BD)
+    keycap(CAP)
+    switch(SW)
+    arrow(W + 1.5, top + SW - 1.5, top - 0.5, "1")
+    arrow(W + 1.5, bottom + BD + c.BOARD_T, bottom + 0.6, "2")
+    arrow(W + 1.5, top - CHOC_TRAVEL - KEYCAP_T + CAP + 1, top - CHOC_TRAVEL + SW, "3")
+    callouts([
+        (-8.25, top - CHOC_TRAVEL - KEYCAP_T / 2 + CAP, "Keycap"),
+        (-7.5, top + 1 + SW, "Switch (Choc V1)"),
+        (-6.9, plate_back + 0.6 + SW, "Two spring clips"),
+        (min(PINS_U), bottom + PIN_LEN + SW, "Two metal pins"),
+        (-W, c.BRASS_T / 2, "Brass face"),
+        (-W, c.FRONT_T - 1, "Front panel"),
+        (-W, bottom + c.BOARD_T / 2 + BD, "Front board"),
+        (SOCKET_U[0], bottom + c.BOARD_T + 1 + BD, "Hot-swap socket, soldered on"),
+    ], s.X(-W - 4), -1)
+    steps = [
+        "1  Push the switch into the panel from the front until both clips click.",
+        "2  Press the board on from behind: the sockets slide onto the pins.",
+        "3  Push the keycap onto the stem. Fit the board's three M2 screws.",
+    ]
+    for i, t in enumerate(steps):
+        s.text(8, s.h - 22 + 5.2 * i, t, 3.5, "start", INK)
+
+    # ---- assembled ----
+    ax = 232
+    s.place(ax, 66 - K * (top - CHOC_TRAVEL - KEYCAP_T), 0, K)
+    s.text(ax - K * W, 8, "Put together", 4.6, "start", INK, 650)
+    panel()
+    board(0)
+    keycap(0)
+    switch(0)
+    callouts([
+        (7.6, plate_back + 0.4, "Clips behind the plate hold the switch"),
+        (c.KEY_HOLE / 2 + 0.4, (plate_front + plate_back) / 2, f"Plate, {n(c.KEY_PLATE)} mm"),
+        (W, c.FRONT_T - 0.6, "Panel takes the push of the key"),
+        (W, bottom + c.BOARD_T / 2, "Board, held by three M2 screws"),
+        (PINS_U[1], bottom + PIN_LEN - 0.3, "Socket grips the pins: the contact"),
+        (POST_D / 2, bottom + POST_LEN - 0.3, "Centre post locates the switch"),
+    ], s.X(W + 4), 1)
+    hold = [
+        "What holds what:",
+        "• The switch clips into the panel.",
+        "• The board is screwed to the panel.",
+        "• The socket only makes the contact.",
+    ]
+    for i, t in enumerate(hold):
+        s.text(ax - K * W, s.Y(-(bottom + c.BOARD_T + SOCKET_T)) + 20 + 5.2 * i, t, 3.5, "start", INK, 650 if i == 0 else 400)
+    s.text(s.w / 2, s.h - 3, "Bought parts at nominal sizes. Cut through the middle of the key; both pins are shown, though one sits 5 mm to the side.", 3.0, "middle", DIM)
+    return s.svg()
+
+
 # ---- brass ------------------------------------------------------------------------
 def brass_template():
     b = c.brass_shapes()
@@ -405,6 +534,7 @@ DRAWINGS = {
     "Rear-Panel.svg": rear_panel,
     "Board-Stack.svg": board_stack,
     "Controls-Section.svg": controls_section,
+    "Key-Closeup.svg": key_closeup,
     "Brass-Front-Template.svg": brass_template,
 }
 

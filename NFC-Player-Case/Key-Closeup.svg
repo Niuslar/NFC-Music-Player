@@ -1,0 +1,111 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="360mm" height="204mm" viewBox="0 0 360 204">
+<title>NFC Player: close-up of one key cut through its middle, front of the case at the top, four times full size. Left: pulled apart in the order it goes together. Right: assembled. Millimetres.</title>
+<rect width="360" height="204" fill="#ffffff"/>
+
+<text x="8" y="8" font-size="4.6" text-anchor="start" fill="#222826" font-weight="650" style="font-family:system-ui,-apple-system,'Segoe UI',sans-serif">Pulled apart, in the order it goes together</text>
+<rect x="86" y="110" width="9" height="3.2" rx="0" fill="#d4b06c" stroke="#8a6a2e" stroke-width="0.2" />
+<rect x="86" y="113.2" width="8" height="13.6" rx="0" fill="#c9ccc8" stroke="#5f6b66" stroke-width="0.2" />
+<rect x="94" y="113.2" width="6.2" height="4.8" rx="0" fill="#c9ccc8" stroke="#5f6b66" stroke-width="0.2" />
+<rect x="161" y="110" width="9" height="3.2" rx="0" fill="#d4b06c" stroke="#8a6a2e" stroke-width="0.2" />
+<rect x="162" y="113.2" width="8" height="13.6" rx="0" fill="#c9ccc8" stroke="#5f6b66" stroke-width="0.2" />
+<rect x="155.8" y="113.2" width="6.2" height="4.8" rx="0" fill="#c9ccc8" stroke="#5f6b66" stroke-width="0.2" />
+<rect x="86" y="154.8" width="84" height="6.4" rx="0" fill="#1d5a35" stroke="#5f6b66" stroke-width="0.15" />
+<rect x="121.2" y="154.8" width="13.6" height="6.4" rx="0" fill="#163f27" stroke="#9fc2ad" stroke-width="0.15" stroke-dasharray="0.6 0.4"/>
+<rect x="98.4" y="154.8" width="20.4" height="6.4" rx="0" fill="#163f27" stroke="#9fc2ad" stroke-width="0.15" stroke-dasharray="0.6 0.4"/>
+<rect x="98" y="161.2" width="21.6" height="0.6" rx="0" fill="#e2e2dc" stroke="#5f6b66" stroke-width="0.1" />
+<rect x="96" y="161.8" width="25.6" height="6.8" rx="0" fill="#e9e6dc" stroke="#5f6b66" stroke-width="0.15" />
+<rect x="101.4" y="161.8" width="6" height="5.4" rx="0" fill="#8f8c80" stroke="none" stroke-width="0.3" />
+<rect x="109.8" y="161.8" width="6" height="5.4" rx="0" fill="#8f8c80" stroke="none" stroke-width="0.3" />
+<rect x="95" y="16" width="66" height="10" rx="0" fill="#2b2f31" stroke="#222826" stroke-width="0.3" />
+<rect x="122" y="50" width="12" height="12" rx="0" fill="#8e3b2e" stroke="none" stroke-width="0.3" />
+<rect x="98" y="62" width="60" height="11.2" rx="0" fill="#4a4f4d" stroke="#222826" stroke-width="0.3" />
+<rect x="100.4" y="73.2" width="55.2" height="13.6" rx="0" fill="#4a4f4d" stroke="#222826" stroke-width="0.3" />
+<polygon points="100.4,78 97.6,79.6 100.4,84.4" fill="#4a4f4d" stroke="#222826" stroke-width="0.3" />
+<polygon points="155.6,78 158.4,79.6 155.6,84.4" fill="#4a4f4d" stroke="#222826" stroke-width="0.3" />
+<rect x="121.6" y="86.8" width="12.8" height="10.6" rx="0" fill="#4a4f4d" stroke="#222826" stroke-width="0.3" />
+<rect x="102" y="86.8" width="4.8" height="12" rx="0" fill="#b9b7ad" stroke="#5f6b66" stroke-width="0.15" />
+<rect x="110.4" y="86.8" width="4.8" height="12" rx="0" fill="#b9b7ad" stroke="#5f6b66" stroke-width="0.15" />
+<line x1="176" y1="56" x2="176" y2="98.4" stroke="#d2452d" stroke-width="0.5" />
+<polygon points="176,100 174.7,97.4 177.3,97.4" fill="#d2452d"/>
+<text x="178.2" y="79.2" font-size="3.5" text-anchor="start" fill="#b3361f" font-weight="650" style="font-family:system-ui,-apple-system,'Segoe UI',sans-serif">1</text>
+<line x1="176" y1="161.2" x2="176" y2="127.6" stroke="#d2452d" stroke-width="0.5" />
+<polygon points="176,129.2 174.7,126.6 177.3,126.6" fill="#d2452d"/>
+<text x="178.2" y="146.4" font-size="3.5" text-anchor="start" fill="#b3361f" font-weight="650" style="font-family:system-ui,-apple-system,'Segoe UI',sans-serif">2</text>
+<line x1="176" y1="20" x2="176" y2="48.4" stroke="#d2452d" stroke-width="0.5" />
+<polygon points="176,50 174.7,47.4 177.3,47.4" fill="#d2452d"/>
+<text x="178.2" y="36.2" font-size="3.5" text-anchor="start" fill="#b3361f" font-weight="650" style="font-family:system-ui,-apple-system,'Segoe UI',sans-serif">3</text>
+<line x1="95" y1="21" x2="70.8" y2="20" stroke="#a9b1ad" stroke-width="0.18" />
+<circle cx="95" cy="21" r="0.45" fill="#5f6b66" stroke="none" stroke-width="0.3"/>
+<text x="70" y="21" font-size="3.5" text-anchor="end" fill="#222826" font-weight="400" style="font-family:system-ui,-apple-system,'Segoe UI',sans-serif">Keycap</text>
+<line x1="98" y1="66" x2="70.8" y2="65" stroke="#a9b1ad" stroke-width="0.18" />
+<circle cx="98" cy="66" r="0.45" fill="#5f6b66" stroke="none" stroke-width="0.3"/>
+<text x="70" y="66" font-size="3.5" text-anchor="end" fill="#222826" font-weight="400" style="font-family:system-ui,-apple-system,'Segoe UI',sans-serif">Switch (Choc V1)</text>
+<line x1="100.4" y1="80.4" x2="70.8" y2="79.4" stroke="#a9b1ad" stroke-width="0.18" />
+<circle cx="100.4" cy="80.4" r="0.45" fill="#5f6b66" stroke="none" stroke-width="0.3"/>
+<text x="70" y="80.4" font-size="3.5" text-anchor="end" fill="#222826" font-weight="400" style="font-family:system-ui,-apple-system,'Segoe UI',sans-serif">Two spring clips</text>
+<line x1="104.4" y1="98.8" x2="70.8" y2="97.8" stroke="#a9b1ad" stroke-width="0.18" />
+<circle cx="104.4" cy="98.8" r="0.45" fill="#5f6b66" stroke="none" stroke-width="0.3"/>
+<text x="70" y="98.8" font-size="3.5" text-anchor="end" fill="#222826" font-weight="400" style="font-family:system-ui,-apple-system,'Segoe UI',sans-serif">Two metal pins</text>
+<line x1="86" y1="111.6" x2="70.8" y2="110.6" stroke="#a9b1ad" stroke-width="0.18" />
+<circle cx="86" cy="111.6" r="0.45" fill="#5f6b66" stroke="none" stroke-width="0.3"/>
+<text x="70" y="111.6" font-size="3.5" text-anchor="end" fill="#222826" font-weight="400" style="font-family:system-ui,-apple-system,'Segoe UI',sans-serif">Brass face</text>
+<line x1="86" y1="122.8" x2="70.8" y2="121.8" stroke="#a9b1ad" stroke-width="0.18" />
+<circle cx="86" cy="122.8" r="0.45" fill="#5f6b66" stroke="none" stroke-width="0.3"/>
+<text x="70" y="122.8" font-size="3.5" text-anchor="end" fill="#222826" font-weight="400" style="font-family:system-ui,-apple-system,'Segoe UI',sans-serif">Front panel</text>
+<line x1="86" y1="158" x2="70.8" y2="157" stroke="#a9b1ad" stroke-width="0.18" />
+<circle cx="86" cy="158" r="0.45" fill="#5f6b66" stroke="none" stroke-width="0.3"/>
+<text x="70" y="158" font-size="3.5" text-anchor="end" fill="#222826" font-weight="400" style="font-family:system-ui,-apple-system,'Segoe UI',sans-serif">Front board</text>
+<line x1="96" y1="165.2" x2="70.8" y2="164.2" stroke="#a9b1ad" stroke-width="0.18" />
+<circle cx="96" cy="165.2" r="0.45" fill="#5f6b66" stroke="none" stroke-width="0.3"/>
+<text x="70" y="165.2" font-size="3.5" text-anchor="end" fill="#222826" font-weight="400" style="font-family:system-ui,-apple-system,'Segoe UI',sans-serif">Hot-swap socket, soldered on</text>
+<text x="8" y="182" font-size="3.5" text-anchor="start" fill="#222826" font-weight="400" style="font-family:system-ui,-apple-system,'Segoe UI',sans-serif">1  Push the switch into the panel from the front until both clips click.</text>
+<text x="8" y="187.2" font-size="3.5" text-anchor="start" fill="#222826" font-weight="400" style="font-family:system-ui,-apple-system,'Segoe UI',sans-serif">2  Press the board on from behind: the sockets slide onto the pins.</text>
+<text x="8" y="192.4" font-size="3.5" text-anchor="start" fill="#222826" font-weight="400" style="font-family:system-ui,-apple-system,'Segoe UI',sans-serif">3  Push the keycap onto the stem. Fit the board's three M2 screws.</text>
+<text x="190" y="8" font-size="4.6" text-anchor="start" fill="#222826" font-weight="650" style="font-family:system-ui,-apple-system,'Segoe UI',sans-serif">Put together</text>
+<rect x="190" y="96" width="9" height="3.2" rx="0" fill="#d4b06c" stroke="#8a6a2e" stroke-width="0.2" />
+<rect x="190" y="99.2" width="8" height="13.6" rx="0" fill="#c9ccc8" stroke="#5f6b66" stroke-width="0.2" />
+<rect x="198" y="99.2" width="6.2" height="4.8" rx="0" fill="#c9ccc8" stroke="#5f6b66" stroke-width="0.2" />
+<rect x="265" y="96" width="9" height="3.2" rx="0" fill="#d4b06c" stroke="#8a6a2e" stroke-width="0.2" />
+<rect x="266" y="99.2" width="8" height="13.6" rx="0" fill="#c9ccc8" stroke="#5f6b66" stroke-width="0.2" />
+<rect x="259.8" y="99.2" width="6.2" height="4.8" rx="0" fill="#c9ccc8" stroke="#5f6b66" stroke-width="0.2" />
+<rect x="190" y="112.8" width="84" height="6.4" rx="0" fill="#1d5a35" stroke="#5f6b66" stroke-width="0.15" />
+<rect x="225.2" y="112.8" width="13.6" height="6.4" rx="0" fill="#163f27" stroke="#9fc2ad" stroke-width="0.15" stroke-dasharray="0.6 0.4"/>
+<rect x="202.4" y="112.8" width="20.4" height="6.4" rx="0" fill="#163f27" stroke="#9fc2ad" stroke-width="0.15" stroke-dasharray="0.6 0.4"/>
+<rect x="202" y="119.2" width="21.6" height="0.6" rx="0" fill="#e2e2dc" stroke="#5f6b66" stroke-width="0.1" />
+<rect x="200" y="119.8" width="25.6" height="6.8" rx="0" fill="#e9e6dc" stroke="#5f6b66" stroke-width="0.15" />
+<rect x="205.4" y="119.8" width="6" height="5.4" rx="0" fill="#8f8c80" stroke="none" stroke-width="0.3" />
+<rect x="213.8" y="119.8" width="6" height="5.4" rx="0" fill="#8f8c80" stroke="none" stroke-width="0.3" />
+<rect x="199" y="66" width="66" height="10" rx="0" fill="#2b2f31" stroke="#222826" stroke-width="0.3" />
+<rect x="226" y="76" width="12" height="12" rx="0" fill="#8e3b2e" stroke="none" stroke-width="0.3" />
+<rect x="202" y="88" width="60" height="11.2" rx="0" fill="#4a4f4d" stroke="#222826" stroke-width="0.3" />
+<rect x="204.4" y="99.2" width="55.2" height="13.6" rx="0" fill="#4a4f4d" stroke="#222826" stroke-width="0.3" />
+<polygon points="204.4,104 201.6,105.6 204.4,110.4" fill="#4a4f4d" stroke="#222826" stroke-width="0.3" />
+<polygon points="259.6,104 262.4,105.6 259.6,110.4" fill="#4a4f4d" stroke="#222826" stroke-width="0.3" />
+<rect x="225.6" y="112.8" width="12.8" height="10.6" rx="0" fill="#4a4f4d" stroke="#222826" stroke-width="0.3" />
+<rect x="206" y="112.8" width="4.8" height="12" rx="0" fill="#b9b7ad" stroke="#5f6b66" stroke-width="0.15" />
+<rect x="214.4" y="112.8" width="4.8" height="12" rx="0" fill="#b9b7ad" stroke="#5f6b66" stroke-width="0.15" />
+<line x1="261.4" y1="101.6" x2="289.2" y2="100.6" stroke="#a9b1ad" stroke-width="0.18" />
+<circle cx="261.4" cy="101.6" r="0.45" fill="#5f6b66" stroke="none" stroke-width="0.3"/>
+<text x="290" y="101.6" font-size="3.5" text-anchor="start" fill="#222826" font-weight="400" style="font-family:system-ui,-apple-system,'Segoe UI',sans-serif">Plate, 1.2 mm</text>
+<line x1="262.4" y1="105.6" x2="289.2" y2="106" stroke="#a9b1ad" stroke-width="0.18" />
+<circle cx="262.4" cy="105.6" r="0.45" fill="#5f6b66" stroke="none" stroke-width="0.3"/>
+<text x="290" y="107" font-size="3.5" text-anchor="start" fill="#222826" font-weight="400" style="font-family:system-ui,-apple-system,'Segoe UI',sans-serif">Clips behind the plate hold the switch</text>
+<line x1="274" y1="110.4" x2="289.2" y2="111.4" stroke="#a9b1ad" stroke-width="0.18" />
+<circle cx="274" cy="110.4" r="0.45" fill="#5f6b66" stroke="none" stroke-width="0.3"/>
+<text x="290" y="112.4" font-size="3.5" text-anchor="start" fill="#222826" font-weight="400" style="font-family:system-ui,-apple-system,'Segoe UI',sans-serif">Panel takes the push of the key</text>
+<line x1="274" y1="116" x2="289.2" y2="116.8" stroke="#a9b1ad" stroke-width="0.18" />
+<circle cx="274" cy="116" r="0.45" fill="#5f6b66" stroke="none" stroke-width="0.3"/>
+<text x="290" y="117.8" font-size="3.5" text-anchor="start" fill="#222826" font-weight="400" style="font-family:system-ui,-apple-system,'Segoe UI',sans-serif">Board, held by three M2 screws</text>
+<line x1="238.4" y1="122.2" x2="289.2" y2="122.2" stroke="#a9b1ad" stroke-width="0.18" />
+<circle cx="238.4" cy="122.2" r="0.45" fill="#5f6b66" stroke="none" stroke-width="0.3"/>
+<text x="290" y="123.2" font-size="3.5" text-anchor="start" fill="#222826" font-weight="400" style="font-family:system-ui,-apple-system,'Segoe UI',sans-serif">Centre post locates the switch</text>
+<line x1="216.8" y1="123.6" x2="289.2" y2="127.6" stroke="#a9b1ad" stroke-width="0.18" />
+<circle cx="216.8" cy="123.6" r="0.45" fill="#5f6b66" stroke="none" stroke-width="0.3"/>
+<text x="290" y="128.6" font-size="3.5" text-anchor="start" fill="#222826" font-weight="400" style="font-family:system-ui,-apple-system,'Segoe UI',sans-serif">Socket grips the pins: the contact</text>
+<text x="190" y="146.6" font-size="3.5" text-anchor="start" fill="#222826" font-weight="650" style="font-family:system-ui,-apple-system,'Segoe UI',sans-serif">What holds what:</text>
+<text x="190" y="151.8" font-size="3.5" text-anchor="start" fill="#222826" font-weight="400" style="font-family:system-ui,-apple-system,'Segoe UI',sans-serif">• The switch clips into the panel.</text>
+<text x="190" y="157" font-size="3.5" text-anchor="start" fill="#222826" font-weight="400" style="font-family:system-ui,-apple-system,'Segoe UI',sans-serif">• The board is screwed to the panel.</text>
+<text x="190" y="162.2" font-size="3.5" text-anchor="start" fill="#222826" font-weight="400" style="font-family:system-ui,-apple-system,'Segoe UI',sans-serif">• The socket only makes the contact.</text>
+<text x="180" y="201" font-size="3" text-anchor="middle" fill="#5f6b66" font-weight="400" style="font-family:system-ui,-apple-system,'Segoe UI',sans-serif">Bought parts at nominal sizes. Cut through the middle of the key; both pins are shown, though one sits 5 mm to the side.</text>
+</svg>
