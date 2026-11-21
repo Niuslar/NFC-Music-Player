@@ -90,7 +90,12 @@ def stand_ins():
     # screen
     s["screen board"] = (B(LCD_CX - 29, LCD_CX + 29, LCD_Y, LCD_Y + 1.6, LCD_CZ - 17.5, LCD_CZ + 17.5), PCB_LCD, "screen")
     s["screen glass"] = (B(LCD_CX - 24, LCD_CX + 24, c.FRONT_T + 0.1, LCD_Y, LCD_CZ - 17.5, LCD_CZ + 17.5), GLASS, "screen")
-    s["screen connector"] = (B(LCD_CX + 14, LCD_CX + 24, LCD_Y + 1.6, LCD_Y + 7, LCD_CZ - 4, LCD_CZ + 4), (0.92, 0.92, 0.88), "screen")
+    s["screen connector"] = (B(LCD_CX + 21.5, LCD_CX + 29, LCD_Y + 1.6, LCD_Y + 7.6, LCD_CZ - 9, LCD_CZ + 9), (0.92, 0.92, 0.88), "screen")
+    s["screen plug"] = (B(LCD_CX + 29, LCD_CX + 33.5, LCD_Y + 2.1, LCD_Y + 7.1, LCD_CZ - 8.5, LCD_CZ + 8.5), (0.96, 0.96, 0.93), "wires")
+    corners = [(LCD_CX + sx * c.LCD_HOLES[0] / 2, LCD_CZ + sz * c.LCD_HOLES[1] / 2) for sx in (-1, 1) for sz in (-1, 1)]
+    s["screen standoffs"] = (c.union(*[c.cyly(x, z, LCD_Y + 1.6, c.CRADLE_PLATE_Y, 5.0) for x, z in corners]), (0.80, 0.66, 0.30), "screen")
+    s["screen front screws"] = (c.union(*[c.cyly(x, z, LCD_Y - 1.6, LCD_Y, 4.5) for x, z in corners]), METAL, "screen")
+    s["screen screws"] = (c.union(*[c.cyly(x, z, c.CRADLE_PLATE_Y + c.CRADLE_PLATE_T, c.CRADLE_PLATE_Y + c.CRADLE_PLATE_T + 1.7, 4.5) for x, z in corners]), METAL, "screen")
     # front controls
     for i, k in enumerate(c.KEYS_X):
         bottom = c.FRONT_T - 0.05  # the switch's underside, level with the inside of the panel
@@ -154,7 +159,7 @@ def wires():
     lead = BOARD_BACK + 22  # where the leads leave the board's pin headers
     j = {ref: ((header_span(ref)[0] + header_span(ref)[1]) / 2, header_span(ref)[2]) for ref in fb.HEADERS}
     out = {
-        "screen wires": ([(LCD_CX + 19, LCD_Y + 7, LCD_CZ), (LCD_CX + 22, 26, LCD_CZ - 8), (j["J2"][0] - 6, lead + 6, 9), (j["J2"][0], lead, j["J2"][1])], WIRES["screen"], "wires"),
+        "screen wires": ([(LCD_CX + 33.5, LCD_Y + 4.6, LCD_CZ), (LCD_CX + 36, 24, LCD_CZ - 8), (j["J2"][0] - 6, lead + 6, 9), (j["J2"][0], lead, j["J2"][1])], WIRES["screen"], "wires"),
         "reader wires": ([(c.CARD_X, READER_Y + 6.5, c.PN532_CENTRE_Z + 16), (c.CARD_X - 30, READER_Y + 4, 30), (j["J3"][0] + 4, lead + 10, 8), (j["J3"][0], lead, j["J3"][1])], WIRES["reader"], "wires"),
         "encoder wires": ([(c.KNOB_X, c.FRONT_T + 9, c.CTRL_Z - 7), (c.KNOB_X - 8, 24, 18), (j["J4"][0] + 6, lead + 4, 16), (j["J4"][0], lead, j["J4"][1])], WIRES["controls"], "wires"),
         "power key wires": ([(c.POWER_X, c.FRONT_T + 24, c.CTRL_Z), (c.POWER_X + 6, 30, 14), (26, 28, 9), (j["J5"][0] - 4, lead + 4, 14), (j["J5"][0], lead, j["J5"][1])], WIRES["power"], "wires"),
@@ -420,13 +425,13 @@ SHOTS = {
         "frame": ("cradle", "screen", "brass"),
         "hide": ("lid", "lid screws", "rear", "standoffs", "pi", "dac", "guide", "reader", "wires", "usb lead", "card", "encoder", "knob", "nut", "feet", "ribbon") + KEYS,
         "focus": ("display-cradle",),
-        "move": {"screen": v(0, 0, 36)},
-        "arrows": [((LCD_CX, LCD_Y + 0.8, LCD_CZ + 44), (LCD_CX, LCD_Y + 0.8, LCD_CZ + 24))],
+        "move": {"screen": v(0, 10, 0), "cradle": v(0, 10, 0)},
+        "arrows": [((c.LCD_X + c.CRADLE_BOSS_DX + 6, c.CRADLE_Y + 18, 9), (c.LCD_X + c.CRADLE_BOSS_DX + 6, c.CRADLE_Y + 8, 9))],
         "marks": [
-            ("Cradle: screwed to two floor bosses through slots, so it can slide sideways", (c.LCD_X + c.CRADLE_BOSS_DX, c.CRADLE_Y, 9.8), "cradle"),
-            ("Grooves in both uprights take the board's side edges", (LCD_CX - 30.5, LCD_Y + 0.8, LCD_CZ + 19.5), "cradle"),
-            ("Screen board slides down into the grooves, glass facing the window", (LCD_CX - 26, LCD_Y + 1.6, LCD_CZ + 10), "screen"),
-            ("Its connector faces into the case: its lead goes to the board's LCD header", (LCD_CX + 19, LCD_Y + 7, LCD_CZ + 4), "screen"),
+            ("Bracket: its base slides back and forth over two floor bosses, then its two screws hold it", (c.LCD_X + c.CRADLE_BOSS_DX, c.CRADLE_Y, 9.8), "cradle"),
+            ("The screen's own standoffs, screwed to the bracket from behind through short slots", (LCD_CX - c.LCD_HOLES[0] / 2, c.CRADLE_PLATE_Y + c.CRADLE_PLATE_T + 1.7, LCD_CZ + c.LCD_HOLES[1] / 2), "screen"),
+            ("Glass facing the window; push the bracket forward until it touches the panel", (LCD_CX - 10, LCD_Y, LCD_CZ + 17.5), "screen"),
+            ("Its socket opens sideways; the bracket is open on that side for the plug", (LCD_CX + 25, LCD_Y + 7.6, LCD_CZ + 9), "screen"),
             ("Power key, through the notch in the corner tower", (c.POWER_X, c.FRONT_T + 12, c.CTRL_Z + 6), "power key"),
         ],
     },

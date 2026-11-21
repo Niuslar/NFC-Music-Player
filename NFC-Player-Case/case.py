@@ -46,6 +46,13 @@ LCD_PCB = (58.0, 35.0, 1.6)
 LCD_GLASS = 3.0  # MEASURE: how far the glass stands in front of the board
 LCD_OFF_X = 2.0  # From Waveshare's drawing, with the pin pads on the left. Centre of the lit area minus centre of the board, seen from the
 LCD_OFF_Z = 0.0  #          front; x to the right, z up. Room for -4 to +4 in x, -2 to +2 in z.
+# The screen screws onto an upright bracket through the four brass standoffs it comes with.
+# Its 8-pin PH2.0 socket lies along the right edge of its back (seen from the front) and opens
+# sideways, so the bracket is open on that side for the plug and its wires.
+LCD_HOLES = (52.0, 30.0)  # MEASURE: centres of the board's four corner holes, across and up
+LCD_STANDOFF = 6.0  # MEASURE: how far the standoffs stand out behind the board
+CLEAR_M25 = 2.9
+CRADLE_TRAVEL = (2.5, 4.0)  # how far the bracket slides forward and back from where the glass meets the panel
 KEYS_X = (37.0, 55.0, 73.0, 91.0)  # Kailh Choc V1 at 18 mm pitch: previous, play, next, back. Left, so the board behind them sits in front of the DAC
 KEY_HOLE = 13.9
 KEY_PLATE = 1.2  # plate thickness the Choc clips need
@@ -141,10 +148,15 @@ DAC_JACKS = (
 USB_X, USB_Z = 130.0, 16.0  # panel-mount USB-C socket
 USB_SLOT = (12.5, 6.5)  # MEASURE: its body opening
 USB_SCREW_PITCH = 17.0  # MEASURE: its two fixing screws
-CRADLE_Y = 14.0  # the screen cradle's two floor screws, 20 mm either side of LCD_X
-CRADLE_BOSS_DX = 20.0
+CRADLE_BOSS_DX = 20.0  # the bracket's two floor screws, either side of LCD_X
+CRADLE_PLATE_Y = FRONT_T + LCD_GLASS + LCD_PCB[2] + LCD_STANDOFF  # front of the bracket's upright, with the glass on the panel
+CRADLE_PLATE_T = 3.0
+CRADLE_BASE_Y = FRONT_T + 0.2 + CRADLE_TRAVEL[0]  # front edge of its base
+CRADLE_Y = 14.0  # the floor screws; their heads pass under the upright through an arch
+CRADLE_ARCH_Z = 11.5  # top of those arches: base, washer and screw head
 
 assert abs(FRONT_T - BRASS_T - KEY_PLATE - CHOC_BELOW_PLATE) < 1e-9, "the board must sit flat on the panel"
+assert CRADLE_Y - CRADLE_TRAVEL[1] - CLEAR_M3 / 2 - 1 >= CRADLE_BASE_Y, "the bracket's slots must stay inside its base"
 assert PI_SLOT_Y[0] <= PI_Y + 3.5 and PI_Y + 26.5 <= PI_SLOT_Y[1], "the standoffs must reach their place in the floor slots"
 
 
@@ -360,16 +372,21 @@ def card_guide():
 
 
 def display_cradle():
-    """Holds the screen against the window. Case coordinates; prints standing as drawn."""
+    """An upright the screen screws onto, on a base that slides back and forth over two floor
+    bosses. Case coordinates, drawn where the glass meets the panel; prints standing as drawn."""
     cx, cz = cradle_centre()
-    half = LCD_PCB[0] / 2 + 0.2
-    board_y = FRONT_T + LCD_GLASS
-    top = cz + LCD_PCB[1] / 2 + 2
-    y0, y1 = FRONT_T + 0.2, board_y + LCD_PCB[2] + 3
-    solid = [box(cx - half - 2.5, cx + half + 2.5, y0, 20, 5, 8)]
-    solid += [box(min(a, b), max(a, b), y0, y1, 5, top) for a, b in ((cx - half - 2.5, cx - half + 1), (cx + half + 2.5, cx + half - 1))]
-    cuts = [box(cx - half, cx + half, board_y - 0.15, board_y + LCD_PCB[2] + 0.15, cz - LCD_PCB[1] / 2 - 0.2, top + 1)]  # the board slides in from above
-    cuts += [prism(slot_x(LCD_X + s * CRADLE_BOSS_DX, CRADLE_Y, 5, CLEAR_M3), 4, 9) for s in (-1, 1)]
+    hx, hz = LCD_HOLES[0] / 2, LCD_HOLES[1] / 2
+    side = hx + 4.5  # past the holes' slots
+    y0, y1 = CRADLE_PLATE_Y, CRADLE_PLATE_Y + CRADLE_PLATE_T
+    solid = [
+        box(cx - side, cx + side, CRADLE_BASE_Y, max(y1, CRADLE_Y + CRADLE_TRAVEL[0] + CLEAR_M3 / 2 + 1.5), 5, 8),  # base
+        box(cx - side, cx + side, y0, y1, 5, cz - hz + 3.5),  # lower bar, below the socket
+        box(cx - side, cx + side, y0, y1, cz + hz - 3.5, cz + hz + 3.5),  # upper bar
+        box(cx - side, cx - hx + 3.5, y0, y1, 5, cz + hz + 3.5),  # left side, behind the pin pads; the right stays open for the plug
+    ]
+    cuts = [hull(cyly(x - 2, z, y0 - 1, y1 + 1, CLEAR_M25), cyly(x + 2, z, y0 - 1, y1 + 1, CLEAR_M25)) for x in (cx - hx, cx + hx) for z in (cz - hz, cz + hz)]  # 2 mm either way to centre the picture
+    cuts += [box(LCD_X + s * CRADLE_BOSS_DX - 4, LCD_X + s * CRADLE_BOSS_DX + 4, y0 - 1, y1 + 1, 8, CRADLE_ARCH_Z) for s in (-1, 1)]  # the screw heads pass under
+    cuts += [prism(slot_y(LCD_X + s * CRADLE_BOSS_DX, CRADLE_Y - CRADLE_TRAVEL[1], CRADLE_Y + CRADLE_TRAVEL[0], CLEAR_M3), 4, 9) for s in (-1, 1)]
     return diff(union(*solid), *cuts)
 
 

@@ -159,7 +159,8 @@ def stand_ins():
     out = {
         "screen board": c.box(cx - 29, cx + 29, pcb_y, pcb_y + 1.6, cz - 17.5, cz + 17.5),
         "screen glass": c.box(cx - 24, cx + 24, c.FRONT_T + 0.05, pcb_y, cz - 17.5, cz + 17.5),
-        "screen plug and wires": c.box(cx - 27, cx + 27, pcb_y + 1.6, pcb_y + 1.6 + 12, cz - 12, cz + 12),
+        "screen socket, plug and wires": c.box(cx + 21, cx + 36, pcb_y + 1.6, pcb_y + 1.6 + 6.5, cz - 9.5, cz + 9.5),
+        "screen standoffs": c.union(*[c.cyly(cx + sx * c.LCD_HOLES[0] / 2, cz + sz * c.LCD_HOLES[1] / 2, pcb_y + 1.65, c.CRADLE_PLATE_Y - 0.05, 5.5) for sx in (-1, 1) for sz in (-1, 1)]),
         "encoder body": c.box(c.KNOB_X - 6.25, c.KNOB_X + 6.25, c.FRONT_T - 1.6, c.FRONT_T + 12, c.CTRL_Z - 6.7, c.CTRL_Z + 6.7),
         "Pi": c.box(c.PI_X, c.PI_X + 65, pi_y, pi_y + 30, c.FLOOR + c.STANDOFF_H, c.FLOOR + c.STANDOFF_H + 1.6 + 9),
         "ribbon plug on the DAC": c.box(c.PI_X + 4, c.PI_X + 61, pi_y - 2, pi_y + 9, dac_z + 1.6 + 2.5, dac_z + 1.6 + 6 + 9),
