@@ -17,7 +17,7 @@ import math
 W, D, H = 200.0, 128.0, 59.0  # outside size, without feet, knob or screw heads
 BODY_H = 56.0  # top of the chassis walls; the lid sits on this
 LID_T = 3.0
-FRONT_T = 4.0  # front panel: 3.2 of plastic behind a 0.8 deep pocket for the brass
+FRONT_T = 4.2  # front panel: 3.4 of plastic behind a 0.8 deep pocket for the brass (see CHOC_BELOW_PLATE)
 REAR_T = 3.0
 WALL = 4.0
 FLOOR = 3.0
@@ -40,13 +40,13 @@ CLEAR_M3 = 3.3
 
 # ---- front controls ---------------------------------------------------------
 CTRL_Z = 29.5  # centre line of screen, keys and knob (half the height)
-LCD_X = 48.4  # centre of the screen window
+LCD_X = 57.5  # centre of the screen window
 LCD_WINDOW = (42.2, 32.0)  # the Waveshare 2 inch panel shows 40.8 x 30.6
 LCD_PCB = (58.0, 35.0, 1.6)
 LCD_GLASS = 3.0  # MEASURE: how far the glass stands in front of the board
 LCD_OFF_X = 2.0  # From Waveshare's drawing, with the pin pads on the left. Centre of the lit area minus centre of the board, seen from the
 LCD_OFF_Z = 0.0  #          front; x to the right, z up. Room for -4 to +4 in x, -2 to +2 in z.
-KEYS_X = (92.5, 110.5, 128.5, 146.5)  # Kailh Choc V1 at 18 mm pitch: previous, play, next, back
+KEYS_X = (93.5, 111.5, 129.5, 147.5)  # Kailh Choc V1 at 18 mm pitch: previous, play, next, back
 KEY_HOLE = 13.9
 KEY_PLATE = 1.2  # plate thickness the Choc clips need
 KNOB_X = 177.0
@@ -54,6 +54,13 @@ KNOB_D = 34.0
 ENCODER_HOLE = 7.3  # M7 bushing
 ENCODER_BODY = (13.5, 14.5)  # pocket for the encoder body; it also stops the body turning
 PANEL_AT_NUT = 1.5  # plastic left where the encoder and socket nuts tighten (plus the brass)
+# Power key: a 12 mm panel push button with its own LED, left of the screen. It must be
+# momentary (not latching). Its body reaches into the case past the front corner tower, so
+# that tower is cut away between TOWER_GAP_Z; its screw pilots stay above and below.
+POWER_X = 14.0
+POWER_HOLE = 12.2  # MEASURE: the button's thread
+POWER_BODY = (16.0, 30.0)  # MEASURE: across its nut, and depth behind the panel including the solder tags
+TOWER_GAP_Z = (16.0, 43.0)
 # Headphones: the DAC Pro's own 3.5 mm socket sits on the same edge as its RCA sockets, so it
 # comes out through RCA_WINDOW with no extra parts. Set REAR_JACK to True only if you want a
 # separate panel socket on a short extension lead, at PHONES_X, PHONES_Z on the rear panel.
@@ -81,19 +88,44 @@ TRAY = (15.0, 20.0, 104.0, 77.0)  # x0, y0, x1, y1 of the card tray in the lid
 TRAY_DEPTH = 5.0
 TRAY_FLOOR = 2.0
 
+# ---- front board ------------------------------------------------------------
+# A printed circuit board lies flat against the inside of the front panel, behind the keys.
+# The four switches plug into hot-swap sockets on its back, and a 40-pin ribbon runs from it
+# to the pins on top of the DAC. front-board/board.py draws it from these numbers.
+# Kailh's PG1350 drawing puts the board 2.2 mm behind the underside of the switch plate, so
+# the panel is exactly that much thicker than brass plus plate and the board needs no spacers.
+CHOC_BELOW_PLATE = 2.2
+BOARD_X = (88.0, 169.0)  # clear of the screen cradle on the left and the encoder on the right
+BOARD_Z = (4.0, 53.0)
+BOARD_T = 1.6
+BOARD_SCREWS = ((91.5, 8.0), (165.0, 8.0), (165.0, 47.0))  # M2 x 4 into pilots in the panel
+PILOT_M2 = 1.6
+PILOT_M2_DEPTH = 2.8
+# The through-hole parts sit on the back of the board and are soldered on its front, so the
+# panel has shallow pockets under their solder joints: x0, z0, x1, z1. board.py checks that
+# every through-hole pad lies inside one.
+BOARD_POCKET_DEPTH = 1.6
+BOARD_POCKETS = (
+    (89.5, 42.0, 148.5, 50.0),  # the 40-pin header
+    (95.0, 5.5, 145.0, 21.0),  # the headers for the screen, reader, knob, power key and OLED
+    (145.5, 5.5, 163.0, 21.5),  # diodes, transistor and resistors
+)
+
 # ---- electronics ------------------------------------------------------------
-# The Pi, the generic 1-to-2 splitter and the DAC Pro form one stack. It stands on four
-# M2.5 standoffs screwed up through two slots in the floor, so it can slide front to back
-# until the DAC's sockets meet the rear panel.
+# The Pi and the DAC Pro form one stack. It stands on four M2.5 standoffs screwed up through
+# two slots in the floor, so it can slide front to back until the DAC's sockets meet the
+# rear panel.
 PI_X = 15.0  # left edge of the Pi; its mounting holes are 58 x 23 mm apart
 PI_SLOT_Y = (40.0, 93.0)
 STANDOFF_H = 5.0
-RCA_WINDOW = (17.0, 78.0, 32.0, 51.0)  # MEASURE: x0, x1, z0, z1 of the opening for the DAC's RCA and headphone sockets
+RCA_WINDOW = (17.0, 78.0, 19.5, 38.5)  # MEASURE: x0, x1, z0, z1 of the opening for the DAC's RCA and headphone sockets
 USB_X, USB_Z = 130.0, 16.0  # panel-mount USB-C socket
 USB_SLOT = (12.5, 6.5)  # MEASURE: its body opening
 USB_SCREW_PITCH = 17.0  # MEASURE: its two fixing screws
 CRADLE_Y = 14.0  # the screen cradle's two floor screws, 20 mm either side of LCD_X
 CRADLE_BOSS_DX = 20.0
+
+assert abs(FRONT_T - BRASS_T - KEY_PLATE - CHOC_BELOW_PLATE) < 1e-9, "the board must sit flat on the panel"
 
 
 # ---- shape tree ---------------------------------------------------------------
@@ -194,7 +226,7 @@ def cradle_centre():
 
 # ---- printed parts ---------------------------------------------------------------
 def chassis():
-    y0, y1 = FRONT_T, D - REAR_T
+    y0, y1 = FRONT_T + 0.001, D - REAR_T  # at exactly 4.2, Blender's exact boolean leaves the chassis open
     boss_x = (LCD_X - CRADLE_BOSS_DX, LCD_X + CRADLE_BOSS_DX)
     solid = union(
         box(0, W, y0, y1, 0, FLOOR),
@@ -205,6 +237,7 @@ def chassis():
         *[cylz(x, CRADLE_Y, FLOOR - 0.1, 5, 8) for x in boss_x],
     )
     cuts = [cylz(x, y, 47, BODY_H + 1, PILOT_M3) for x in LID_SCREW_X for y in LID_SCREW_Y]
+    cuts.append(box(WALL - 0.5, TOWER_X + 1, y0 - 1, y0 + TOWER_Y + 1, *TOWER_GAP_Z))  # room for the power key
     cuts += [cyly(x, z, y0 - 1, y0 + 9, PILOT_M3) for x in SCREW_X for z in SCREW_Z]
     cuts += [cyly(x, z, y1 - 9, y1 + 1, PILOT_M3) for x in SCREW_X for z in SCREW_Z]
     cuts += [cylz(x, GUIDE_Y, 1, 6, PILOT_M3) for x in GUIDE_X]
@@ -251,6 +284,9 @@ def front():
     cuts += [cylz(x, z, -1, FRONT_T + 1, CLEAR_M3) for x in SCREW_X for z in SCREW_Z]
     cuts.append(cylz(KNOB_X, CTRL_Z, -1, FRONT_T + 1, ENCODER_HOLE))
     cuts.append(box(KNOB_X - ENCODER_BODY[0] / 2, KNOB_X + ENCODER_BODY[0] / 2, CTRL_Z - ENCODER_BODY[1] / 2, CTRL_Z + ENCODER_BODY[1] / 2, -1, back - PANEL_AT_NUT))
+    cuts.append(cylz(POWER_X, CTRL_Z, -1, FRONT_T + 1, POWER_HOLE))
+    cuts += [box(x0, x1, z0, z1, -1, BOARD_POCKET_DEPTH) for x0, z0, x1, z1 in BOARD_POCKETS]
+    cuts += [cylz(x, z, -1, PILOT_M2_DEPTH, PILOT_M2) for x, z in BOARD_SCREWS]
     return diff(prism(outline(), 0, FRONT_T), *cuts)
 
 
@@ -354,7 +390,7 @@ def brass_shapes():
             (LCD_X - LCD_WINDOW[0] / 2 - 0.6, CTRL_Z - LCD_WINDOW[1] / 2 - 0.6, LCD_X + LCD_WINDOW[0] / 2 + 0.6, CTRL_Z + LCD_WINDOW[1] / 2 + 0.6),
             (k0, CTRL_Z - 8.25, k1, CTRL_Z + 8.25),
         ],
-        "circles": [(x, z, CLEAR_M3) for x in SCREW_X for z in SCREW_Z] + [(KNOB_X, CTRL_Z, ENCODER_HOLE)],
+        "circles": [(x, z, CLEAR_M3) for x in SCREW_X for z in SCREW_Z] + [(KNOB_X, CTRL_Z, ENCODER_HOLE), (POWER_X, CTRL_Z, POWER_HOLE)],
     }
 
 

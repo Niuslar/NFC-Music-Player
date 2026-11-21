@@ -153,7 +153,8 @@ def stand_ins():
     cx, cz = c.cradle_centre()
     pcb_y = c.FRONT_T + c.LCD_GLASS
     pi_y = 62.0  # with the DAC directly above the Pi and its sockets 6.5 mm from the rear panel
-    dac_z = c.FLOOR + c.STANDOFF_H + 1.6 + 11 + 1.6 + 11  # underside of the DAC board
+    dac_z = c.FLOOR + c.STANDOFF_H + 1.6 + 11  # underside of the DAC board, straight on the Pi
+    board_back = c.FRONT_T + c.BOARD_T  # the back of the front board, where its parts stand
     lean = [(1, 0, 0, 0), (0, 1, c.TAN, -c.TAN * c.H), (0, 0, 1, 0)]
     reader_y = c.READER_Y  # antenna face, reader in the middle grooves
     out = {
@@ -162,7 +163,12 @@ def stand_ins():
         "screen plug and wires": c.box(cx - 27, cx + 27, pcb_y + 1.6, pcb_y + 1.6 + 12, cz - 12, cz + 12),
         "encoder body": c.box(c.KNOB_X - 6.25, c.KNOB_X + 6.25, c.FRONT_T - 1.6, c.FRONT_T + 12, c.CTRL_Z - 6.7, c.CTRL_Z + 6.7),
         "Pi": c.box(c.PI_X, c.PI_X + 65, pi_y, pi_y + 30, c.FLOOR + c.STANDOFF_H, c.FLOOR + c.STANDOFF_H + 1.6 + 9),
-        "splitter": c.box(c.PI_X, c.PI_X + 65, pi_y - 22, pi_y + 56.5, dac_z - 12.6, dac_z - 11),
+        "ribbon plug on the DAC": c.box(c.PI_X + 4, c.PI_X + 61, pi_y - 2, pi_y + 9, dac_z + 1.6 + 2.5, dac_z + 1.6 + 6 + 9),
+        "power key": c.cyly(c.POWER_X, c.CTRL_Z, c.FRONT_T + 0.05, c.FRONT_T + c.POWER_BODY[1], c.POWER_BODY[0]),
+        "front board": c.box(c.BOARD_X[0], c.BOARD_X[1], c.FRONT_T + 0.05, board_back, c.BOARD_Z[0], c.BOARD_Z[1]),
+        "board's headers and sockets": c.box(c.BOARD_X[0] + 0.5, c.BOARD_X[1] - 0.5, board_back, board_back + 9, c.BOARD_Z[0] + 0.5, c.BOARD_Z[1] - 0.5),
+        "ribbon plug on the board": c.box(89.0, 149.0, board_back + 9, board_back + 18, 40.5, 51.5),
+        "leads on the board's headers": c.box(99.0, 143.0, board_back + 8.5, board_back + 23, 6.5, 18.5),
         "DAC board": c.box(c.PI_X, c.PI_X + 65, pi_y, pi_y + 56.5, dac_z, dac_z + 1.6 + 8),
         "DAC sockets": c.box(c.PI_X + 5, c.PI_X + 60, pi_y + 44, c.D - c.REAR_T - 0.3, dac_z + 1.6, dac_z + 1.6 + 13.5),
         "NFC reader": c.xf(lean, c.box(c.CARD_X - 21.35, c.CARD_X + 21.35, reader_y + 0.05, reader_y + 1.65, c.PN532_CENTRE_Z - 20.2, c.PN532_CENTRE_Z + 20.2)),
@@ -174,7 +180,7 @@ def stand_ins():
     if c.REAR_JACK:
         out["headphone socket"] = c.cyly(c.PHONES_X, c.PHONES_Z, c.D - c.REAR_T - 22, c.D - c.REAR_T - 0.05, 10.0)
     for i, k in enumerate(c.KEYS_X):
-        out[f"switch {i + 1}"] = c.box(k - 6.9, k + 6.9, c.FRONT_T - c.BRASS_T - c.KEY_PLATE + 0.05, c.FRONT_T + 8, c.CTRL_Z - 6.9, c.CTRL_Z + 6.9)
+        out[f"switch {i + 1}"] = c.box(k - 6.9, k + 6.9, c.FRONT_T - c.BRASS_T - c.KEY_PLATE + 0.05, c.FRONT_T - 0.05, c.CTRL_Z - 6.9, c.CTRL_Z + 6.9)
     return out
 
 

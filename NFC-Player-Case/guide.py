@@ -21,8 +21,12 @@ HERE = Path(__file__).resolve().parent
 sys.path.insert(0, str(HERE))
 import case as c  # noqa: E402
 
+sys.path.insert(0, str(HERE / "front-board"))
+import board as fb  # noqa: E402
+
 PICS = HERE / "pictures"
-REVISION = "3.4"
+BOARD_FAB = HERE / "front-board" / "fab"
+REVISION = "4.0"
 
 
 def n(v):
@@ -84,6 +88,41 @@ def figure(name, caption, alt):
         f'<figure class="pic" id="pic-{name}"><div class="frame"><img src="{jpeg(PICS / f"{name}.png")}" alt="{html.escape(alt)}" width="{w}" height="{h}">{"".join(svg)}</div>'
         f'<figcaption>{caption}</figcaption><ol class="legend">{items}</ol></figure>'
     )
+
+
+def board_picture(file, caption, alt):
+    return f'<figure class="pic"><div class="frame"><img src="{jpeg(BOARD_FAB / file, 1400, 86)}" alt="{html.escape(alt)}"></div><figcaption>{caption}</figcaption></figure>'
+
+
+def header_table():
+    """What plugs into each of the board's headers, straight from board.py."""
+    leads = {
+        "J2": ("Screen", "The lead that comes with the Waveshare screen: its plug into the screen, its eight female ends onto these pins, by name."),
+        "J3": ("NFC reader", "Six female-to-female leads to the reader's pins of the same names. Leave its IRQ and RSTO pins free."),
+        "J4": ("Knob (encoder)", "Five wires soldered to the encoder, ending in female leads. A, C and B are its three-pin side, C in the middle; the two SW pins are the push switch."),
+        "J5": ("Power key", "Four wires soldered to the button. KEY and GND go to its switch tags (either way round); LED+ and LED− to its lamp tags, the right way round."),
+        "J6": ("OLED (instead of the screen)", "Only if you use the 0.91-inch OLED: four leads to the OLED's pins of the same names."),
+    }
+    rows = []
+    for ref, (title, names, nets, x1, z, value) in fb.HEADERS.items():
+        what, how = leads[ref]
+        pins = " · ".join(f"{i + 1} {html.escape(n)}" for i, n in enumerate(names))
+        rows.append(f"<tr><td>{ref} <strong>{title}</strong></td><td>{what}</td><td><code>{pins}</code></td><td>{how}</td></tr>")
+    return "<table><tr><th>Header</th><th>For</th><th>Pins, from pin 1</th><th>Lead</th></tr>" + "".join(rows) + "</table>"
+
+
+def board_parts_table():
+    rows, seen = [], {}
+    for p in fb.PARTS:
+        key = (p["value"] if p["ref"][0] in "DRQ" else p["footprint"][1], p["desc"])
+        seen.setdefault(key, []).append(p["ref"])
+    names = {"Kailh_Choc_V1_Hotswap": "Kailh Choc hot-swap socket CPG135001S30 (the switch itself is bought with the keys)", "IDC-Header_2x20_P2.54mm_Vertical": "2 × 20 shrouded box header, 2.54 mm, straight",
+             "PinHeader_1x08_P2.54mm_Vertical": "1 × 8 straight pin header, 2.54 mm", "PinHeader_1x06_P2.54mm_Vertical": "1 × 6 straight pin header, 2.54 mm",
+             "PinHeader_1x05_P2.54mm_Vertical": "1 × 5 straight pin header, 2.54 mm", "PinHeader_1x04_P2.54mm_Vertical": "1 × 4 straight pin header, 2.54 mm",
+             "BAT43": "BAT43 Schottky diode (1N5817 also fits)", "2N3904": "2N3904 NPN transistor, TO-92", "1k": "1 kΩ resistor, ¼ W", "220": "220 Ω resistor, ¼ W"}
+    for (name, desc), refs in seen.items():
+        rows.append(f"<tr><td>{', '.join(refs)}</td><td>{names.get(name, name)}</td><td class=\"num\">{len(refs)}</td><td>{html.escape(desc)}</td></tr>")
+    return "<table><tr><th>On the board</th><th>Part</th><th>Qty</th><th>Note</th></tr>" + "".join(rows) + "</table>"
 
 
 def drawing(file, caption):
@@ -171,17 +210,22 @@ def page():
 <header><div><div class="kicker">Mechanical assembly · Revision {REVISION}</div><h1>NFC Player<br>Case</h1>
 <p>Charcoal printed case with a brass face set inside a thin printed rim, a card that leans back in a slot, and a tray in the lid for five spare cards.</p>
 <p><strong>{n(c.W)} × {n(c.D)} × {n(c.H)} mm</strong> printed shell. Knob, keycaps, screw heads, feet and cards stand proud of it.</p></div>
-<img src="{jpeg(hero, 1400, 86)}" alt="Rendered case: brass front inside a thin dark rim with a screen, four keys and a large knob; cards in a tray on the lid and one card standing in a slot"></header>
-<nav><a href="#inside">What goes where</a><a href="#changes">Changes</a><a href="#measure">Measure first</a><a href="#print">Print</a><a href="#hardware">Hardware</a><a href="#controls">Keys and knob</a><a href="#assembly">Assembly</a><a href="#drawings">Drawings</a><a href="#brass">Brass</a><a href="#rebuild">Rebuild</a></nav>
+<img src="{jpeg(hero, 1400, 86)}" alt="Rendered case: brass front inside a thin dark rim with a lit power key, a screen, four keys and a large knob; cards in a tray on the lid and one card standing in a slot"></header>
+<nav><a href="#inside">What goes where</a><a href="#changes">Changes</a><a href="#measure">Measure first</a><a href="#print">Print</a><a href="#hardware">Hardware</a><a href="#controls">Keys, knob and power key</a><a href="#board">Front board</a><a href="#assembly">Assembly</a><a href="#drawings">Drawings</a><a href="#brass">Brass</a><a href="#rebuild">Rebuild</a></nav>
 
 <section id="inside"><h2>What goes where</h2>
 <p>The numbers on each picture are explained in the list under it. Hover a number or a line to pick out the other. The bought parts are simple blocks at their nominal size and position: they show where things go and which way round, not exactly what they look like.</p>
 {figure("exploded", "Exploded view from the front left. Lid lifted, front and rear panels pulled out.", "Exploded case: lid above, front panel and brass pulled forward, rear panel pulled back, electronics inside the chassis")}
-{figure("layout-top", "From above with the lid off. Front at the bottom. Wire colours: yellow screen, pink NFC reader, blue knob and switches, black USB.", "Top view of the open case showing the screen, keys, knob, card guide with reader, the board stack and the wire routes")}
-{figure("layout-inside", "From the rear right with the lid and rear panel off.", "Open case from behind, showing the board stack, its sockets, the card guide and reader, and the screen cradle")}
+{figure("layout-top", "From above with the lid off. Front at the bottom. Grey: the ribbon. Lead colours: yellow screen, pink NFC reader, blue knob, orange power key, black USB.", "Top view of the open case showing the power key, screen, front board, keys, knob, card guide with reader, the Pi and DAC, the ribbon and the lead routes")}
+{figure("layout-inside", "From the rear right with the lid and rear panel off.", "Open case from behind, showing the Pi and DAC, the ribbon plug on the DAC, the front board, the card guide and reader, and the screen cradle")}
 </section>
 
 <section id="changes"><h2>Changes in revision {REVISION}</h2><table><tr><th>Area</th><th>Change</th><th>Why</th></tr>
+<tr><td>Front board</td><td>A printed circuit board now lies flat against the inside of the front panel, behind the keys. The switches plug into hot-swap sockets on it, and a 40-way ribbon joins it to the pins on top of the DAC. The screen, reader, knob and power key plug into labelled pin headers on it. See <a href="#board">Front board</a>.</td><td>Replaces a nest of jumper wires on the Pi's header, and nothing on the keys needs soldering.</td></tr>
+<tr><td>Power key</td><td>A 12 mm panel push button with its own light, left of the screen. The front left corner tower is cut away between {n(c.TOWER_GAP_Z[0])} and {n(c.TOWER_GAP_Z[1])} mm for its body.</td><td>The separate power light is gone: the button's ring lights while the Pi is on.</td></tr>
+<tr><td>Front layout</td><td>Screen window moved to {n(c.LCD_X)} mm, keys to {n(c.KEYS_X[0])}–{n(c.KEYS_X[-1])} mm. The knob stays at {n(c.KNOB_X)} mm.</td><td>Room for the power key on the left, and for the board between the screen cradle and the encoder.</td></tr>
+<tr><td>Front panel</td><td>{n(c.FRONT_T)} mm thick (was 4), with pockets for the board's solder joints and three M2 pilots.</td><td>Kailh's drawing puts the board {n(c.CHOC_BELOW_PLATE)} mm behind the underside of the switch plate. The extra 0.2 mm lets the board sit flat on the panel with no spacers.</td></tr>
+<tr><td>Board stack</td><td>The splitter is gone: the DAC goes straight onto the Pi, and the rear window is {n(32.0 - c.RCA_WINDOW[2])} mm lower.</td><td>The DAC Pro's header passes the Pi's pins through on top, so the ribbon plugs straight onto it.</td></tr>
 <tr><td>NFC reader</td><td>The reader now slides into grooved posts {n(c.READER_GAP)} mm behind the card, with spare grooves at {n(c.READER_GAP + min(c.READER_SLOTS))} and {n(c.READER_GAP + max(c.READER_SLOTS))} mm. The shelf and cable tie are gone.</td><td>On the bench the PN532 missed cards held against it and read them reliably at about 20 mm. Before, the antenna sat about 3 mm from the card.</td></tr>
 </table></section>
 
@@ -190,7 +234,8 @@ def page():
 <table><tr><th>Value</th><th>Default</th><th>What to measure</th></tr>
 <tr><td><code>LCD_OFF_X</code>, <code>LCD_OFF_Z</code></td><td>{n(c.LCD_OFF_X)}, {n(c.LCD_OFF_Z)}</td><td>Where the lit area's centre sits relative to the centre of the 58 × 35 mm screen board, seen from the front. Set from Waveshare's outline drawing of the 2inch LCD Module: the picture sits about 2 mm right of centre with the pin pads on the left. Fit the board that way round, or change the sign. The cradle can be offset ±4 mm sideways and ±2 mm vertically.</td></tr>
 <tr><td><code>LCD_GLASS</code></td><td>{n(c.LCD_GLASS)} mm</td><td>How far the glass stands in front of the board. It sets where the cradle's grooves are.</td></tr>
-<tr><td><code>RCA_WINDOW</code></td><td>x {n(x0)}–{n(x1)}, z {n(z0)}–{n(z1)}</td><td>Assemble the Pi, splitter and DAC on 5 mm standoffs and measure where the DAC's RCA and headphone sockets come out. See the <a href="#drawings">board stack drawing</a> for the heights assumed.</td></tr>
+<tr><td><code>RCA_WINDOW</code></td><td>x {n(x0)}–{n(x1)}, z {n(z0)}–{n(z1)}</td><td>Assemble the Pi and DAC on 5 mm standoffs and measure where the DAC's RCA and headphone sockets come out. See the <a href="#drawings">board stack drawing</a> for the heights assumed.</td></tr>
+<tr><td><code>POWER_HOLE</code>, <code>POWER_BODY</code></td><td>{n(c.POWER_HOLE)} mm; {n(c.POWER_BODY[0])} × {n(c.POWER_BODY[1])} mm</td><td>Your power key's thread, the size across its nut, and how far it reaches into the case including its solder tags.</td></tr>
 <tr><td><code>USB_SLOT</code>, <code>USB_SCREW_PITCH</code></td><td>{n(c.USB_SLOT[0])} × {n(c.USB_SLOT[1])} mm, {n(c.USB_SCREW_PITCH)} mm</td><td>The body opening and screw spacing of your panel-mount USB-C socket.</td></tr>
 </table>
 <aside>Print the fit gauge first and try your encoder in it: its thread must pass {n(c.PANEL_AT_NUT + c.BRASS_T)} mm of panel and brass and still take the washer and nut.</aside>
@@ -202,7 +247,7 @@ def page():
 <tr><td>fit-gauge.stl</td><td>Flat, pocket up. Print it first. It has a switch opening, the encoder hole and its pocket, 3.3, 2.55 and 2.9 mm holes, the 55.4 × 1.65 mm card slot and a corner of the brass pocket.</td></tr>
 <tr><td>chassis.stl</td><td>Floor down, no support. Clear the horizontal screw pilots in the towers by hand.</td></tr>
 <tr><td>lid.stl</td><td>Top surface down, with support under the two curved edges.</td></tr>
-<tr><td>front.stl</td><td>Inside face down, brass pocket up, no support.</td></tr>
+<tr><td>front.stl</td><td>Inside face down, brass pocket up, no support. The pockets for the switch clips and the board's solder joints open onto the bed, so their roofs are short bridges.</td></tr>
 <tr><td>rear.stl</td><td>Flat, either face down.</td></tr>
 <tr><td>card-guide.stl</td><td>Foot down, brim if needed. Keep support out of the card channel.</td></tr>
 <tr><td>display-cradle.stl</td><td>Base down, as it stands in the case. No support.</td></tr></table>
@@ -211,21 +256,24 @@ def page():
 <section id="hardware"><h2>Hardware</h2><ul>
 <li>M3 screws that thread straight into the print (try one in the gauge first, and drive by hand): four M3 × 10 for the front (they pass the brass and panel), four M3 × 8 for the rear, four low-profile M3 × 6 for the lid (head at most 6 mm across and 1.5 mm tall), two M3 × 6 for the card guide and two for the screen cradle.</li>
 <li>Four M2.5 standoffs 5 mm tall, four M2.5 × 6 screws from below, and four more on top for the Pi.</li>
-<li>Keys and knob: four switches, four keycaps, an encoder and a knob, all bought. See <a href="#controls">Keys and knob</a> for exactly what to get.</li>
+<li>Three M2 × 4 pan-head screws for the front board, threaded straight into the panel.</li>
+<li>A 40-way IDC ribbon cable, female at both ends, 15–20 cm long (the old IDE-drive style).</li>
+<li>Keys, knob and power key: four switches, four keycaps, an encoder, a knob and a lit push button, all bought. See <a href="#controls">Keys, knob and power key</a> for exactly what to get, and <a href="#board">Front board</a> for the board and its parts.</li>
 <li>A panel-mount USB-C socket on a short lead ending in micro-USB.</li>
-<li>{n(c.BRASS_T)} mm brass sheet and thin double-sided tape. Four feet at least 5 mm tall. Foam pads and female jumper leads for the wiring.</li>
+<li>{n(c.BRASS_T)} mm brass sheet and thin double-sided tape. Four feet at least 5 mm tall. Foam pads, female-to-female jumper leads, and thin hook-up wire for the encoder and power key.</li>
 </ul></section>
 
-<section id="controls"><h2>Keys and knob</h2>
-<p>Nothing you press or turn is printed. The keys are four ordinary keyboard switches with keycaps, and the knob sits on a rotary encoder. All of them are bought parts. The printed front panel is only what they clip or bolt into, and the brass covers its face.</p>
+<section id="controls"><h2>Keys, knob and power key</h2>
+<p>Nothing you press or turn is printed. The keys are four ordinary keyboard switches with keycaps, the knob sits on a rotary encoder, and the power key is a panel push button with a light in it. All of them are bought parts. The printed front panel is only what they clip or bolt into, and the brass covers its face.</p>
 
 <h3>What to buy</h3>
 <table><tr><th>Part</th><th>Get</th><th>Make sure</th></tr>
-<tr><td>Switches ×4</td><td>Kailh Choc <strong>V1</strong> low-profile switches</td><td>Choc V1, not Choc V2 or full-size MX: the panel's {n(c.KEY_HOLE)} mm square holes and {n(c.KEY_PLATE)} mm plate are cut for V1. Buy a spare or two.</td></tr>
+<tr><td>Switches ×4</td><td>Kailh Choc <strong>V1</strong> low-profile switches</td><td>Choc V1, not Choc V2 or full-size MX: the panel's {n(c.KEY_HOLE)} mm square holes, the {n(c.KEY_PLATE)} mm plate and the board's sockets are made for V1. Buy a spare or two.</td></tr>
 <tr><td>Keycaps ×4</td><td>Choc V1 keycaps, 1u</td><td>Made for Choc V1 stems (MX keycaps will not fit), and no bigger than 17.5 × 16.5 mm. The keys sit 18 mm apart, so standard Choc-spaced caps leave a 0.5 mm gap.</td></tr>
 <tr><td>Encoder</td><td>EC11-style rotary encoder with push switch: the Pi Hut one from the build guide, a Bourns PEC11R or an Alps EC11</td><td>An M7 threaded bushing at least 5 mm long, a 6 mm shaft that reaches at least 12 mm past the bushing, and a nut and washer (usually included). Try it in the fit gauge first.</td></tr>
 <tr><td>Knob</td><td>Solid metal knob, up to {n(c.KNOB_D)} mm across, for a 6 mm shaft</td><td>Fixed with a set screw, and its bore matches your shaft's shape (D-flat or knurled).</td></tr>
-<tr><td>Wire</td><td>Thin hook-up wire and female jumper leads</td><td>Neither part has a connector: you solder a wire to each pin.</td></tr></table>
+<tr><td>Power key</td><td>12 mm panel push button with a lit ring or power symbol, black plastic or metal</td><td><strong>Momentary</strong>, not latching or self-locking. The {n(c.POWER_HOLE)} mm hole fits a 12 mm thread; its nut at most {n(c.POWER_BODY[0])} mm across and the body at most {n(c.POWER_BODY[1])} mm deep. An LED rated 3 V, or 5–6 V (those have a resistor inside: fit a wire link for R2 on the board). A 12 V or 24 V one will not light.</td></tr>
+<tr><td>Wire</td><td>Thin hook-up wire and female jumper leads</td><td>The encoder and power key have solder tags, not connectors: solder a wire to each and finish it with a female jumper end for the board's pin headers.</td></tr></table>
 
 <h3>How the keys feel</h3>
 <p>The feel comes entirely from the switch you choose. All Choc V1 switches fit the same holes, so pick by feel:</p>
@@ -237,47 +285,64 @@ def page():
 
 <h3>How they are held</h3>
 <ul>
-<li><strong>Switches:</strong> push in from the front. Two spring clips on each switch snap behind the {n(c.KEY_PLATE)} mm plate, and the pocket behind it leaves them room. No glue or screws. To remove one, squeeze its clips from behind, or use a switch puller from the front.</li>
+<li><strong>Switches:</strong> push in from the front. Two spring clips on each switch snap behind the {n(c.KEY_PLATE)} mm plate, and the pocket behind it leaves them room. Their pins come out at the inside face of the panel and plug into the hot-swap sockets on the <a href="#board">front board</a>, so nothing on them is soldered. To remove one, take the board off, then squeeze its clips from behind, or use a switch puller from the front.</li>
 <li><strong>Encoder:</strong> held by its own nut. It goes in from behind with the threaded bushing through the {n(c.ENCODER_HOLE)} mm hole. On the front, a washer and then the nut clamp the brass and the {n(c.PANEL_AT_NUT)} mm of plastic between the nut and the encoder body. The body also sits in a rectangular pocket, so it cannot turn when you twist the knob.</li>
 <li><strong>Locating lug:</strong> many encoders have a small lug beside the bushing, meant for a hole in a metal panel. The pocket already stops the encoder turning, so nip the lug off flush with side cutters, or the body will not sit flat.</li>
 <li><strong>Knob:</strong> slides onto the shaft and is held by its set screw on the shaft's flat. Leave about 1 mm between the knob and the nut so it never rubs.</li>
+<li><strong>Power key:</strong> goes in from the front through the {n(c.POWER_HOLE)} mm hole; its nut tightens from behind. Its body reaches past the front left corner tower, which is cut away for it between {n(c.TOWER_GAP_Z[0])} and {n(c.TOWER_GAP_Z[1])} mm up.</li>
 </ul>
 {drawing("Controls-Section.svg", "Sections through a key and through the encoder, three times full size.")}
+<aside>The smooth Bourns EM14 encoder mentioned in the build guide as a later upgrade has a different bushing and body, and needs 5 V and two resistor dividers that the board does not have. Check its drawing against the encoder hole and pocket and change <code>ENCODER_HOLE</code> and <code>ENCODER_BODY</code> in <code>case.py</code>, and wire it as the build guide describes.</aside>
+</section>
 
-<h3>Wiring</h3>
-<p>Every key and the encoder only connect a pin to ground, so they need no resistors or power. Pin numbers are the Pi's physical pins, reached through the splitter's spare header (the same as the build guide's step 5).</p>
-<table><tr><th>Part</th><th>Pin on the part</th><th>Pi pin</th></tr>
-<tr><td>Previous</td><td>Either pin; the other to ground</td><td>7 (GPIO 4)</td></tr>
-<tr><td>Play / pause</td><td>Either pin; the other to ground</td><td>11 (GPIO 17)</td></tr>
-<tr><td>Next</td><td>Either pin; the other to ground</td><td>36 (GPIO 16)</td></tr>
-<tr><td>Back</td><td>Either pin; the other to ground</td><td>32 (GPIO 12)</td></tr>
-<tr><td>Keys, shared ground</td><td>One pin of every key, chained together</td><td>14 (ground)</td></tr>
-<tr><td>Encoder</td><td>A, the outer pin on the three-pin side</td><td>29 (GPIO 5)</td></tr>
-<tr><td>Encoder</td><td>C, the middle pin</td><td>6 (ground)</td></tr>
-<tr><td>Encoder</td><td>B, the other outer pin</td><td>31 (GPIO 6)</td></tr>
-<tr><td>Encoder push switch</td><td>One of the two pins on the other side</td><td>37 (GPIO 26)</td></tr>
-<tr><td>Encoder push switch</td><td>The other</td><td>34 (ground)</td></tr></table>
-<aside>The smooth Bourns EM14 encoder mentioned in the build guide as a later upgrade has a different bushing and body. Check its drawing against the encoder hole and pocket, and change <code>ENCODER_HOLE</code> and <code>ENCODER_BODY</code> in <code>case.py</code> before printing.</aside>
+<section id="board"><h2>Front board</h2>
+<p>A small printed circuit board, {n(c.BOARD_X[1] - c.BOARD_X[0])} × {n(c.BOARD_Z[1] - c.BOARD_Z[0])} mm, lies flat against the inside of the front panel behind the four keys. The switches plug into hot-swap sockets on its back. A 40-way ribbon joins its box header to the pins on top of the DAC, so it reaches every pin of the Pi. The screen, NFC reader, knob and power key each plug into a labelled pin header on it. It also carries the two diodes the power key needs, and a transistor that lights the power key from 5 V.</p>
+{board_picture("nfc-front-board-back.png", "The back of the board, where every part goes. Seen from behind, so the keys read back, next, play, previous from left to right.", "Back of the front board: a 40-pin box header along the top, four hot-swap sockets, labelled pin headers for LCD, NFC, PWR, OLED and ENC, two diodes, two resistors and a transistor")}
+{board_picture("nfc-front-board-front.png", "The front of the board, which sits against the panel. Nothing goes on this side except solder joints.", "Front of the front board, marked This side against the panel, showing the solder pads and the holes for the switches")}
+
+<h3>Order it</h3>
+<p>The board is drawn in KiCad by <code>front-board/board.py</code> from the numbers in <code>case.py</code>, so it always matches the panel. Upload <a href="front-board/fab/nfc-front-board-gerbers.zip">front-board/fab/nfc-front-board-gerbers.zip</a> to any board maker (JLCPCB, PCBWay, Aisler and others). Choose 2 layers, 1.6 mm FR-4, any colour and any finish. No assembly service is needed. Five boards usually cost a few pounds plus postage. The schematic is in <a href="front-board/fab/nfc-front-board-schematic.pdf">front-board/fab/nfc-front-board-schematic.pdf</a>, and the KiCad project in <code>front-board/</code> opens in KiCad 10 if you want to change anything.</p>
+
+<h3>Parts on the board</h3>
+{board_parts_table()}
+
+<h3>Build it</h3>
+<ol>
+<li>Every part goes on the back: the side with the part labels. The front is marked <em>This side against the panel</em> and gets nothing but solder joints.</li>
+<li>Solder the four hot-swap sockets first. They are surface-mount: tin one pad, hold the socket in its holes and melt that pad, then solder the other.</li>
+<li>Then the low parts: D1 and D2 with their stripe on the band printed on the board, R1 (1 kΩ), R2 (220 Ω, or a wire link if the power key's LED has its own resistor), and Q1 with its flat side on the flat of its outline.</li>
+<li>Then the pin headers and the 40-pin box header, its notch where the board shows it. Hold each one square while you solder the first pin.</li>
+<li>On the front, trim every lead to 1.5 mm or less. The panel's pockets under the joints are {n(c.BOARD_POCKET_DEPTH)} mm deep, and anything longer stops the board sitting flat.</li>
+<li>With a multimeter, check there is no short between 3.3 V, 5 V and ground: pins 1, 2 and 6 of the box header.</li>
+</ol>
+
+<h3>What plugs in where</h3>
+{header_table()}
+<p>The keys need no leads: their switches plug straight into the sockets. The keys and the knob only pull a pin to ground, and the Pi's own pull-ups hold them high. The power key reaches GPIO 24 and GPIO 3 through D1 and D2, exactly as in the build guide. GPIO 22 still switches the light, through Q1, so nothing changes in the software or in <code>config.txt</code>.</p>
+<aside>The ribbon's red stripe marks pin 1 at both ends. On the board, pin 1 is at the triangle beside the box header, and its notch only lets the plug in one way. On the DAC there is no notch, so check before you push it on: pin 1 is the corner pin with a square pad on the Pi, and with the Pi running it reads 3.3 V, while its neighbour across the header (pin 2) reads 5 V.</aside>
+<aside>If your switches have the two extra plastic posts (the 5-pin kind), the left post of the previous key sits in a half-hole at the board's edge. It is meant to be that way: the board stops just short of the screen cradle.</aside>
 </section>
 
 <section id="assembly"><h2>Assembly</h2>
 {key}
 {step(1, "Fit the brass", "step-1-brass", "Front panel with the brass about to go in. Seen from the front left.", "Front panel with the brass face held in front of its pocket",
 f"<ol><li>Deburr the brass and try it in the pocket. It should drop in with a hair of clearance and sit flush with the rim.</li><li>Stick it down with thin double-sided tape, lining the screw holes up with the panel's.</li></ol>")}
-{step(2, "Fit the switches and the encoder", "step-2-front", "Keys and knob from the front left. One switch, two keycaps, the washer, nut and knob are pulled forward; the encoder is pulled back.", "Front of the panel with a switch, keycaps, washer, nut and knob pulled out in the order they go on",
-"<p>Solder the wires to the switches and the encoder first (see <a href=\"#controls\">Wiring</a>): it is easier before they are in the panel. Then:</p><ol><li>Push each switch in from the front until both clips snap behind the plate. From the front, left to right: previous, play/pause, next, back.</li><li>Press a keycap onto each switch's stem.</li><li>Nip off the encoder's locating lug if it has one. From behind, put the bushing through its hole so the body drops into the rectangular pocket.</li><li>On the front: washer, then nut. Tighten the nut firmly with a spanner, holding the body square in its pocket.</li><li>Slide the knob on, leaving about 1 mm clear of the nut, and tighten its set screw onto the flat of the shaft.</li></ol>",
-more=[("step-2-controls", "The same panel from behind (the inside), so the knob end is on the left. One switch is out of its hole and the encoder is pulled back from its pocket.", "Inside of the front panel with switches clipped in and the encoder about to go into its pocket")])}
-{step(3, "Fit the front panel and the screen", "step-3-screen", "Front left corner of the chassis from behind, with the front panel fitted and the screen lifted above its cradle.", "Screen cradle on the chassis floor behind the window, with the screen board above it ready to slide down",
-"<ol><li>Screw the front panel to the chassis with four M3 × 10 screws.</li><li>Screw the cradle loosely to its two floor bosses with M3 × 6 screws.</li><li>Slide the screen board down into the grooves of both uprights, glass towards the window and connector towards you.</li><li>Look through the window and slide the cradle sideways until the lit area is centred, then tighten its screws. A foam pad between the board and the lid stops it lifting.</li></ol>")}
-{step(4, "Mount the Pi, splitter and DAC", "step-4-stack", "Chassis from the front left with the front panel off for clarity, and the three boards lifted apart.", "Chassis floor with four standoffs in two slots, and the Pi, splitter and DAC stacked above them",
-"<ol><li>Screw four standoffs up through the two floor slots and leave them loose.</li><li>Screw the Pi onto them, header at the front. Plug the splitter onto the Pi and the DAC onto the splitter's rear header, checking pin 1 each time.</li><li>Slide the whole stack back until the DAC's sockets sit just inside the rear window, then tighten the standoffs from below.</li></ol>")}
-{step(5, "Fit the card guide and the NFC reader", "step-5-reader", "Card guide from the rear right, with the reader lifted out of its grooves.", "Card guide with two grooved posts behind the card slot and the NFC reader above them",
+{step(2, "Fit the power key, the switches and the encoder", "step-2-front", "Keys, knob and power key from the front left. One switch, two keycaps, the washer, nut, knob and power key are pulled forward; the encoder and the power key's nut are pulled back.", "Front of the panel with the power key, a switch, keycaps, washer, nut and knob pulled out in the order they go on",
+"<p>Solder four wires to the power key and five to the encoder first, each ending in a female jumper end (see <a href=\"#board\">What plugs in where</a>). It is easier before they are in the panel. Then:</p><ol><li>Push the power key in from the front and tighten its nut from behind, with its tags pointing down or sideways.</li><li>Push each switch in from the front until both clips snap behind the plate. From the front, left to right: previous, play/pause, next, back.</li><li>Press a keycap onto each switch's stem.</li><li>Nip off the encoder's locating lug if it has one. From behind, put the bushing through its hole so the body drops into the rectangular pocket.</li><li>On the front: washer, then nut. Tighten the nut firmly with a spanner, holding the body square in its pocket.</li><li>Slide the knob on, leaving about 1 mm clear of the nut, and tighten its set screw onto the flat of the shaft.</li></ol>",
+more=[("step-2-controls", "The same panel from behind (the inside), so the knob end is on the left. One switch is out of its hole and the encoder is pulled back from its pocket.", "Inside of the front panel with the power key, switches clipped in, and the encoder about to go into its pocket")])}
+{step(3, "Fit the front board", "step-3-board", "The inside of the front panel from behind on the knob side, with the board pulled back off the switches.", "Front board held behind the panel, its sockets lined up with the switches, with the ribbon plug on its box header",
+"<ol><li>Build the board first (see <a href=\"#board\">Front board</a>).</li><li>Press the ribbon's plug onto the board's box header now, red stripe at the triangle. Pushing it on later would push the board off the switches.</li><li>Line the board up behind the keys, hot-swap sockets on the switches' pins, and press it on evenly until it sits flat on the panel.</li><li>Fit its three M2 × 4 screws, snug only: they thread into the plastic.</li><li>A switch that has not gone fully into its socket still feels normal, so test every key in step 7.</li></ol>")}
+{step(4, "Fit the front panel and the screen", "step-4-screen", "Front left corner of the chassis from behind, with the front panel fitted and the screen lifted above its cradle.", "Screen cradle on the chassis floor behind the window, with the screen board above it ready to slide down",
+"<ol><li>Screw the front panel to the chassis with four M3 × 10 screws. The power key's body passes the front left corner tower through its notch.</li><li>Screw the cradle loosely to its two floor bosses with M3 × 6 screws.</li><li>Slide the screen board down into the grooves of both uprights, glass towards the window and connector towards you.</li><li>Look through the window and slide the cradle sideways until the lit area is centred, then tighten its screws. It sits about 1 mm from the front board on its right, so it can only move a little that way. A foam pad between the board and the lid stops it lifting.</li></ol>")}
+{step(5, "Mount the Pi and the DAC", "step-5-stack", "Chassis from the front left with the front panel off for clarity, and the two boards lifted apart.", "Chassis floor with four standoffs in two slots, and the Pi and DAC above them",
+"<ol><li>Screw four standoffs up through the two floor slots and leave them loose.</li><li>Screw the Pi onto them, header at the front. Plug the DAC straight onto the Pi, checking pin 1. The pins of its header stand up through it, ready for the ribbon.</li><li>Slide the stack back until the DAC's sockets sit just inside the rear window, then tighten the standoffs from below.</li></ol>")}
+{step(6, "Fit the card guide and the NFC reader", "step-6-reader", "Card guide from the rear right, with the reader lifted out of its grooves.", "Card guide with two grooved posts behind the card slot and the NFC reader above them",
 f"<ol><li>Screw the guide to the two floor bosses with M3 × 6 screws. The slot leans back toward the top.</li><li>Set the reader's switches for SPI. Slide it down into the middle pair of grooves in the two posts, antenna side toward the card and header at the top. That holds it {n(c.READER_GAP)} mm behind the card, where it reads best; this reader misses cards held right against it.</li><li>Try a card. If reads are unreliable, move the reader to the front or rear grooves ({n(c.READER_GAP + min(c.READER_SLOTS))} or {n(c.READER_GAP + max(c.READER_SLOTS))} mm). The lid stops it lifting out, so no tie or glue is needed.</li></ol>")}
-{step(6, "Wire it", "", "", "",
-"<p>Every wire runs to the splitter's spare header. Follow the pin tables in the build guide (<code>docs/index.html</code>, step 5); the top view under <a href=\"#inside\">What goes where</a> shows the routes.</p><ul><li>Keep wires out from under the card tray, which comes down to 52 mm over the left two thirds of the case, and clear of the card slot.</li><li>Leave enough slack that the front panel can come off with the wires attached.</li></ul>")}
-{step(7, "Fit the rear panel", "step-6-rear", "Rear of the case seen from the right, with the lid off.", "Rear panel with the window showing the DAC's RCA and headphone sockets, and the USB-C socket",
+{step(7, "Wire it", "step-7-wiring", "The open case from the rear left, with the lid and rear panel off.", "Open case from behind with the ribbon folded from the front board down onto the DAC, and leads from the screen, reader, knob and power key to the board",
+"<ol><li>Fold the ribbon back and to the left, and press its other plug onto the pins on top of the DAC, red stripe on pin 1.</li><li>Plug the leads into the board's headers as the table under <a href=\"#board\">What plugs in where</a> says: screen to LCD, reader to NFC, knob to ENC, power key to PWR.</li><li>Keep the ribbon and leads out from under the card tray, which comes down to 52 mm over the left two thirds of the case, and clear of the card slot. Leave enough slack that the front panel can come off with everything attached.</li><li>Before closing up, run the checks in the build guide: every key, the knob, the power key and its light, the screen and a card.</li></ol>")}
+{step(8, "Fit the rear panel", "step-8-rear", "Rear of the case seen from the right, with the lid off.", "Rear panel with the window showing the DAC's RCA and headphone sockets, and the USB-C socket",
 "<ol><li>Mount the USB-C socket in the rear panel and plug its lead into the Pi port marked USB (not PWR IN).</li><li>Screw the rear panel on with four M3 × 8 screws.</li><li>Check that an RCA plug and a headphone plug both seat fully through the window.</li></ol>")}
-{step(8, "Close up", "step-7-close", "Finished case from the front right, with the lid lifted.", "Lid being lowered onto the case between the front and rear panels",
+{step(9, "Close up", "step-9-close", "Finished case from the front right, with the lid lifted.", "Lid being lowered onto the case between the front and rear panels",
 "<ol><li>Before closing for good, test card reading with the brass fitted and five cards in the tray.</li><li>Lower the lid between the panels and fit its four low-profile screws, by hand.</li><li>Stick the feet on, clear of the floor slots and the vents.</li></ol>")}
 </section>
 
@@ -285,11 +350,11 @@ f"<ol><li>Screw the guide to the two floor bosses with M3 × 6 screws. The slot 
 <p>Generated from <code>case.py</code>, so they match the STLs. Millimetres, measured from the bottom left of each view.</p>
 {drawing("Front-Panel.svg", "Front panel as built, seen from the front.")}
 {drawing("Rear-Panel.svg", "Rear panel seen from behind, so the window for the DAC is on the right.")}
-{drawing("Board-Stack.svg", "Side section through the board stack, seen from the left.")}
+{drawing("Board-Stack.svg", "Side section through the Pi and DAC, with the front board and the ribbon, seen from the left.")}
 </section>
 
 <section id="brass"><h2>Brass face</h2>
-<p>Cut it from {n(c.BRASS_T)} mm brass using <a href="Brass-Front-Template.svg">Brass-Front-Template.svg</a>. It is drawn at actual size, seen from the front: print it at 100% and check the scale bar measures exactly 100 mm before using it as a pattern. It has a screen window, one slot for all four switches (the keycaps cover it), the encoder hole and four screw holes, with centre marks for a punch.</p>
+<p>Cut it from {n(c.BRASS_T)} mm brass using <a href="Brass-Front-Template.svg">Brass-Front-Template.svg</a>. It is drawn at actual size, seen from the front: print it at 100% and check the scale bar measures exactly 100 mm before using it as a pattern. It has the power key's hole, a screen window, one slot for all four switches (the keycaps cover it), the encoder hole and four screw holes, with centre marks for a punch.</p>
 {drawing("Brass-Front-Template.svg", "Brass template at actual size.")}
 <p>The rectangular openings have square corners, which suits laser or waterjet cutting, or a fretsaw and file. Deburr, then try it in the printed pocket before sticking it down.</p>
 </section>
@@ -297,11 +362,12 @@ f"<ol><li>Screw the guide to the two floor bosses with M3 × 6 screws. The slot 
 <section id="rebuild"><h2>Rebuilding after a change</h2>
 <p>Edit the values at the top of <code>case.py</code>, then run these from this folder in order. The first rewrites the STLs, the OpenSCAD copy and the brass outline, and reports any part that collides with another. The OpenSCAD file is a generated copy and has not been run through OpenSCAD.</p>
 <p><code>/Applications/Blender.app/Contents/MacOS/Blender -b -P build.py</code><br>
+<code>(cd front-board && /Applications/KiCad/KiCad.app/Contents/Frameworks/Python.framework/Versions/Current/bin/python3 board.py)</code><br>
 <code>python3 drawings.py</code><br>
 <code>/Applications/Blender.app/Contents/MacOS/Blender -b -P pictures.py</code><br>
 <code>/Applications/Blender.app/Contents/MacOS/Blender -b NFC-Player-Render.blend -P render.py</code><br>
 <code>../.venv/bin/python guide.py</code></p>
-<p>The model checks that parts fit each other and the stand-ins. It cannot check print tolerances, your exact boards, heat, or how well the NFC reader works next to brass and stored cards: those need a bench test.</p>
+<p>The second line redraws and reroutes the front board, runs KiCad's electrical and design rules checks, and rewrites its Gerber files. Run it whenever you move the keys, the screws or the board's outline. The model checks that parts fit each other and the stand-ins. It cannot check print tolerances, your exact boards, heat, or how well the NFC reader works next to brass and stored cards: those need a bench test.</p>
 </section>
 </main>"""
     return f'<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>NFC Player Case Assembly</title><style>{CSS}</style></head><body><svg width="0" height="0" style="position:absolute"><defs><marker id="head" viewBox="0 0 10 10" refX="6" refY="5" markerWidth="3.2" markerHeight="3.2" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 z" fill="#d2452d"/></marker></defs></svg>{body}<script>{JS}</script></body></html>'

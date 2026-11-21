@@ -8,7 +8,7 @@
 
 A tabletop music player where each album is a card. Put a card in the slot and its album plays; take it out and it pauses. It is built for a Hi-Fi shelf: a proper DAC, a screen, a knob, and local storage for a whole collection.
 
-![Render of the case design: a charcoal box with a brass front set inside a thin rim, a screen, four keys and a large knob, five cards in a tray on the lid and one card standing in a slot](NFC-Player-Case/NFC-Player-Render.png)
+![Render of the case design: a charcoal box with a brass front set inside a thin rim, a lit power key, a screen, four keys and a large knob, five cards in a tray on the lid and one card standing in a slot](NFC-Player-Case/NFC-Player-Render.png)
 
 *Render of the case design, made from the same model as its printable parts. The case has not been printed yet; the real build is currently parts on a bench.*
 
@@ -33,7 +33,7 @@ A tabletop music player where each album is a card. Put a card in the slot and i
 | NFC reader | PN532 over SPI, with NTAG215 cards |
 | Knob | 24-click rotary encoder with push switch |
 | Buttons | Five momentary push buttons: four for playback, one for power |
-| Power light | An LED and a 330 Ω resistor on GPIO 22, lit from early in boot until the Pi has shut down |
+| Power light | An LED on GPIO 22, lit from early in boot until the Pi has shut down. In the case it is the power key's own light, switched through the front board |
 
 A 0.91-inch 128×32 SSD1306 I2C OLED also works as a stand-in screen, with a compact layout and no cover art. Wire it to 3.3 V, GND, SDA (GPIO 2) and SCL (GPIO 3); it shares that bus with the DAC. Choose the screen and knob on the web remote's **Setup** page (`/setup`), which also tests the screen, DAC, buttons, knob and NFC reader. The settings are saved in `/var/lib/nfc-player/hardware.json` and used after a restart.
 
@@ -81,7 +81,7 @@ Run the tests with:
 - `player/wifi.py` reads the Wi-Fi signal and runs the setup network for joining a new one, through NetworkManager and a small root helper (`system/nfc-player-wifi`).
 - `player/playback.py` talks to [MPD](https://www.musicpd.org/), which does the decoding and audio output.
 - `system/` has the Raspberry Pi setup script and service files.
-- `NFC-Player-Case/` is the 3D-printed case. Every dimension is in `case.py`; Blender scripts build the STLs, pictures and assembly guide from it.
+- `NFC-Player-Case/` is the 3D-printed case. Every dimension is in `case.py`; Blender scripts build the STLs, pictures and assembly guide from it. `front-board/board.py` draws the circuit board behind the keys in KiCad from the same numbers, and `front-board/fab/` holds the files to order it.
 
 ## A note on the web remote
 

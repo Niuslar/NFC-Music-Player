@@ -4,8 +4,8 @@
 <rect width="220" height="93" fill="#ffffff"/>
 
 <polygon points="12.91,67.65 206.79,67.65 208.5,65.94 208.5,16 208.46,15.39 208.34,14.8 208.15,14.22 207.88,13.67 207.54,13.17 207.14,12.71 206.68,12.31 206.17,11.97 205.63,11.7 205.05,11.51 204.46,11.39 203.85,11.35 15.85,11.35 15.24,11.39 14.65,11.51 14.07,11.7 13.53,11.97 13.02,12.31 12.56,12.71 12.16,13.17 11.82,13.67 11.55,14.22 11.36,14.8 11.24,15.39 11.2,16 11.2,65.94" fill="none" stroke="#000000" stroke-width="0.15" />
-<rect x="36.55" y="22.9" width="43.4" height="33.2" rx="0" fill="none" stroke="#000000" stroke-width="0.15" />
-<rect x="94.1" y="31.25" width="70.5" height="16.5" rx="0" fill="none" stroke="#000000" stroke-width="0.15" />
+<rect x="45.65" y="22.9" width="43.4" height="33.2" rx="0" fill="none" stroke="#000000" stroke-width="0.15" />
+<rect x="95.1" y="31.25" width="70.5" height="16.5" rx="0" fill="none" stroke="#000000" stroke-width="0.15" />
 <circle cx="16.85" cy="60" r="1.65" fill="none" stroke="#000000" stroke-width="0.15"/>
 <line x1="13.55" y1="60" x2="20.15" y2="60" stroke="#a9b1ad" stroke-width="0.1" />
 <line x1="16.85" y1="56.7" x2="16.85" y2="63.3" stroke="#a9b1ad" stroke-width="0.1" />
@@ -21,6 +21,9 @@
 <circle cx="186.85" cy="39.5" r="3.65" fill="none" stroke="#000000" stroke-width="0.15"/>
 <line x1="179.55" y1="39.5" x2="194.15" y2="39.5" stroke="#a9b1ad" stroke-width="0.1" />
 <line x1="186.85" y1="32.2" x2="186.85" y2="46.8" stroke="#a9b1ad" stroke-width="0.1" />
+<circle cx="23.85" cy="39.5" r="6.1" fill="none" stroke="#000000" stroke-width="0.15"/>
+<line x1="11.65" y1="39.5" x2="36.05" y2="39.5" stroke="#a9b1ad" stroke-width="0.1" />
+<line x1="23.85" y1="27.3" x2="23.85" y2="51.7" stroke="#a9b1ad" stroke-width="0.1" />
 <text x="109.85" y="17.5" font-size="2.6" text-anchor="middle" fill="#a9b1ad" font-weight="400" style="font-family:system-ui,-apple-system,'Segoe UI',sans-serif">FRONT FACE · cut on the black lines</text>
 <line x1="11.2" y1="76.65" x2="111.2" y2="76.65" stroke="#222826" stroke-width="0.3" />
 <line x1="11.2" y1="75.15" x2="11.2" y2="76.65" stroke="#222826" stroke-width="0.2" />

@@ -4,7 +4,7 @@
 
 Front-Panel.svg       the front as built, seen from the front, with the controls' positions
 Rear-Panel.svg        the rear panel seen from behind, with the socket openings
-Board-Stack.svg       a side section through the Pi, splitter and DAC stack, with heights
+Board-Stack.svg       a side section through the Pi and DAC stack and the front board, with heights
 Brass-Front-Template.svg   the brass at actual size, to print at 100% and cut round
 
 Every label sits outside the part, in its own row or column, so none can overlap.
@@ -145,6 +145,7 @@ def front_panel():
         s.rect(k - c.KEY_HOLE / 2, c.CTRL_Z - c.KEY_HOLE / 2, k + c.KEY_HOLE / 2, c.CTRL_Z + c.KEY_HOLE / 2, PAPER)
     s.circle(c.KNOB_X, c.CTRL_Z, c.ENCODER_HOLE, PAPER)
     s.circle(c.KNOB_X, c.CTRL_Z, c.KNOB_D, "none", stroke=DIM, sw=0.2)
+    s.circle(c.POWER_X, c.CTRL_Z, c.POWER_HOLE, PAPER)
     for x in c.SCREW_X:
         for z in c.SCREW_Z:
             s.circle(x, z, c.CLEAR_M3, PAPER)
@@ -152,9 +153,9 @@ def front_panel():
     s.line(s.X(-3), s.Y(c.CTRL_Z), s.X(c.W + 3), s.Y(c.CTRL_Z), DIM, 0.15, 'stroke-dasharray="2 1 0.4 1"')
     s.hdim(0, c.W, s.Y(c.H) - 7, f"{n(c.W)}", s.Y(c.H) - 1)
     s.vdim(0, c.H, s.X(c.W) + 9, f"{n(c.H)}", s.X(c.W) + 1)
-    s.ordinates_x([c.SCREW_X[0], c.LCD_X, *c.KEYS_X, c.KNOB_X, c.SCREW_X[1]], s.Y(0) + 7, s.Y(0) + 1)
+    s.ordinates_x([c.SCREW_X[0], c.POWER_X, c.LCD_X, *c.KEYS_X, c.KNOB_X, c.SCREW_X[1]], s.Y(0) + 7, s.Y(0) + 1)
     s.ordinates_z([c.SCREW_Z[0], c.CTRL_Z, c.SCREW_Z[1]], s.X(0) - 7, s.X(0) - 1, -1)
-    s.text(s.X(0), s.h - 4, f"Centre line {n(c.CTRL_Z)}. Dashed circles: the {n(c.KNOB_D)} mm knob and 6 mm screw heads.", 2.8, "start", DIM)
+    s.text(s.X(0), s.h - 4, f"Centre line {n(c.CTRL_Z)}. Power key hole {n(c.POWER_HOLE)}. Dashed circles: the {n(c.KNOB_D)} mm knob and 6 mm screw heads.", 2.8, "start", DIM)
     return s.svg()
 
 
@@ -192,10 +193,10 @@ def board_stack():
     import importlib
 
     pz = c.FLOOR + c.STANDOFF_H
-    split_z = pz + 1.6 + 11
-    dac_z = split_z + 1.6 + 11
+    dac_z = pz + 1.6 + 11
     pi_y, dac_y1 = 62.0, 62.0 + 56.5
-    s = Sheet(c.D + 120, c.H + 30, "NFC Player: side section through the Pi, splitter and DAC stack, seen from the left. Millimetres.")
+    plug_z = dac_z + 1.6 + 2.5
+    s = Sheet(c.D + 120, c.H + 30, "NFC Player: side section through the Pi and DAC stack, with the front board behind the keys, seen from the left. Millimetres.")
     s.place(60, 12, c.H)
     R = s.rect  # here x is depth from the front face (y), z is height
     R(0, 0, c.FRONT_T, c.H, "#e2e3df", FAINT)
@@ -208,11 +209,17 @@ def board_stack():
     for y in (pi_y + 3.5, pi_y + 26.5):
         R(y - 2.5, c.FLOOR, y + 2.5, pz, "#c9c9c4")
     R(pi_y, pz, pi_y + 30, pz + 1.6, "#2f7a4a")
-    R(pi_y + 1, pz + 1.6, pi_y + 6, split_z, "#1c1c1e")
-    R(pi_y - 22, split_z, pi_y + 8, split_z + 1.6, "#6b4c95")
-    R(pi_y - 20, split_z + 1.6, pi_y - 15, split_z + 10, "#1c1c1e")
-    R(pi_y + 1, split_z + 1.6, pi_y + 6, dac_z, "#1c1c1e")
+    R(pi_y + 1, pz + 1.6, pi_y + 6, dac_z, "#1c1c1e")
     R(pi_y, dac_z, dac_y1, dac_z + 1.6, "#1d5a35")
+    R(pi_y + 1, dac_z + 1.6, pi_y + 6, plug_z, "#9a9a94")  # the header's pins above the DAC
+    R(pi_y - 1, plug_z, pi_y + 8, plug_z + 9, "#55595a")  # ribbon plug
+    bz0, bz1 = c.BOARD_Z
+    R(c.FRONT_T, bz0, c.FRONT_T + c.BOARD_T, bz1, "#1d5a35")
+    hb = c.FRONT_T + c.BOARD_T
+    R(hb, 41.0, hb + 9, 51.0, "#1c1c1e")  # 40-pin header on the board
+    R(hb + 9, 41.0, hb + 18, 51.0, "#55595a")  # its ribbon plug
+    ribbon = f"M {s.X(hb + 18)} {s.Y(46)} C {s.X(hb + 40)} {s.Y(46)} {s.X(pi_y + 3.5)} {s.Y(plug_z + 22)} {s.X(pi_y + 3.5)} {s.Y(plug_z + 9)}"
+    s.out.append(f'<path d="{ribbon}" fill="none" stroke="#8d8f8c" stroke-width="1.2" stroke-dasharray="2 1"/>')
     R(dac_y1 - 12, dac_z + 1.6, dac_y1 + 2.5, dac_z + 14.1, "#1c1c1e")
     lcd_y = c.FRONT_T + c.LCD_GLASS
     R(lcd_y, c.CTRL_Z - 17.5, lcd_y + 1.6, c.CTRL_Z + 17.5, "#1f2f6e")
@@ -238,26 +245,27 @@ def board_stack():
         (c.BODY_H - 4, t1 - 2, f"Card tray, down to {n(c.BODY_H - 4)}"),
         (dac_z + 8, dac_y1 + 1, "DAC sockets, at the rear window"),
         (dac_z + 0.8, dac_y1 - 20, f"DAC board, underside at {n(dac_z)}"),
+        (plug_z + 6, pi_y + 7, "Ribbon plug on the DAC's pins"),
         (pz + 0.8, pi_y + 28, f"Pi, underside at {n(pz)}"),
         (pz - 2.5, pi_y + 26.5, f"Standoffs, {n(c.STANDOFF_H)} tall"),
         (c.FLOOR / 2, c.D - 25, f"Floor, {n(c.FLOOR)} thick"),
     ])
     column(-1, [
-        (c.CTRL_Z + 12, lcd_y + 0.8, "Screen board"),
-        (split_z + 6, pi_y - 17.5, "Splitter's spare header"),
-        (split_z + 0.8, pi_y - 21, f"Splitter, underside at {n(split_z)}"),
+        (51.0, hb + 13, "Ribbon plug on the board"),
+        (c.CTRL_Z + 12, lcd_y + 0.8, "Screen board (nearer the left)"),
+        (bz0 + 4, c.FRONT_T + 0.8, f"Front board, flat on the panel, {n(bz0)}–{n(bz1)}"),
         (pz + 6, pi_y + 3.5, "40-pin header"),
     ])
     s.text(s.X(0), s.Y(-9), "Front", 3, "start", DIM, 600)
     s.text(s.X(c.D), s.Y(-9), "Rear", 3, "end", DIM, 600)
-    s.text(s.X(c.D / 2), s.Y(-9), "Header heights are nominal (11 mm per stacked header). Measure yours.", 2.6, "middle", DIM)
+    s.text(s.X(c.D / 2), s.Y(-9), "Header heights are nominal (11 mm between the boards). Measure yours. Dashed: the ribbon.", 2.6, "middle", DIM)
     return s.svg()
 
 
 # ---- controls ----------------------------------------------------------------------
 # Nominal sizes of the bought parts in the section drawing. Check them against yours.
 CHOC_TOP = 2.8  # Choc V1 housing height in front of the plate
-CHOC_BELOW = 2.2  # housing depth behind the plate
+CHOC_BELOW = c.CHOC_BELOW_PLATE  # housing depth behind the plate
 CHOC_TRAVEL = 3.0
 KEYCAP_T = 2.5
 ENC_BODY = (13.4, 6.5)  # height, depth
@@ -302,11 +310,14 @@ def controls_section():
         s.rect(plate_front, a, plate_back, b, PANEL, DIM, 0.2)
     top = plate_front - CHOC_TOP
     s.rect(top, c.CTRL_Z - 7.5, plate_front, c.CTRL_Z + 7.5, PART)  # top housing, sits on the plate
-    s.rect(plate_front, c.CTRL_Z - 6.9, plate_front + CHOC_BELOW + 0.6, c.CTRL_Z + 6.9, PART)  # bottom housing
+    bottom = plate_back + CHOC_BELOW  # underside of the switch = inside face of the panel
+    s.rect(plate_front, c.CTRL_Z - 6.9, bottom, c.CTRL_Z + 6.9, PART)  # bottom housing
     for d in (-1, 1):  # the clips that catch the back of the plate
         s.poly([(plate_back, c.CTRL_Z + d * 6.9), (plate_back + 0.4, c.CTRL_Z + d * 7.6), (plate_back + 1.6, c.CTRL_Z + d * 6.9)], PART)
-    s.rect(plate_front + CHOC_BELOW + 0.6, c.CTRL_Z - 3.6, plate_front + CHOC_BELOW + 3.6, c.CTRL_Z - 3.0, "#b9b7ad", DIM, 0.15)
-    s.rect(plate_front + CHOC_BELOW + 0.6, c.CTRL_Z + 2.0, plate_front + CHOC_BELOW + 3.6, c.CTRL_Z + 2.6, "#b9b7ad", DIM, 0.15)
+    s.rect(bottom, z0, bottom + c.BOARD_T, z1, "#1d5a35", DIM, 0.15)  # the front board, flat on the panel
+    s.rect(bottom + c.BOARD_T, c.CTRL_Z - 7.25, bottom + c.BOARD_T + 1.85, c.CTRL_Z - 1.0, "#e9e6dc", DIM, 0.15)  # hot-swap socket
+    s.rect(bottom, c.CTRL_Z - 6.5, bottom + 3.0, c.CTRL_Z - 5.3, "#b9b7ad", DIM, 0.15)  # switch pins
+    s.rect(bottom, c.CTRL_Z - 4.4, bottom + 3.0, c.CTRL_Z - 3.2, "#b9b7ad", DIM, 0.15)
     s.rect(top - CHOC_TRAVEL, c.CTRL_Z - 1.5, top, c.CTRL_Z + 1.5, "#8e3b2e", "none")  # stem
     s.rect(top - CHOC_TRAVEL - KEYCAP_T, c.CTRL_Z - 8.25, top - CHOC_TRAVEL, c.CTRL_Z + 8.25, "#2b2f31")
     callouts(0, [
@@ -317,7 +328,8 @@ def controls_section():
     ], [
         (c.CTRL_Z + 12, c.FRONT_T, "Front panel"),
         (c.CTRL_Z + 7.3, plate_back + 0.4, f"Clips catch the back of the {n(c.KEY_PLATE)} mm plate"),
-        (c.CTRL_Z + 2.3, plate_front + CHOC_BELOW + 3.6, "Two pins: solder a wire to each"),
+        (c.CTRL_Z + 10, bottom + c.BOARD_T / 2, f"Front board, {n(c.BOARD_T)}, flat on the panel"),
+        (c.CTRL_Z - 4.5, bottom + c.BOARD_T + 1.85, "Pins plug into the hot-swap socket"),
         (c.CTRL_Z - 9, c.FRONT_T - 0.5, "Pocket: room for the clips"),
     ], s.X(-11), s.X(c.FRONT_T + 5))
 
@@ -356,7 +368,7 @@ def controls_section():
         (c.CTRL_Z + 5.1, lug + 0.5, "Locating lug, if fitted: nip it off"),
         (c.CTRL_Z + 0.5, pocket_front - 2.5, f"Threaded bushing, needs ≥ {n(ENC_THREAD)} mm"),
         (c.CTRL_Z - 4, pocket_front + ENC_BODY[1] / 2, "Body in the pocket: it cannot turn"),
-        (c.CTRL_Z - 9, pocket_front + ENC_BODY[1] + 3, "Five pins, to the splitter"),
+        (c.CTRL_Z - 9, pocket_front + ENC_BODY[1] + 3, "Five pins, wired to the board's ENC header"),
     ], s.X(-21.5), s.X(c.FRONT_T + 5))
     s.text(s.w / 2, s.h - 3, "Bought parts at nominal sizes. The nut clamps brass and panel between itself and the encoder body.", 3.3, "middle", DIM)
     return s.svg()
