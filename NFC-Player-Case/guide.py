@@ -26,7 +26,7 @@ import board as fb  # noqa: E402
 
 PICS = HERE / "pictures"
 BOARD_FAB = HERE / "front-board" / "fab"
-REVISION = "4.0"
+REVISION = "4.1"
 
 
 def n(v):
@@ -116,7 +116,7 @@ def board_parts_table():
     for p in fb.PARTS:
         key = (p["value"] if p["ref"][0] in "DRQ" else p["footprint"][1], p["desc"])
         seen.setdefault(key, []).append(p["ref"])
-    names = {"Kailh_Choc_V1_Hotswap": "Kailh Choc hot-swap socket CPG135001S30 (the switch itself is bought with the keys)", "IDC-Header_2x20_P2.54mm_Vertical": "2 × 20 shrouded box header, 2.54 mm, straight",
+    names = {"SW_PUSH_6mm_H5mm": f"6 × 6 mm through-hole tactile switch, {n(c.TACT_H)} mm tall (sold as 6x6x5 mm)", "IDC-Header_2x20_P2.54mm_Vertical": "2 × 20 shrouded box header, 2.54 mm, straight",
              "PinHeader_1x08_P2.54mm_Vertical": "1 × 8 straight pin header, 2.54 mm", "PinHeader_1x06_P2.54mm_Vertical": "1 × 6 straight pin header, 2.54 mm",
              "PinHeader_1x05_P2.54mm_Vertical": "1 × 5 straight pin header, 2.54 mm", "PinHeader_1x04_P2.54mm_Vertical": "1 × 4 straight pin header, 2.54 mm",
              "BAT43": "BAT43 Schottky diode (1N5817 also fits)", "2N3904": "2N3904 NPN transistor, TO-92", "1k": "1 kΩ resistor, ¼ W", "220": "220 Ω resistor, ¼ W"}
@@ -209,7 +209,7 @@ def page():
 <main>
 <header><div><div class="kicker">Mechanical assembly · Revision {REVISION}</div><h1>NFC Player<br>Case</h1>
 <p>Charcoal printed case with a brass face set inside a thin printed rim, a card that leans back in a slot, and a tray in the lid for five spare cards.</p>
-<p><strong>{n(c.W)} × {n(c.D)} × {n(c.H)} mm</strong> printed shell. Knob, keycaps, screw heads, feet and cards stand proud of it.</p></div>
+<p><strong>{n(c.W)} × {n(c.D)} × {n(c.H)} mm</strong> printed shell. Knob, screw heads, feet and cards stand proud of it; the key caps sit flush with the brass.</p></div>
 <img src="{jpeg(hero, 1400, 86)}" alt="Rendered case: brass front inside a thin dark rim with a lit power key, a screen, four keys and a large knob; cards in a tray on the lid and one card standing in a slot"></header>
 <nav><a href="#inside">What goes where</a><a href="#changes">Changes</a><a href="#measure">Measure first</a><a href="#print">Print</a><a href="#hardware">Hardware</a><a href="#controls">Keys, knob and power key</a><a href="#board">Front board</a><a href="#assembly">Assembly</a><a href="#drawings">Drawings</a><a href="#brass">Brass</a><a href="#rebuild">Rebuild</a></nav>
 
@@ -221,14 +221,11 @@ def page():
 </section>
 
 <section id="changes"><h2>Changes in revision {REVISION}</h2><table><tr><th>Area</th><th>Change</th><th>Why</th></tr>
-<tr><td>Front board</td><td>A printed circuit board now lies flat against the inside of the front panel, behind the keys. The switches plug into hot-swap sockets on it, and a 40-way ribbon joins it to the pins on top of the DAC. The screen, reader, knob and power key plug into labelled pin headers on it. See <a href="#board">Front board</a>.</td><td>Replaces a nest of jumper wires on the Pi's header, and nothing on the keys needs soldering.</td></tr>
-<tr><td>Power key</td><td>A 12 mm panel push button with its own light, left of the screen. The front left corner tower is cut away between {n(c.TOWER_GAP_Z[0])} and {n(c.TOWER_GAP_Z[1])} mm for its body.</td><td>The separate power light is gone: the button's ring lights while the Pi is on.</td></tr>
-<tr><td>Front layout</td><td>From the left: power key, keys at {n(c.KEYS_X[0])}–{n(c.KEYS_X[-1])} mm, screen window at {n(c.LCD_X)} mm, knob at {n(c.KNOB_X)} mm. The keys and screen have swapped places.</td><td>The board behind the keys now sits straight in front of the Pi and DAC, so its 40-pin header lines up with the DAC's pins and the ribbon needs no twist.</td></tr>
-<tr><td>Front panel</td><td>{n(c.FRONT_T)} mm thick (was 4), with pockets for the board's solder joints and three M2 pilots.</td><td>Kailh's drawing puts the board {n(c.CHOC_BELOW_PLATE)} mm behind the underside of the switch plate. The extra 0.2 mm lets the board sit flat on the panel with no spacers.</td></tr>
-<tr><td>Board stack</td><td>The splitter is gone: the DAC goes straight onto the Pi.</td><td>The DAC Pro's header passes the Pi's pins through on top, so the ribbon plugs straight onto it.</td></tr>
-<tr><td>Rear panel</td><td>The window is gone. The stack now sits {n(c.PI_Y - 62.0)} mm further back, with the DAC's rear edge {n(c.DAC_GAP)} mm from the rear panel, and each socket sits in its own round hole: Ø{n(jacks[0][3])} for the RCA sockets, Ø{n(jacks[2][3])} for the headphone socket. The floor slots are {n(c.PI_SLOT_Y[1] - 93.0)} mm longer to match.</td><td>A plain panel with three holes looks tidier than a window onto the board.</td></tr>
-<tr><td>NFC reader</td><td>The reader now slides into grooved posts {n(c.READER_GAP)} mm behind the card, with spare grooves at {n(c.READER_GAP + min(c.READER_SLOTS))} and {n(c.READER_GAP + max(c.READER_SLOTS))} mm. The shelf and cable tie are gone.</td><td>On the bench the PN532 missed cards held against it and read them reliably at about 20 mm. Before, the antenna sat about 3 mm from the card.</td></tr>
-</table></section>
+<tr><td>Keys</td><td>The Kailh Choc switches and their keycaps are gone. Each key is now a printed cap, {n(c.KEY_CAP)} mm square, that slides in a hole through the brass and the panel with its face flush with the brass, and presses a 6 × 6 mm tactile switch soldered to the front board. See <a href="#controls">Keys, knob and power key</a>.</td><td>Keyboard switches need 3 mm of travel in front of the panel, so their caps stood about 7.5 mm proud with a gap behind them. The tactile switches click after about {n(c.TACT_TRAVEL)} mm, like a hi-fi button.</td></tr>
+<tr><td>Spacer</td><td>A new printed part, <code>board-spacer.stl</code>, {n(c.SPACER_T)} mm thick, between the panel and the front board. It has an opening round each key for the cap's lip and the switch, and openings for the board's solder joints.</td><td>It sets the switches just behind the caps. The panel itself stays {n(c.FRONT_T)} mm thick, so nothing else moves.</td></tr>
+<tr><td>Front board</td><td>Revision 2: the four hot-swap sockets are replaced by the tactile switches, on the side facing the panel. Its top edge is {n(c.BOARD_Z[1])} mm up (was 53) to clear the card tray now that it sits further back. The board's screws are M2 × 6 (were M2 × 4).</td><td>The switches are soldered straight on, with no sockets.</td></tr>
+<tr><td>Front panel and brass</td><td>A {n(c.KEY_HOLE)} mm square hole for each key in the panel, and {n(c.KEY_BRASS_HOLE)} mm in the brass, with rounded corners. The pockets for the switch clips and the board's solder joints are gone from the panel.</td><td>The holes guide the caps; the solder joints now sit in the spacer.</td></tr>
+</section>
 
 <section id="measure"><h2>Measure first</h2>
 <p>Published drawings did not settle these, so each is a named value at the top of <code>case.py</code> with a sensible default. Measure your parts, change the value and <a href="#rebuild">rebuild</a> <strong>before printing the front or rear panel or cutting brass</strong>.</p>
@@ -246,10 +243,12 @@ def page():
 <section id="print"><h2>Print</h2>
 <p>Millimetres, 100% scale. Start with a 0.4 mm nozzle, 0.20 mm layers, four walls and 20% infill in PETG. The largest part is {n(c.W)} mm long and fits a 220 × 220 mm bed.</p>
 <table><tr><th>File</th><th>Orientation and notes</th></tr>
-<tr><td>fit-gauge.stl</td><td>Flat, pocket up. Print it first. It has a switch opening, the encoder hole and its pocket, 3.3, 2.55 and 2.9 mm holes, the 55.4 × 1.65 mm card slot and a corner of the brass pocket.</td></tr>
+<tr><td>fit-gauge.stl</td><td>Flat, pocket up. Print it first. It has a key cap's square hole, the encoder hole and its pocket, 3.3, 2.55 and 2.9 mm holes, the 55.4 × 1.65 mm card slot and a corner of the brass pocket.</td></tr>
 <tr><td>chassis.stl</td><td>Floor down, no support. Clear the horizontal screw pilots in the towers by hand.</td></tr>
 <tr><td>lid.stl</td><td>Top surface down, with support under the two curved edges.</td></tr>
-<tr><td>front.stl</td><td>Inside face down, brass pocket up, no support. The pockets for the switch clips and the board's solder joints open onto the bed, so their roofs are short bridges.</td></tr>
+<tr><td>front.stl</td><td>Inside face down, brass pocket up, no support.</td></tr>
+<tr><td>board-spacer.stl</td><td>Flat, either face down.</td></tr>
+<tr><td>keycap-previous.stl, keycap-play.stl, keycap-next.stl, keycap-back.stl</td><td>Face down, no support: the face comes out as smooth as the bed. 0.12 mm layers make the symbols sharper. Try one in the fit gauge's square hole: it should slide freely without rattling. Fill the symbols with paint if you like.</td></tr>
 <tr><td>rear.stl</td><td>Flat, either face down.</td></tr>
 <tr><td>card-guide.stl</td><td>Foot down, brim if needed. Keep support out of the card channel.</td></tr>
 <tr><td>display-cradle.stl</td><td>Base down, as it stands in the case. No support.</td></tr></table>
@@ -258,36 +257,31 @@ def page():
 <section id="hardware"><h2>Hardware</h2><ul>
 <li>M3 screws that thread straight into the print (try one in the gauge first, and drive by hand): four M3 × 10 for the front (they pass the brass and panel), four M3 × 8 for the rear, four low-profile M3 × 6 for the lid (head at most 6 mm across and 1.5 mm tall), two M3 × 6 for the card guide and two for the screen bracket, each with a washer.</li><li>Four M2.5 × 5 screws to hold the screen's standoffs to its bracket (check the thread of the standoffs on your screen).</li>
 <li>Four M2.5 standoffs 5 mm tall, four M2.5 × 6 screws from below, and four more on top for the Pi.</li>
-<li>Three M2 × 4 pan-head screws for the front board, threaded straight into the panel.</li>
+<li>Three M2 × 6 pan-head screws for the front board, threaded through the spacer and into the panel.</li>
 <li>A 40-way IDC ribbon cable for the Raspberry Pi, female at both ends with both plugs on the same side of the cable (the usual kind), as short as you can find: about 10 cm. The run is about 6 cm, and a longer cable just bows upward under the lid.</li>
-<li>Keys, knob and power key: four switches, four keycaps, an encoder, a knob and a lit push button, all bought. See <a href="#controls">Keys, knob and power key</a> for exactly what to get, and <a href="#board">Front board</a> for the board and its parts.</li>
+<li>Keys, knob and power key: four tactile switches (they go on the board), an encoder, a knob and a lit push button, all bought; the key caps are printed. See <a href="#controls">Keys, knob and power key</a> for exactly what to get, and <a href="#board">Front board</a> for the board and its parts.</li>
 <li>A panel-mount USB-C socket on a short lead ending in micro-USB.</li>
 <li>{n(c.BRASS_T)} mm brass sheet and thin double-sided tape. Four feet at least 5 mm tall. Foam pads, female-to-female jumper leads, and thin hook-up wire for the encoder and power key.</li>
 </ul></section>
 
 <section id="controls"><h2>Keys, knob and power key</h2>
-<p>Nothing you press or turn is printed. The keys are four ordinary keyboard switches with keycaps, the knob sits on a rotary encoder, and the power key is a panel push button with a light in it. All of them are bought parts. The printed front panel is only what they clip or bolt into, and the brass covers its face.</p>
+<p>The keys are printed caps that press small tactile switches on the front board. The knob sits on a rotary encoder, and the power key is a panel push button with a light in it. Those are bought parts, held by the printed front panel, and the brass covers its face.</p>
 
 <h3>What to buy</h3>
 <table><tr><th>Part</th><th>Get</th><th>Make sure</th></tr>
-<tr><td>Switches ×4</td><td>Kailh Choc <strong>V1</strong> low-profile switches</td><td>Choc V1, not Choc V2 or full-size MX: the panel's {n(c.KEY_HOLE)} mm square holes, the {n(c.KEY_PLATE)} mm plate and the board's sockets are made for V1. Buy a spare or two.</td></tr>
-<tr><td>Keycaps ×4</td><td>Choc V1 keycaps, 1u</td><td>Made for Choc V1 stems (MX keycaps will not fit), and no bigger than 17.5 × 16.5 mm. The keys sit 18 mm apart, so standard Choc-spaced caps leave a 0.5 mm gap.</td></tr>
+<tr><td>Key switches ×4</td><td>6 × 6 mm through-hole tactile switches, {n(c.TACT_H)} mm tall with the button (often sold as "6x6x5 mm")</td><td>Four legs on a 6.5 × 4.5 mm grid, and a body {n(c.TACT_BODY_H)} mm tall. Measure one: if it is not {n(c.TACT_H)} mm from its base to the top of the button, set <code>TACT_H</code> in <code>case.py</code> and rebuild, and the spacer changes to suit. Buy plenty; they come in packs.</td></tr>
 <tr><td>Encoder</td><td>EC11-style rotary encoder with push switch: the Pi Hut one from the build guide, a Bourns PEC11R or an Alps EC11</td><td>An M7 threaded bushing at least 5 mm long, a 6 mm shaft that reaches at least 12 mm past the bushing, and a nut and washer (usually included). Try it in the fit gauge first.</td></tr>
 <tr><td>Knob</td><td>Solid metal knob, up to {n(c.KNOB_D)} mm across, for a 6 mm shaft</td><td>Fixed with a set screw, and its bore matches your shaft's shape (D-flat or knurled).</td></tr>
 <tr><td>Power key</td><td>12 mm panel push button with a lit ring or power symbol, black plastic or metal</td><td><strong>Momentary</strong>, not latching or self-locking. The {n(c.POWER_HOLE)} mm hole fits a 12 mm thread; its nut at most {n(c.POWER_BODY[0])} mm across and the body at most {n(c.POWER_BODY[1])} mm deep. An LED rated 3 V, or 5–6 V (those have a resistor inside: fit a wire link for R2 on the board). A 12 V or 24 V one will not light.</td></tr>
 <tr><td>Wire</td><td>Thin hook-up wire and female jumper leads</td><td>The encoder and power key have solder tags, not connectors: solder a wire to each and finish it with a female jumper end for the board's pin headers.</td></tr></table>
 
 <h3>How the keys feel</h3>
-<p>The feel comes entirely from the switch you choose. All Choc V1 switches fit the same holes, so pick by feel:</p>
-<table><tr><th>Type</th><th>Feel</th><th>Typical Kailh name</th></tr>
-<tr><td>Linear</td><td>Smooth all the way down, no bump and no sound beyond the keycap landing.</td><td>Red</td></tr>
-<tr><td>Tactile</td><td>A soft bump you can feel as it actuates, quiet.</td><td>Brown</td></tr>
-<tr><td>Clicky</td><td>A bump with a crisp, audible click. Closest to a hi-fi push button.</td><td>White (light), Jade or Navy (heavier)</td></tr></table>
-<p>Each has about {n(3.0)} mm of travel and a spring that pushes the key back up. Any of them works with the player, which only sees the contact close.</p>
+<p>A short, firm press with a click after about {n(c.TACT_TRAVEL)} mm, like the buttons on hi-fi gear. The click comes from the switch: cheap packs differ, so if you want a crisper or lighter one, any 6 × 6 mm through-hole switch of the same height fits.</p>
 
 <h3 id="held">How they are held</h3>
 <ul>
-<li><strong>Switches:</strong> push in from the front. Two spring clips on each switch snap behind the {n(c.KEY_PLATE)} mm plate, and the pocket behind it leaves them room. Their pins come out at the inside face of the panel and plug into the hot-swap sockets on the <a href="#board">front board</a>, so nothing on them is soldered. The clips are what hold the switch, and pressing the key pushes on the panel. The sockets only make the contact, and the board's three screws keep them on the pins. To remove one, take the board off, then squeeze its clips from behind, or use a switch puller from the front.</li>
+<li><strong>Key caps:</strong> each slides in its {n(c.KEY_HOLE)} mm square hole, face flush with the brass. A lip round its back stops it at the inside of the panel, so it cannot fall out of the front. Its back is hollow, and the switch stands inside it, {n(c.KEY_FREE)} mm short of the back of the face. The switch's button pushes the cap back out after a press. Nothing holds a cap but the panel and the board, so take the board off to change one.</li>
+<li><strong>Key switches:</strong> soldered to the front of the <a href="#board">front board</a>, the side facing the panel. A printed spacer between panel and board sets the gap, and the board's three screws hold the lot together.</li>
 <li><strong>Encoder:</strong> held by its own nut. It goes in from behind with the threaded bushing through the {n(c.ENCODER_HOLE)} mm hole. On the front, a washer and then the nut clamp the brass and the {n(c.PANEL_AT_NUT)} mm of plastic between the nut and the encoder body. The body also sits in a rectangular pocket, so it cannot turn when you twist the knob.</li>
 <li><strong>Locating lug:</strong> many encoders have a small lug beside the bushing, meant for a hole in a metal panel. The pocket already stops the encoder turning, so nip the lug off flush with side cutters, or the body will not sit flat.</li>
 <li><strong>Knob:</strong> slides onto the shaft and is held by its set screw on the shaft's flat. Leave about 1 mm between the knob and the nut so it never rubs.</li>
@@ -299,9 +293,9 @@ def page():
 </section>
 
 <section id="board"><h2>Front board</h2>
-<p>A small printed circuit board, {n(c.BOARD_X[1] - c.BOARD_X[0])} × {n(c.BOARD_Z[1] - c.BOARD_Z[0])} mm, lies flat against the inside of the front panel behind the four keys. The switches plug into hot-swap sockets on its back. A 40-way ribbon joins its box header to the pins on top of the DAC, so it reaches every pin of the Pi. The screen, NFC reader, knob and power key each plug into a labelled pin header on it. It also carries the two diodes the power key needs, and a transistor that lights the power key from 5 V.</p>
-{board_picture("nfc-front-board-back.png", "The back of the board, where every part goes. Seen from behind, so the keys read back, next, play, previous from left to right.", "Back of the front board: a 40-pin box header along the top, four hot-swap sockets, labelled pin headers for LCD, NFC, PWR, OLED and ENC, two diodes, two resistors and a transistor")}
-{board_picture("nfc-front-board-front.png", "The front of the board, which sits against the panel. Nothing goes on this side except solder joints.", "Front of the front board, marked This side against the panel, showing the solder pads and the holes for the switches")}
+<p>A small printed circuit board, {n(c.BOARD_X[1] - c.BOARD_X[0])} × {n(c.BOARD_Z[1] - c.BOARD_Z[0])} mm, lies flat on a {n(c.SPACER_T)} mm printed spacer behind the front panel, behind the four keys. The keys' tactile switches are soldered to its front. A 40-way ribbon joins its box header to the pins on top of the DAC, so it reaches every pin of the Pi. The screen, NFC reader, knob and power key each plug into a labelled pin header on it. It also carries the two diodes the power key needs, and a transistor that lights the power key from 5 V.</p>
+{board_picture("nfc-front-board-back.png", "The back of the board, where every part but the key switches goes. Seen from behind, so the keys read back, next, play, previous from left to right.", "Back of the front board: a 40-pin box header along the top, labelled pin headers for LCD, NFC, PWR, OLED and ENC, two diodes, two resistors and a transistor")}
+{board_picture("nfc-front-board-front.png", "The front of the board, which faces the panel. Only the four key switches go on this side.", "Front of the front board, marked This side towards the panel, with the four tactile switches")}
 
 <h3>Order it</h3>
 <p>The board is drawn in KiCad by <code>front-board/board.py</code> from the numbers in <code>case.py</code>, so it always matches the panel. Upload <a href="front-board/fab/nfc-front-board-gerbers.zip">front-board/fab/nfc-front-board-gerbers.zip</a> to any board maker (JLCPCB, PCBWay, Aisler and others). Choose 2 layers, 1.6 mm FR-4, any colour and any finish. No assembly service is needed. Five boards usually cost a few pounds plus postage. The schematic is in <a href="front-board/fab/nfc-front-board-schematic.pdf">front-board/fab/nfc-front-board-schematic.pdf</a>, and the KiCad project in <code>front-board/</code> opens in KiCad 10 if you want to change anything.</p>
@@ -311,17 +305,17 @@ def page():
 
 <h3>Build it</h3>
 <ol>
-<li>Every part goes on the back: the side with the part labels. The front is marked <em>This side against the panel</em> and gets nothing but solder joints.</li>
-<li>Solder the four hot-swap sockets first. They are surface-mount: tin one pad, hold the socket in its holes and melt that pad, then solder the other.</li>
+<li>Every part but the key switches goes on the back: the side with the part labels. The front is marked <em>This side towards the panel</em>.</li>
 <li>Then the low parts: D1 and D2 with their stripe on the band printed on the board, R1 (1 kΩ), R2 (220 Ω, or a wire link if the power key's LED has its own resistor), and Q1 with its flat side on the flat of its outline.</li>
 <li>Then the pin headers and the 40-pin box header, its notch where the board shows it. Hold each one square while you solder the first pin.</li>
-<li>On the front, trim every lead to 1.5 mm or less. The panel's pockets under the joints are {n(c.BOARD_POCKET_DEPTH)} mm deep, and anything longer stops the board sitting flat.</li>
+<li>On the front, trim every lead to 1.5 mm or less, so the joints fit in the spacer's openings.</li>
+<li>Last, the four key switches on the front, in the squares marked for them. Push each fully home so it sits flat and square; a tilted switch tilts its cap. Solder them from the back, and trim their legs too.</li>
 <li>With a multimeter, check there is no short between 3.3 V, 5 V and ground: pins 1, 2 and 6 of the box header.</li>
 </ol>
 
 <h3>What plugs in where</h3>
 {header_table()}
-<p>The keys need no leads: their switches plug straight into the sockets. The keys and the knob only pull a pin to ground, and the Pi's own pull-ups hold them high. The power key reaches GPIO 24 and GPIO 3 through D1 and D2, exactly as in the build guide. GPIO 22 still switches the light, through Q1, so nothing changes in the software or in <code>config.txt</code>.</p>
+<p>The keys need no leads: their switches are on the board. The keys and the knob only pull a pin to ground, and the Pi's own pull-ups hold them high. The power key reaches GPIO 24 and GPIO 3 through D1 and D2, exactly as in the build guide. GPIO 22 still switches the light, through Q1, so nothing changes in the software or in <code>config.txt</code>.</p>
 <aside>The box header sits straight in front of the Pi's header, the same way round: pin 1 on the right seen from the front, on the lower row. So the ribbon leaves the board, bends once and comes down onto the DAC's pins, with no twist or fold. The ribbon's red stripe marks pin 1 at both ends. On the board, pin 1 is at the triangle beside the box header, and its notch only lets the plug in one way. On the DAC there is no notch, so check before you push it on: pin 1 is the corner pin with a square pad on the Pi, at the right-hand end seen from the front of the case, and with the Pi running it reads 3.3 V, while its neighbour across the header (pin 2) reads 5 V.</aside>
 </section>
 
@@ -329,11 +323,11 @@ def page():
 {key}
 {step(1, "Fit the brass", "step-1-brass", "Front panel with the brass about to go in. Seen from the front left.", "Front panel with the brass face held in front of its pocket",
 f"<ol><li>Deburr the brass and try it in the pocket. It should drop in with a hair of clearance and sit flush with the rim.</li><li>Stick it down with thin double-sided tape, lining the screw holes up with the panel's.</li></ol>")}
-{step(2, "Fit the power key, the switches and the encoder", "step-2-front", "Keys, knob and power key from the front left. One switch, two keycaps, the washer, nut, knob and power key are pulled forward; the encoder and the power key's nut are pulled back.", "Front of the panel with the power key, a switch, keycaps, washer, nut and knob pulled out in the order they go on",
-"<p>Solder four wires to the power key and five to the encoder first, each ending in a female jumper end (see <a href=\"#board\">What plugs in where</a>). It is easier before they are in the panel. Then:</p><ol><li>Push the power key in from the front and tighten its nut from behind, with its tags pointing down or sideways.</li><li>Push each switch in from the front until both clips snap behind the plate. From the front, left to right: previous, play/pause, next, back.</li><li>Press a keycap onto each switch's stem.</li><li>Nip off the encoder's locating lug if it has one. From behind, put the bushing through its hole so the body drops into the rectangular pocket.</li><li>On the front: washer, then nut. Tighten the nut firmly with a spanner, holding the body square in its pocket.</li><li>Slide the knob on, leaving about 1 mm clear of the nut, and tighten its set screw onto the flat of the shaft.</li></ol>",
-more=[("step-2-controls", "The same panel from behind (the inside), so the knob end is on the left. One switch is out of its hole and the encoder is pulled back from its pocket.", "Inside of the front panel with the power key, switches clipped in, and the encoder about to go into its pocket")])}
-{step(3, "Fit the front board", "step-3-board", "The inside of the front panel from behind on the power key side, with the board pulled back off the switches.", "Front board held behind the panel, its sockets lined up with the switches, with the ribbon plug on its box header",
-"<ol><li>Build the board first (see <a href=\"#board\">Front board</a>).</li><li>Press the ribbon's plug onto the board's box header now, red stripe at the triangle. Pushing it on later would push the board off the switches.</li><li>Line the board up behind the keys, hot-swap sockets on the switches' pins, and press it on evenly until it sits flat on the panel. The switches are already held by their clips; the board only plugs onto their pins (see the <a href=\"#held\">close-up of one key</a>).</li><li>Fit its three M2 × 4 screws, snug only: they thread into the plastic.</li><li>A switch that has not gone fully into its socket still feels normal, so test every key in step 7.</li></ol>")}
+{step(2, "Fit the power key, the key caps and the encoder", "step-2-front", "Keys, knob and power key from the front left. The washer, nut, knob and power key are pulled forward; the encoder and the power key's nut are pulled back.", "Front of the panel with the key caps flush in the brass, and the power key, washer, nut and knob pulled out in the order they go on",
+"<p>Solder four wires to the power key and five to the encoder first, each ending in a female jumper end (see <a href=\"#board\">What plugs in where</a>). It is easier before they are in the panel. Then:</p><ol><li>Push the power key in from the front and tighten its nut from behind, with its tags pointing down or sideways.</li><li>Lay the panel face down. Drop each key cap into its hole from behind, face first, until its lip stops it. From the front, left to right: previous, play/pause, next, back, so from behind they read back, next, play/pause, previous.</li><li>Nip off the encoder's locating lug if it has one. From behind, put the bushing through its hole so the body drops into the rectangular pocket.</li><li>On the front: washer, then nut. Tighten the nut firmly with a spanner, holding the body square in its pocket.</li><li>Slide the knob on, leaving about 1 mm clear of the nut, and tighten its set screw onto the flat of the shaft.</li></ol>",
+more=[("step-2-controls", "The same panel from behind (the inside), so the knob end is on the left. One key cap is out of its hole and the encoder is pulled back from its pocket.", "Inside of the front panel with the power key, three key caps in their holes and one about to go in, and the encoder about to go into its pocket")])}
+{step(3, "Fit the spacer and the front board", "step-3-board", "The inside of the front panel from behind on the power key side, with the spacer and board pulled back together.", "Front board and spacer held behind the panel, the switches on the board's front lined up with the key caps, with the ribbon plug on its box header",
+"<ol><li>Build the board first (see <a href=\"#board\">Front board</a>).</li><li>Press the ribbon's plug onto the board's box header now, red stripe at the triangle. It is hard to reach once the board is on.</li><li>With the panel still face down and the caps in their holes, lay the spacer on the back of the panel, over the caps' lips, its screw holes over the panel's.</li><li>Lay the board on the spacer, switches down towards the caps (see the <a href=\"#held\">close-up of one key</a>).</li><li>Fit its three M2 × 6 screws, snug only: they thread into the spacer and the panel.</li><li>Turn it over and press each key: it should click, and spring back flush. A key that is already pressed in or rattles means a switch of a different height; see <code>TACT_H</code>.</li></ol>")}
 {step(4, "Fit the front panel and the screen", "step-4-screen", "Front left corner of the chassis from behind, with the front panel fitted and the screen on its bracket, pulled back from the window.", "Screen screwed to an upright bracket on the chassis floor behind the window, its base slid back over two floor screws, with an arrow showing it pushed forward",
 "<ol><li>Screw the front panel to the chassis with four M3 × 10 screws. The power key's body passes the front left corner tower through its notch.</li><li>Leave the four brass standoffs on the screen board. Screw the board to the bracket from behind with four M2.5 screws through the standoffs, glass facing away from the bracket and the socket on its open side. Leave them a little loose.</li><li>Stand the bracket behind the window, socket on the right by the knob, and put its two M3 × 6 screws and washers through the base's slots into the floor bosses, loosely.</li><li>Push the bracket forward until the glass touches the panel, then tighten its two floor screws.</li><li>Look through the window and slide the screen sideways in its slots until the lit area is centred, then tighten its four screws.</li><li>Push the lead's plug into the socket from the right, then bend the wires back towards the rear, clear of the encoder. A foam pad between the bracket and the lid stops it rattling.</li></ol>")}
 {step(5, "Mount the Pi and the DAC", "step-5-stack", "Chassis from the front left with the front panel off for clarity, and the two boards lifted apart.", "Chassis floor with four standoffs in two slots, and the Pi and DAC above them",
@@ -356,15 +350,17 @@ f"<ol><li>Screw the guide to the two floor bosses with M3 × 6 screws. The slot 
 </section>
 
 <section id="brass"><h2>Brass face</h2>
-<p>Cut it from {n(c.BRASS_T)} mm brass using <a href="Brass-Front-Template.svg">Brass-Front-Template.svg</a>. It is drawn at actual size, seen from the front: print it at 100% and check the scale bar measures exactly 100 mm before using it as a pattern. It has the power key's hole, a screen window, one slot for all four switches (the keycaps cover it), the encoder hole and four screw holes, with centre marks for a punch.</p>
+<p>Cut it from {n(c.BRASS_T)} mm brass using <a href="Brass-Front-Template.svg">Brass-Front-Template.svg</a>. It is drawn at actual size, seen from the front: print it at 100% and check the scale bar measures exactly 100 mm before using it as a pattern. It has the power key's hole, a screen window, a {n(c.KEY_BRASS_HOLE)} mm square hole with rounded corners for each key, the encoder hole and four screw holes, with centre marks for a punch.</p>
 {drawing("Brass-Front-Template.svg", "Brass template at actual size.")}
-<p>The rectangular openings have square corners, which suits laser or waterjet cutting, or a fretsaw and file. Deburr, then try it in the printed pocket before sticking it down.</p>
+<p>The screen window has square corners and the key holes rounded ones, which suits laser or waterjet cutting, or a fretsaw and file. The key caps show any wobble in the key holes, so file them to the line. Deburr, then try it in the printed pocket before sticking it down.</p>
 </section>
 
 <section id="rebuild"><h2>Rebuilding after a change</h2>
 <p>Edit the values at the top of <code>case.py</code>, then run these from this folder in order. The first rewrites the STLs, the OpenSCAD copy and the brass outline, and reports any part that collides with another. The OpenSCAD file is a generated copy and has not been run through OpenSCAD.</p>
 <p><code>/Applications/Blender.app/Contents/MacOS/Blender -b -P build.py</code><br>
 <code>(cd front-board && /Applications/KiCad/KiCad.app/Contents/Frameworks/Python.framework/Versions/Current/bin/python3 board.py)</code><br>
+<code>/Applications/Blender.app/Contents/MacOS/Blender -b -P keycaps.py</code><br>
+<code>/Applications/Blender.app/Contents/MacOS/Blender -b -P wood.py</code> (only for the wood-grain version)<br>
 <code>python3 drawings.py</code><br>
 <code>/Applications/Blender.app/Contents/MacOS/Blender -b -P pictures.py</code><br>
 <code>/Applications/Blender.app/Contents/MacOS/Blender -b NFC-Player-Render.blend -P render.py</code><br>

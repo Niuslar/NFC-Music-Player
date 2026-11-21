@@ -8,9 +8,10 @@ It writes nfc-front-board.kicad_sch, .kicad_pcb and .kicad_pro, routes the coppe
 simple two-layer router, pours ground on both sides, then runs KiCad's electrical rules
 check and design rules check and writes the files a board maker needs to fab/.
 
-The board lies flat against the inside of the front panel, behind the four keys. The keys'
-Kailh Choc switches plug into hot-swap sockets on its back. Everything else is through-hole,
-also on the back, and soldered on the front; the panel has shallow pockets under those joints.
+The board lies flat on a printed spacer behind the front panel, behind the four keys. The keys'
+6 x 6 mm tactile switches are soldered on its front, facing the panel, where the key caps press
+them. Everything else is through-hole on the back and soldered on the front; the spacer has
+openings under those joints.
 The 40-pin header takes a ribbon from the pins on top of the DAC, so the board sees every Pi pin.
 """
 
@@ -32,12 +33,11 @@ import case as c  # noqa: E402
 import sexpr  # noqa: E402
 
 NAME = "nfc-front-board"
-REVISION = "1"
+REVISION = "2"
 KICAD = Path("/Applications/KiCad/KiCad.app/Contents")
 CLI = KICAD / "MacOS" / "kicad-cli"
 FOOTPRINTS = KICAD / "SharedSupport" / "footprints"
 SYMBOLS = KICAD / "SharedSupport" / "symbols"
-LOCAL_LIB = "NFC-Front-Board"
 FAB = HERE / "fab"
 
 # Board coordinates are the case's: x across the front, and y = TOP - z (KiCad's y runs down).
@@ -87,8 +87,8 @@ def part(ref, value, symbol, footprint, nets, at, side="back", rot=0.0, desc="")
 part("J1", "Pi GPIO, ribbon from the DAC", ("Connector_Generic", "Conn_02x20_Odd_Even"), ("Connector_IDC", "IDC-Header_2x20_P2.54mm_Vertical"),
      {str(k): v for k, v in PI_PINS.items()}, (c.PI_HEADER_X, Y(46.0)), rot=90, desc="Shrouded 2x20 box header, 2.54 mm")
 for i, (k, name, net) in enumerate(zip(c.KEYS_X, KEY_NAMES, KEY_NETS)):
-    part(f"SW{i + 1}", f"{name.title()} key", ("Switch", "SW_Push"), (LOCAL_LIB, "Kailh_Choc_V1_Hotswap"), {"1": net, "2": "GND"}, (k, Y(c.CTRL_Z)), side="front",
-         desc="Kailh Choc V1 switch in a CPG135001S30 hot-swap socket")
+    part(f"SW{i + 1}", f"{name.title()} key", ("Switch", "SW_Push"), ("Button_Switch_THT", "SW_PUSH_6mm_H5mm"), {"1": net, "2": "GND"}, (k, Y(c.CTRL_Z)), side="front",
+         desc="6 x 6 mm through-hole tactile switch, 5 mm tall, on the side facing the panel")
 for ref, (title, names, nets, x1, z, value) in HEADERS.items():
     part(ref, value, ("Connector_Generic", f"Conn_01x{len(nets):02d}"), ("Connector_PinHeader_2.54mm", f"PinHeader_1x{len(nets):02d}_P2.54mm_Vertical"),
          {str(i + 1): n for i, n in enumerate(nets)}, (x1, Y(z)), desc="Straight pin header, 2.54 mm")
@@ -97,34 +97,6 @@ part("D2", "BAT43", ("Device", "D_Schottky"), ("Diode_THT", "D_DO-35_SOD27_P7.62
 part("R1", "1k", ("Device", "R"), ("Resistor_THT", "R_Axial_DIN0207_L6.3mm_D2.5mm_P7.62mm_Horizontal"), {"1": "LIGHT", "2": "LED_BASE"}, (80.5, 47.5), desc="Base resistor")
 part("R2", "220", ("Device", "R"), ("Resistor_THT", "R_Axial_DIN0207_L6.3mm_D2.5mm_P7.62mm_Horizontal"), {"1": "5V", "2": "LED_A"}, (80.5, 51.1), desc="Sets the power light's current. A wire link if the button's LED has its own resistor")
 part("Q1", "2N3904", ("Transistor_BJT", "Q_NPN_EBC"), ("Package_TO_SOT_THT", "TO-92_Inline"), {"1": "GND", "2": "LED_BASE", "3": "LED_K"}, (92.5, 44.0), desc="Switches the power light from 5 V")
-
-
-# ---- the Choc hot-swap footprint ------------------------------------------------------------
-def choc_footprint():
-    """Kailh PG1350 (Choc V1) on a CPG135001S30 socket, from Kailh's two drawings. Seen from the switch side."""
-    f = lambda v: f"{v:g}"
-    npth = [(0, 0, 3.4), (-5.5, 0, 1.9), (5.5, 0, 1.9), (0, 5.9, 3.0), (5, 3.8, 3.0)]
-    lines = [
-        f'(footprint "Kailh_Choc_V1_Hotswap" (version 20240108) (generator "board.py") (layer "F.Cu")',
-        '  (descr "Kailh Choc V1 (PG1350) switch in a CPG135001S30 hot-swap socket on the back. Holes and pads from the Kailh drawings.")',
-        '  (tags "kailh choc pg1350 hotswap")',
-        '  (property "Reference" "SW**" (at 0 -9) (layer "F.SilkS") (effects (font (size 1 1) (thickness 0.15))))',
-        '  (property "Value" "Choc" (at 0 9.5) (layer "F.Fab") (effects (font (size 1 1) (thickness 0.15))))',
-        '  (attr smd)',
-        '  (fp_rect (start -7.5 -7.5) (end 7.5 7.5) (stroke (width 0.1) (type solid)) (fill no) (layer "F.Fab"))',
-        '  (fp_rect (start -7.75 -7.75) (end 7.75 7.75) (stroke (width 0.05) (type solid)) (fill no) (layer "F.CrtYd"))',
-        '  (fp_rect (start -4.85 1.2) (end 9.85 8.55) (stroke (width 0.05) (type solid)) (fill no) (layer "B.CrtYd"))',
-        '  (fp_poly (pts (xy -4.75 2.3) (xy 1.5 2.3) (xy 2.6 1.3) (xy 9.75 1.3) (xy 9.75 6.2) (xy 3.5 6.2) (xy 2.4 7.25) (xy -4.75 7.25)) (stroke (width 0.1) (type solid)) (fill no) (layer "B.Fab"))',
-    ]
-    for x, y, d in npth:
-        lines.append(f'  (pad "" np_thru_hole circle (at {f(x)} {f(y)}) (size {f(d)} {f(d)}) (drill {f(d)}) (layers "*.Cu" "*.Mask"))')
-    lines.append('  (pad "1" smd rect (at -3.275 5.95) (size 2.6 2.6) (layers "B.Cu" "B.Paste" "B.Mask"))')
-    lines.append('  (pad "2" smd rect (at 8.275 3.75) (size 2.6 2.6) (layers "B.Cu" "B.Paste" "B.Mask"))')
-    lines.append(")")
-    lib = HERE / f"{LOCAL_LIB}.pretty"
-    lib.mkdir(exist_ok=True)
-    (lib / "Kailh_Choc_V1_Hotswap.kicad_mod").write_text("\n".join(lines) + "\n")
-    (HERE / "fp-lib-table").write_text(f'(fp_lib_table\n  (version 7)\n  (lib (name "{LOCAL_LIB}")(type "KiCad")(uri "${{KIPRJMOD}}/{LOCAL_LIB}.pretty")(options "")(descr "Parts drawn for this board"))\n)\n')
 
 
 # ---- schematic ----------------------------------------------------------------------------
@@ -499,7 +471,7 @@ def build_board(used_nets):
         nets[name] = ni
 
     def footprint(lib, name):
-        path = HERE / f"{LOCAL_LIB}.pretty" if lib == LOCAL_LIB else FOOTPRINTS / f"{lib}.pretty"
+        path = FOOTPRINTS / f"{lib}.pretty"
         fp = pcbnew.FootprintLoad(str(path), name)
         fp.SetFPID(pcbnew.LIB_ID(lib, name))
         return fp
@@ -536,9 +508,7 @@ def build_board(used_nets):
             else:
                 raise RuntimeError(f"could not turn {p['ref']}")
             fp.Move(pcbnew.VECTOR2I(mm(x) - pads["1"].x, mm(y) - pads["1"].y))
-        elif p["ref"].startswith("SW"):
-            fp.SetPosition(pcbnew.VECTOR2I(mm(x), mm(y)))
-        else:
+        else:  # centred on the point: the switches on their keys
             cx, cy = pad_centroid(fp)
             fp.Move(pcbnew.VECTOR2I(int(mm(x) - cx), int(mm(y) - cy)))
         for pad in fp.Pads():
@@ -595,9 +565,9 @@ def build_board(used_nets):
             text(p["ref"], p["at"][0] + 3.81, p["at"][1], 0.8)
     text("Q1", 92.5, 47.6, 0.8)
     text(f"NFC PLAYER FRONT BOARD  REV {REVISION}", (c.BOARD_X[0] + 6 + c.BOARD_X[1]) / 2, 21.4, 1.0)
-    text("PARTS ON THIS SIDE. TRIM LEADS ON THE OTHER SIDE TO 1.5 MM", (c.BOARD_X[0] + 6 + c.BOARD_X[1]) / 2, 38.4, 0.8)
-    text("THIS SIDE AGAINST THE PANEL", (c.BOARD_X[0] + 6 + c.BOARD_X[1]) / 2, 21.4, 1.0, layer=pcbnew.F_SilkS)
-    text("NO PARTS ON THIS SIDE", (c.BOARD_X[0] + 6 + c.BOARD_X[1]) / 2, 41.0, 0.8, layer=pcbnew.F_SilkS)
+    text("PARTS ON THIS SIDE. TRIM LEADS ON THE OTHER SIDE TO 1.5 MM. KEY SWITCHES GO ON THE OTHER SIDE", (c.BOARD_X[0] + 6 + c.BOARD_X[1]) / 2, 38.4, 0.8)
+    text("THIS SIDE TOWARDS THE PANEL", (c.BOARD_X[0] + 6 + c.BOARD_X[1]) / 2, 21.4, 1.0, layer=pcbnew.F_SilkS)
+    text("ONLY THE FOUR KEY SWITCHES ON THIS SIDE", (c.BOARD_X[0] + 6 + c.BOARD_X[1]) / 2, 41.0, 0.8, layer=pcbnew.F_SilkS)
 
     j1 = {pad.GetNumber(): pad.GetPosition() for pad in board.FindFootprintByReference("J1").Pads()}
     centre = (pcbnew.ToMM(j1["1"].x) + pcbnew.ToMM(j1["40"].x)) / 2
@@ -689,7 +659,7 @@ def build_board(used_nets):
 
 
 def check_pockets(board):
-    """Every through-hole solder joint must sit over a pocket in the panel."""
+    """Every through-hole solder joint must sit over an opening in the spacer: its pockets, or a key's opening."""
     import pcbnew
 
     bad = []
@@ -700,7 +670,8 @@ def check_pockets(board):
             bb = pad.GetBoundingBox()
             x0, x1 = pcbnew.ToMM(bb.GetLeft()) - 0.4, pcbnew.ToMM(bb.GetRight()) + 0.4
             z0, z1 = TOP - pcbnew.ToMM(bb.GetBottom()) - 0.4, TOP - pcbnew.ToMM(bb.GetTop()) + 0.4
-            if not any(a <= x0 and x1 <= b and lo <= z0 and z1 <= hi for a, lo, b, hi in c.BOARD_POCKETS):
+            keys = [(k - c.KEY_ROOM / 2 + 2, c.CTRL_Z - c.KEY_ROOM / 2 + 2, k + c.KEY_ROOM / 2 - 2, c.CTRL_Z + c.KEY_ROOM / 2 - 2) for k in c.KEYS_X]  # clear of the rounded corners
+            if not any(a <= x0 and x1 <= b and lo <= z0 and z1 <= hi for a, lo, b, hi in (*c.BOARD_POCKETS, *keys)):
                 bad.append(f"{fp.GetReference()}.{pad.GetNumber()}")
     return bad
 
@@ -719,7 +690,6 @@ def report_counts(path):
 
 def main():
     print("== footprints, schematic, project ==")
-    choc_footprint()
     used = schematic()
     project()
     print("== board ==")
@@ -729,7 +699,7 @@ def main():
         problems.append("could not route: " + ", ".join(router.failed))
     bad = check_pockets(board)
     if bad:
-        problems.append("solder joints outside the panel pockets: " + ", ".join(bad))
+        problems.append("solder joints outside the spacer's openings: " + ", ".join(bad))
     print(f"  {len(router.tracks)} tracks, {len(router.vias)} vias")
 
     print("== checks ==")

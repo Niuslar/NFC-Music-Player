@@ -1,4 +1,0 @@
-(fp_lib_table
-  (version 7)
-  (lib (name "NFC-Front-Board")(type "KiCad")(uri "${KIPRJMOD}/NFC-Front-Board.pretty")(options "")(descr "Parts drawn for this board"))
-)

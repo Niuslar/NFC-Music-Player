@@ -3,7 +3,7 @@
     /Applications/Blender.app/Contents/MacOS/Blender -b NFC-Player-Render.blend -P render.py
 
 It reuses the scene's camera, lights and materials, swaps in the freshly built printed parts,
-brass and keycaps, and moves the knob, screws and cards to match case.py. Run wood.py too
+brass and key caps, and moves the knob, screws and cards to match case.py. Run wood.py too
 to render the wood-grain chassis and front; otherwise the plain ones are shown, still in wood.
 The knob, screw heads, feet, screen and cards are stand-ins for bought parts.
 """
@@ -109,11 +109,10 @@ def numbered(base):
     return [D.objects[n] for n in sorted(D.objects.keys()) if n == base or n.startswith(base + ".")]
 
 
-# The keycaps from keycaps.py, turned from their print orientation to sit on the switches:
-# underside 3 mm (the travel) in front of the switch housing, which stands 2 mm proud of the brass.
-CAP_TO_CASE = [(-1, 0, 0, 0), (0, 0, 1, -5.0 - keycaps.CAP_T), (0, 1, 0, 0)]
+# The key caps from keycaps.py, turned from their print orientation to sit in their holes,
+# face flush with the brass. (The scene still names them "Choc keycap", from the earlier keys.)
 for ob, k, name in zip(numbered("Choc keycap"), c.KEYS_X, keycaps.SYMBOLS):
-    old, ob.data = ob.data, stl_mesh(HERE / "STL" / f"keycap-{name}.stl", CAP_TO_CASE)
+    old, ob.data = ob.data, stl_mesh(HERE / "STL" / f"keycap-{name}.stl", keycaps.TO_CASE)
     if old.users == 0:
         D.meshes.remove(old)
     ob.data.materials.append(D.materials["Printed charcoal"])

@@ -1,14 +1,18 @@
-"""The four keycaps for the Kailh Choc V1 keys, with their symbols cut into the top. Millimetres.
+"""The four key caps, with their symbols cut into the face. Millimetres.
 
     /Applications/Blender.app/Contents/MacOS/Blender -b -P keycaps.py
 
-Writes STL/keycap-previous.stl, keycap-play.stl, keycap-next.stl, keycap-back.stl and
-keycap-fit-test.stl. Print the fit test first: it has three pairs of legs marked with 1, 2
-and 3 dots, from thinnest to thickest. Push each into a switch, then set LEG_W to the one that holds
-firmly without forcing and rebuild.
+Writes STL/keycap-previous.stl, keycap-play.stl, keycap-next.stl and keycap-back.stl.
 
-Every cap is laid top down, legs up, ready to print: no support, and the top comes out
-as smooth as the bed. The symbols are seen the right way round from the front of the case.
+Each cap slides in a square hole through the brass and the front panel, its face flush with the
+brass, and presses a 6 x 6 mm tactile switch on the front board behind it. A lip round its back,
+chamfered at 45 degrees, seats against the inside of the panel and stops it coming out of the front.
+The back is hollow: the switch's body stands inside it, and the button presses the back of the face.
+All the sizes come from case.py (KEY_*, TACT_*), which also makes the holes and the spacer.
+
+Each cap is laid face down, ready to print: no support, and the face comes out as smooth as the
+bed. The symbols read the right way round from the front of the case. Try one cap in the fit gauge's
+square hole first: it should slide freely without rattling.
 """
 
 import sys
@@ -18,24 +22,20 @@ HERE = Path(__file__).resolve().parent
 sys.path.insert(0, str(HERE))
 import build  # noqa: E402  (Blender mesh helpers)
 import case  # noqa: E402
-from case import box, diff, hull, prism, rrect, union, xf  # noqa: E402
+from case import diff, hull, prism, xf  # noqa: E402
 
-# ---- the cap ------------------------------------------------------------------------
-CAP_W, CAP_H = 17.5, 16.5  # across and up; the keys are 18 mm apart (case.KEYS_X), so 0.5 mm between caps
-CAP_T = 2.5  # thickness, as in the key drawings (drawings.KEYCAP_T)
-CAP_R = 1.5  # corner radius
-TOP_CHAMFER = 0.6  # 45 degrees round the top edge
 SYMBOL_DEPTH = 0.6  # how deep the symbols are cut; fill them with paint if you like
+FACE_CHAMFER = 0.3  # a small 45 degree edge round the face
 
-# ---- the legs that go into the switch stem ---------------------------------------------
-# A Choc V1 stem has two slots side by side, 5.7 mm apart, each about 1.2 wide and 3.0 tall.
-# The legs are a little smaller so a printed cap goes in without splitting the stem.
-LEG_PITCH = 5.7
-LEG_W, LEG_H = 1.15, 2.9  # MEASURE: confirm LEG_W with keycap-fit-test.stl
-LEG_L = 3.0  # how far the legs reach into the stem
-LEG_TIP = 0.3  # chamfer on the leg ends so they find the slots
+# Lengths along the cap, from its back (z = 0) to its face.
+LENGTH = case.KEY_LENGTH  # back of the cap to its face
+LIP_FLAT, HOLLOW = case.KEY_LIP_FLAT, case.KEY_HOLLOW
+CEILING = LENGTH - case.KEY_FACE_T  # the back of the face, where the switch's button presses
 
-assert CAP_W < case.KEYS_X[1] - case.KEYS_X[0], "neighbouring caps would touch"
+# The lip's chamfer meets the panel's hole where the chamfer is as wide as the hole, so that
+# is where the cap stops: KEY_LIP_T from its back.
+assert abs(LIP_FLAT + (case.KEY_CAP + 2 * case.KEY_LIP - case.KEY_HOLE) / 2 - case.KEY_LIP_T) < 1e-6, "the lip must seat at KEY_LIP_T"
+assert case.KEY_FACE_T - SYMBOL_DEPTH >= 0.9, "the face would be too thin under the symbols"
 
 
 # ---- symbols, as outlines in x (right) and y (up) seen from the front ------------------------
@@ -52,7 +52,12 @@ def mirror(shapes):
     return [[(-x, y) for x, y in reversed(s)] for s in shapes]
 
 
-H = 6.4  # symbol height
+def scaled(shapes, k=0.85):
+    """The symbols were drawn for a 17.5 mm cap; this fits them to the 14 mm one."""
+    return [[(x * k, y * k) for x, y in s] for s in shapes]
+
+
+H = 6.4  # symbol height, before scaling
 NEXT = [tri(-4.6, -0.6, H), tri(-1.0, 3.0, H), bar(2.8, 4.1, H)]  # two triangles and a bar: >>|
 NEXT = [[(x + 0.25, y) for x, y in s] for s in NEXT]
 PLAY = [tri(-4.5, 0.3, H), bar(1.6, 2.8, H), bar(3.8, 5.0, H)]  # play and pause: |> ||
@@ -60,69 +65,44 @@ PLAY = [[(x - 0.25, y) for x, y in s] for s in PLAY]
 
 
 def back_arrow():
-    """A U-turn arrow pointing left, like the return key: one outline plus its head."""
-    band, r_out, cx = 1.25, 3.0, 1.4
+    """The ↩ the simulator shows on its back key: an arrow pointing left along the bottom,
+    curling up on the right into a short hook. One outline plus a solid head."""
+    band, r_out, cx = 1.2, 2.5, 1.5
     r_in = r_out - band
-    pts = case.arc(cx, 0, r_out, 90, -90, 16)  # outside of the bend, top to bottom
-    pts += [(-2.0, -r_out), (-2.0, -r_in)]  # the tail along the bottom
-    pts += case.arc(cx, 0, r_in, -90, 90, 16)  # inside of the bend, bottom to top
-    pts += [(-1.6, r_in)]  # along the top to the head
-    pts += [(-1.6, r_out)]
-    pts.reverse()  # counter-clockwise for prism()
-    head = [(-1.4, r_out + 1.6), (-5.2, (r_out + r_in) / 2), (-1.4, r_in - 1.6)]
-    shapes = [pts, head]
-    dx, dy = 0.4, -0.8  # centre it on the cap
-    return [[(x + dx, y + dy) for x, y in s] for s in shapes]
+    pts = case.arc(cx, 0, r_in, 90, -90, 16)  # inside of the curl, top to bottom
+    pts += [(-1.6, -r_in), (-1.6, -r_out)]  # the stem along the bottom, to the head
+    pts += case.arc(cx, 0, r_out, -90, 90, 16)  # outside of the curl, bottom to top; it ends square
+    mid = -(r_out + r_in) / 2
+    head = [(-1.4, mid - 2.0), (-1.4, mid + 2.0), (-4.9, mid)]
+    dx, dy = 0.45, 0.85  # centre it on the cap
+    return [[(x + dx, y + dy) for x, y in s] for s in (pts, head)]
 
 
 SYMBOLS = {
-    "previous": mirror(NEXT),
-    "play": PLAY,
-    "next": NEXT,
-    "back": back_arrow(),
+    "previous": scaled(mirror(NEXT)),
+    "play": scaled(PLAY),
+    "next": scaled(NEXT),
+    "back": scaled(back_arrow()),
 }
 
 
-# ---- solids, built top up (z = 0 is the underside of the cap), then turned over to print ---------
-def body():
-    full = rrect(-CAP_W / 2, -CAP_H / 2, CAP_W / 2, CAP_H / 2, CAP_R)
-    c = TOP_CHAMFER
-    top = rrect(-CAP_W / 2 + c, -CAP_H / 2 + c, CAP_W / 2 - c, CAP_H / 2 - c, CAP_R - c)
-    return hull(prism(full, 0, CAP_T - c), prism(top, CAP_T - 0.01, CAP_T))
-
-
-def legs(x_centre=0.0, w=LEG_W):
-    t = LEG_TIP
-    out = []
-    for s in (-1, 1):
-        x = x_centre + s * LEG_PITCH / 2
-        out.append(hull(
-            box(x - w / 2, x + w / 2, -LEG_H / 2, LEG_H / 2, -LEG_L + t, 0.2),
-            box(x - w / 2 + t, x + w / 2 - t, -LEG_H / 2 + t, LEG_H / 2 - t, -LEG_L, -LEG_L + t),
-        ))
-    return out
+# ---- the cap, built face up (z = 0 its back), then turned over to print --------------------------
+def square(size, r=None):
+    return case.key_square(0, 0, size, r)
 
 
 def keycap(name):
-    cuts = [prism(s, CAP_T - SYMBOL_DEPTH, CAP_T + 1) for s in SYMBOLS[name]]
-    return diff(union(body(), *legs()), *cuts)
+    c, lip = FACE_CHAMFER, case.KEY_CAP + 2 * case.KEY_LIP
+    body = hull(prism(square(case.KEY_CAP), 0, LENGTH - c), prism(square(case.KEY_CAP - 2 * c), LENGTH - 0.01, LENGTH))
+    rim = hull(prism(square(lip), 0, LIP_FLAT), prism(square(case.KEY_CAP), 0, LIP_FLAT + case.KEY_LIP))
+    hollow = prism(square(HOLLOW, 0.8), -1, CEILING)
+    cuts = [prism(s, LENGTH - SYMBOL_DEPTH, LENGTH + 1) for s in SYMBOLS[name]]
+    return diff(case.union(body, rim), hollow, *cuts)
 
 
-def fit_test():
-    """A bar with three pairs of legs, marked with 1, 2 and 3 dots from thinnest to thickest."""
-    widths = (LEG_W - 0.1, LEG_W, LEG_W + 0.1)
-    pitch = 12.0
-    plate = box(-pitch * 1.5, pitch * 1.5, -4.0, 4.0, 0, 1.6)
-    parts = [plate]
-    dots = []
-    for i, w in enumerate(widths):
-        x = (i - 1) * pitch
-        parts += legs(x, w)
-        dots += [case.cylz(x + (j - i / 2) * 1.6, 2.6, 1.0, 2.6, 0.9) for j in range(i + 1)]
-    return diff(union(*parts), *dots)
-
-
-TO_PRINT = [(-1, 0, 0, 0), (0, 1, 0, 0), (0, 0, -1, CAP_T)]  # turned over about y: top on the bed, still reads right from the front
+TO_PRINT = [(-1, 0, 0, 0), (0, 1, 0, 0), (0, 0, -1, LENGTH)]  # turned over about y: face on the bed, still reads right from the front
+# From the printed STL to the case, round a key's centre at rest: x across, y back from the brass, z up.
+TO_CASE = [(-1, 0, 0, 0), (0, 0, 1, -case.KEY_PROUD), (0, 1, 0, 0)]
 
 
 def main():
@@ -130,12 +110,11 @@ def main():
         build.bpy.data.objects.remove(ob)
     out = HERE / "STL"
     problems = []
-    jobs = {f"keycap-{n}": xf(TO_PRINT, keycap(n)) for n in SYMBOLS}
-    jobs["keycap-fit-test"] = xf([(-1, 0, 0, 0), (0, 1, 0, 0), (0, 0, -1, 1.6)], fit_test())  # plate down, legs up
-    for name, node in jobs.items():
-        ob = build.make(node)
+    for n in SYMBOLS:
+        name = f"keycap-{n}"
+        ob = build.make(xf(TO_PRINT, keycap(n)))
         closed, volume, bounds = build.describe(ob)
-        print(f"{name:18s} closed={closed}  {volume * 1000:6.0f} mm3  " + " x ".join(f"{hi - lo:g}" for lo, hi in bounds) + f" mm  z {bounds[2][0]:g}..{bounds[2][1]:g}")
+        print(f"{name:16s} closed={closed}  {volume * 1000:6.0f} mm3  " + " x ".join(f"{hi - lo:g}" for lo, hi in bounds) + " mm")
         if not closed or volume <= 0:
             problems.append(f"{name} is not a closed solid")
         build.write_stl(ob, out / f"{name}.stl")

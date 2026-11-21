@@ -17,7 +17,7 @@ import math
 W, D, H = 200.0, 128.0, 59.0  # outside size, without feet, knob or screw heads
 BODY_H = 56.0  # top of the chassis walls; the lid sits on this
 LID_T = 3.0
-FRONT_T = 4.2  # front panel: 3.4 of plastic behind a 0.8 deep pocket for the brass (see CHOC_BELOW_PLATE)
+FRONT_T = 4.2  # front panel: 3.4 of plastic behind a 0.8 deep pocket for the brass
 REAR_T = 3.0
 WALL = 4.0
 FLOOR = 3.0
@@ -53,9 +53,27 @@ LCD_HOLES = (52.0, 30.0)  # MEASURE: centres of the board's four corner holes, a
 LCD_STANDOFF = 6.0  # MEASURE: how far the standoffs stand out behind the board
 CLEAR_M25 = 2.9
 CRADLE_TRAVEL = (2.5, 4.0)  # how far the bracket slides forward and back from where the glass meets the panel
-KEYS_X = (37.0, 55.0, 73.0, 91.0)  # Kailh Choc V1 at 18 mm pitch: previous, play, next, back. Left, so the board behind them sits in front of the DAC
-KEY_HOLE = 13.9
-KEY_PLATE = 1.2  # plate thickness the Choc clips need
+KEYS_X = (37.0, 55.0, 73.0, 91.0)  # previous, play, next, back, 18 mm apart. Left, so the board behind them sits in front of the DAC
+# Keys: a printed cap slides in a square hole through the brass and the panel, flush with the
+# brass, and presses a 6 x 6 mm tactile switch soldered to the front board. A lip round the
+# cap's back stops it falling out of the front. A printed spacer between the panel and the
+# board gives the lips and the switches their room. keycaps.py makes the caps.
+KEY_CAP = 14.0  # the cap, square
+KEY_CAP_R = 2.0  # its corner radius
+KEY_HOLE = 14.4  # the hole through the panel that guides it
+KEY_BRASS_HOLE = 14.6  # and through the brass, a little larger since the brass is cut by hand
+KEY_LIP, KEY_LIP_T = 1.0, 1.2  # the lip round the cap's back: how far it stands out, and how thick
+KEY_ROOM = KEY_CAP + 2 * KEY_LIP + 0.6  # the opening in the spacer round each lip
+KEY_PROUD = 0.0  # how far the cap's face stands in front of the brass; 0 is flush
+KEY_FACE_T = 1.6  # solid face of the cap, in front of the switch (its symbol is cut 0.6 into it)
+KEY_FREE = 0.1  # between the cap and the switch's button at rest, so the switch is never held down
+TACT = 6.0  # MEASURE: the switch body, square
+TACT_BODY_H = 3.5  # MEASURE: its body height, without the button
+TACT_H = 5.0  # MEASURE: its height with the button, from the board; the "6x6x5" of the listing
+TACT_TRAVEL = 0.25  # about this much until it clicks
+KEY_LENGTH = KEY_PROUD + FRONT_T + KEY_LIP_T  # the cap, from its face to its back
+KEY_LIP_FLAT = 0.4  # the lip's full width runs this far, then a 45 degree chamfer so it prints without support
+KEY_HOLLOW = TACT + 1.0  # the hollow in the cap's back, round the switch body
 KNOB_X = 178.5
 KNOB_D = 30.0  # the largest knob the front takes: it sits close to the screen window
 ENCODER_HOLE = 7.3  # M7 bushing
@@ -96,27 +114,26 @@ TRAY_DEPTH = 5.0
 TRAY_FLOOR = 2.0
 
 # ---- front board ------------------------------------------------------------
-# A printed circuit board lies flat against the inside of the front panel, behind the keys.
-# The four switches plug into hot-swap sockets on its back, and a 40-pin ribbon runs from it
-# to the pins on top of the DAC. front-board/board.py draws it from these numbers.
-# Kailh's PG1350 drawing puts the board 2.2 mm behind the underside of the switch plate, so
-# the panel is exactly that much thicker than brass plus plate and the board needs no spacers.
-CHOC_BELOW_PLATE = 2.2
+# A printed circuit board lies flat behind the front panel, on a printed spacer, behind the keys.
+# The four key switches are soldered to its front, and a 40-pin ribbon runs from it to the
+# pins on top of the DAC. front-board/board.py draws it from these numbers.
+# The spacer sets the board just far back that a switch's button sits KEY_FREE behind its cap.
+SPACER_T = -KEY_PROUD + KEY_FACE_T + KEY_FREE + TACT_H - FRONT_T
+BOARD_Y = FRONT_T + SPACER_T  # the board's front face, in the case
 # Its 40-pin header sits straight in front of the Pi's, the same way round, so the ribbon runs
 # back and down onto the DAC's pins with one bend and no twist (see front-board/board.py).
 PI_HEADER_X = None  # set below, from PI_X
-BOARD_OUTLINE = ((23.0, 4.0), (101.5, 4.0), (101.5, 53.0), (17.5, 53.0), (17.5, 40.0), (23.0, 40.0))  # x, z; the step at the
+BOARD_OUTLINE = ((23.0, 4.0), (101.5, 4.0), (101.5, 51.5), (17.5, 51.5), (17.5, 40.0), (23.0, 40.0))  # x, z; the top clears the card tray under the lid; the step at the
 # top left lets the 40-pin header reach over the power key's nut
 BOARD_X = (min(x for x, z in BOARD_OUTLINE), max(x for x, z in BOARD_OUTLINE))
 BOARD_Z = (min(z for x, z in BOARD_OUTLINE), max(z for x, z in BOARD_OUTLINE))
 BOARD_T = 1.6
-BOARD_SCREWS = ((27.0, 8.0), (97.5, 8.0), (97.5, 47.0))  # M2 x 4 into pilots in the panel
+BOARD_SCREWS = ((27.0, 8.0), (97.5, 8.0), (97.5, 47.0))  # M2 x 6, through pilots in the spacer and into the panel
 PILOT_M2 = 1.6
 PILOT_M2_DEPTH = 2.8
-# The through-hole parts sit on the back of the board and are soldered on its front, so the
-# panel has shallow pockets under their solder joints: x0, z0, x1, z1. board.py checks that
-# every through-hole pad lies inside one.
-BOARD_POCKET_DEPTH = 1.6
+# The other through-hole parts sit on the back of the board and are soldered on its front, so
+# the spacer has openings under their solder joints: x0, z0, x1, z1. board.py checks that every
+# through-hole pad lies inside one of these or inside a key's opening.
 BOARD_POCKETS = (
     (21.5, 42.5, 73.5, 49.5),  # the 40-pin header
     (31.0, 5.5, 75.5, 21.0),  # the headers for the screen, reader, knob, power key and OLED
@@ -155,7 +172,9 @@ CRADLE_BASE_Y = FRONT_T + 0.2 + CRADLE_TRAVEL[0]  # front edge of its base
 CRADLE_Y = 14.0  # the floor screws; their heads pass under the upright through an arch
 CRADLE_ARCH_Z = 11.5  # top of those arches: base, washer and screw head
 
-assert abs(FRONT_T - BRASS_T - KEY_PLATE - CHOC_BELOW_PLATE) < 1e-9, "the board must sit flat on the panel"
+assert FRONT_T + KEY_LIP_T + TACT_TRAVEL + 0.3 <= BOARD_Y, "a pressed cap's lip must clear the board"
+assert BOARD_Y - TACT_BODY_H >= -KEY_PROUD + KEY_FACE_T, "the switch body must fit in the hollow behind the cap's face"
+assert KEYS_X[1] - KEYS_X[0] - KEY_ROOM >= 1.2, "the spacer between two keys would be too thin"
 assert CRADLE_Y - CRADLE_TRAVEL[1] - CLEAR_M3 / 2 - 1 >= CRADLE_BASE_Y, "the bracket's slots must stay inside its base"
 assert PI_SLOT_Y[0] <= PI_Y + 3.5 and PI_Y + 26.5 <= PI_SLOT_Y[1], "the standoffs must reach their place in the floor slots"
 
@@ -310,16 +329,27 @@ def front():
     back = FRONT_T - BRASS_T  # plastic thickness behind the brass
     cuts = [prism(outline(RIM), back, FRONT_T + 1)]  # the pocket the brass drops into
     cuts.append(box(LCD_X - LCD_WINDOW[0] / 2, LCD_X + LCD_WINDOW[0] / 2, CTRL_Z - LCD_WINDOW[1] / 2, CTRL_Z + LCD_WINDOW[1] / 2, -1, FRONT_T + 1))
-    for k in KEYS_X:
-        cuts.append(box(k - KEY_HOLE / 2, k + KEY_HOLE / 2, CTRL_Z - KEY_HOLE / 2, CTRL_Z + KEY_HOLE / 2, -1, FRONT_T + 1))
-        cuts.append(box(k - 8.5, k + 8.5, CTRL_Z - 8.5, CTRL_Z + 8.5, -1, back - KEY_PLATE))  # room for the switch clips
+    cuts += [prism(key_square(k, CTRL_Z, KEY_HOLE), -1, FRONT_T + 1) for k in KEYS_X]
     cuts += [cylz(x, z, -1, FRONT_T + 1, CLEAR_M3) for x in SCREW_X for z in SCREW_Z]
     cuts.append(cylz(KNOB_X, CTRL_Z, -1, FRONT_T + 1, ENCODER_HOLE))
     cuts.append(box(KNOB_X - ENCODER_BODY[0] / 2, KNOB_X + ENCODER_BODY[0] / 2, CTRL_Z - ENCODER_BODY[1] / 2, CTRL_Z + ENCODER_BODY[1] / 2, -1, back - PANEL_AT_NUT))
     cuts.append(cylz(POWER_X, CTRL_Z, -1, FRONT_T + 1, POWER_HOLE))
-    cuts += [box(x0, x1, z0, z1, -1, BOARD_POCKET_DEPTH) for x0, z0, x1, z1 in BOARD_POCKETS]
     cuts += [cylz(x, z, -1, PILOT_M2_DEPTH, PILOT_M2) for x, z in BOARD_SCREWS]
     return diff(prism(outline(), 0, FRONT_T), *cuts)
+
+
+def key_square(x, z, size, r=None):
+    """A key-shaped square outline centred on x, z, its corners rounded to match the cap."""
+    r = KEY_CAP_R + (size - KEY_CAP) / 2 if r is None else r
+    return rrect(x - size / 2, z - size / 2, x + size / 2, z + size / 2, r)
+
+
+def spacer():
+    """Printed flat. Panel coordinates as for the front, but z = 0 is the side against the board."""
+    cuts = [prism(key_square(k, CTRL_Z, KEY_ROOM), -1, SPACER_T + 1) for k in KEYS_X]
+    cuts += [box(x0, x1, z0, z1, -1, SPACER_T + 1) for x0, z0, x1, z1 in BOARD_POCKETS]
+    cuts += [cylz(x, z, -1, SPACER_T + 1, PILOT_M2) for x, z in BOARD_SCREWS]
+    return diff(prism(BOARD_OUTLINE, 0, SPACER_T), *cuts)
 
 
 def rear():
@@ -393,7 +423,7 @@ def display_cradle():
 def fit_gauge():
     """Print this first, on the settings you will use for the case, and try every part in it."""
     back = FRONT_T - BRASS_T
-    cuts = [box(4, 4 + KEY_HOLE, 8, 8 + KEY_HOLE, -1, FRONT_T + 1), box(4 + KEY_HOLE / 2 - 8.5, 4 + KEY_HOLE / 2 + 8.5, 8 + KEY_HOLE / 2 - 8.5, 8 + KEY_HOLE / 2 + 8.5, -1, back - KEY_PLATE)]
+    cuts = [prism(key_square(12, 17, KEY_HOLE), -1, FRONT_T + 1)]  # a cap must slide freely in this
     cuts += [cylz(32, 15, -1, FRONT_T + 1, ENCODER_HOLE), box(32 - ENCODER_BODY[0] / 2, 32 + ENCODER_BODY[0] / 2, 15 - ENCODER_BODY[1] / 2, 15 + ENCODER_BODY[1] / 2, -1, back - PANEL_AT_NUT)]
     if REAR_JACK:
         cuts.append(cylz(52, 15, -1, FRONT_T + 1, PHONES_HOLE))
@@ -403,12 +433,13 @@ def fit_gauge():
     return diff(box(0, 90, 0, 36, 0, FRONT_T), *cuts)
 
 
-PARTS = {"chassis": chassis, "lid": lid, "front": front, "rear": rear, "card-guide": card_guide, "display-cradle": display_cradle, "fit-gauge": fit_gauge}
+PARTS = {"chassis": chassis, "lid": lid, "front": front, "board-spacer": spacer, "rear": rear, "card-guide": card_guide, "display-cradle": display_cradle, "fit-gauge": fit_gauge}
 # Where each part's own coordinates sit in the assembled case.
 PLACE = {
     "chassis": move(0, 0, 0),
     "lid": move(0, 0, BODY_H),
     "front": xf(FRONT_M),
+    "board-spacer": xf([(1, 0, 0, 0), (0, 0, -1, BOARD_Y), (0, 1, 0, 0)]),  # its z = 0 against the board
     "rear": xf(REAR_M),
     "card-guide": move(GUIDE_X[0], GUIDE_Y, 5),
     "display-cradle": move(0, 0, 0),
@@ -419,13 +450,12 @@ PLACE = {
 # ---- brass ---------------------------------------------------------------------
 def brass_shapes():
     """The brass face as flat shapes in x, z: an outline, then the openings to cut."""
-    k0, k1 = KEYS_X[0] - 8.25, KEYS_X[-1] + 8.25  # one slot for all four switches; the keycaps cover it
     return {
         "outline": outline(RIM + BRASS_GAP),
         "rects": [
             (LCD_X - LCD_WINDOW[0] / 2 - 0.6, CTRL_Z - LCD_WINDOW[1] / 2 - 0.6, LCD_X + LCD_WINDOW[0] / 2 + 0.6, CTRL_Z + LCD_WINDOW[1] / 2 + 0.6),
-            (k0, CTRL_Z - 8.25, k1, CTRL_Z + 8.25),
         ],
+        "rounded": [key_square(k, CTRL_Z, KEY_BRASS_HOLE) for k in KEYS_X],  # the keys
         "circles": [(x, z, CLEAR_M3) for x in SCREW_X for z in SCREW_Z] + [(KNOB_X, CTRL_Z, ENCODER_HOLE), (POWER_X, CTRL_Z, POWER_HOLE)],
     }
 
@@ -436,6 +466,7 @@ def brass():
     back = FRONT_T - BRASS_T
     cuts = [box(x0, x1, z0, z1, back - 1, FRONT_T + 1) for x0, z0, x1, z1 in s["rects"]]
     cuts += [cylz(x, z, back - 1, FRONT_T + 1, d) for x, z, d in s["circles"]]
+    cuts += [prism(p, back - 1, FRONT_T + 1) for p in s["rounded"]]
     return diff(prism(s["outline"], back, FRONT_T), *cuts)
 
 
@@ -452,6 +483,7 @@ def brass_svg():
     ]
     out += [f'<rect x="{f(x0)}" y="{f(H - z1)}" width="{f(x1 - x0)}" height="{f(z1 - z0)}"/>' for x0, z0, x1, z1 in s["rects"]]
     out += [f'<circle cx="{f(x)}" cy="{f(H - z)}" r="{f(d / 2)}"/>' for x, z, d in s["circles"]]
+    out += ['<path d="M ' + " L ".join(f"{f(x)},{f(H - z)}" for x, z in p) + ' Z"/>' for p in s["rounded"]]
     return "\n".join(out + ["</g>", "</svg>", ""])
 
 

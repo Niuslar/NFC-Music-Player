@@ -4,49 +4,42 @@
 <rect width="268" height="268" fill="#ffffff"/>
 
 <text x="8" y="8" font-size="4.6" text-anchor="start" fill="#222826" font-weight="650" style="font-family:system-ui,-apple-system,'Segoe UI',sans-serif">Through a key</text>
-<rect x="122" y="86.75" width="2.4" height="20.25" rx="0" fill="#d4b06c" stroke="#8a6a2e" stroke-width="0.2" />
-<rect x="122" y="17" width="2.4" height="20.25" rx="0" fill="#d4b06c" stroke="#8a6a2e" stroke-width="0.2" />
-<rect x="124.4" y="87.5" width="10.2" height="19.5" rx="0" fill="#c9ccc8" stroke="#5f6b66" stroke-width="0.2" />
-<rect x="124.4" y="17" width="10.2" height="19.5" rx="0" fill="#c9ccc8" stroke="#5f6b66" stroke-width="0.2" />
-<rect x="124.4" y="82.85" width="3.6" height="4.65" rx="0" fill="#c9ccc8" stroke="#5f6b66" stroke-width="0.2" />
-<rect x="124.4" y="36.5" width="3.6" height="4.65" rx="0" fill="#c9ccc8" stroke="#5f6b66" stroke-width="0.2" />
-<rect x="116" y="39.5" width="8.4" height="45" rx="0" fill="#4a4f4d" stroke="#222826" stroke-width="0.3" />
-<rect x="124.4" y="41.3" width="10.2" height="41.4" rx="0" fill="#4a4f4d" stroke="#222826" stroke-width="0.3" />
-<polygon points="128,82.7 129.2,84.8 132.8,82.7" fill="#4a4f4d" stroke="#222826" stroke-width="0.3" />
-<polygon points="128,41.3 129.2,39.2 132.8,41.3" fill="#4a4f4d" stroke="#222826" stroke-width="0.3" />
-<rect x="134.6" y="17" width="4.8" height="90" rx="0" fill="#1d5a35" stroke="#5f6b66" stroke-width="0.15" />
-<rect x="139.4" y="65" width="5.55" height="18.75" rx="0" fill="#e9e6dc" stroke="#5f6b66" stroke-width="0.15" />
-<rect x="134.6" y="77.9" width="9" height="3.6" rx="0" fill="#b9b7ad" stroke="#5f6b66" stroke-width="0.15" />
-<rect x="134.6" y="71.6" width="9" height="3.6" rx="0" fill="#b9b7ad" stroke="#5f6b66" stroke-width="0.15" />
-<rect x="107" y="57.5" width="9" height="9" rx="0" fill="#8e3b2e" stroke="none" stroke-width="0.3" />
-<rect x="99.5" y="37.25" width="7.5" height="49.5" rx="0" fill="#2b2f31" stroke="#222826" stroke-width="0.3" />
-<line x1="99.5" y1="38" x2="89.8" y2="37" stroke="#a9b1ad" stroke-width="0.18" />
-<circle cx="99.5" cy="38" r="0.45" fill="#5f6b66" stroke="none" stroke-width="0.3"/>
-<text x="89" y="38" font-size="3.7" text-anchor="end" fill="#222826" font-weight="400" style="font-family:system-ui,-apple-system,'Segoe UI',sans-serif">Keycap (Choc V1 fit)</text>
-<line x1="111.5" y1="57.5" x2="89.8" y2="56.5" stroke="#a9b1ad" stroke-width="0.18" />
-<circle cx="111.5" cy="57.5" r="0.45" fill="#5f6b66" stroke="none" stroke-width="0.3"/>
-<text x="89" y="57.5" font-size="3.7" text-anchor="end" fill="#222826" font-weight="400" style="font-family:system-ui,-apple-system,'Segoe UI',sans-serif">Stem: 3 mm of travel</text>
-<line x1="119" y1="80" x2="89.8" y2="79" stroke="#a9b1ad" stroke-width="0.18" />
-<circle cx="119" cy="80" r="0.45" fill="#5f6b66" stroke="none" stroke-width="0.3"/>
-<text x="89" y="80" font-size="3.7" text-anchor="end" fill="#222826" font-weight="400" style="font-family:system-ui,-apple-system,'Segoe UI',sans-serif">Switch housing, in the brass slot</text>
+<rect x="122" y="83.9" width="2.4" height="23.1" rx="0" fill="#d4b06c" stroke="#8a6a2e" stroke-width="0.2" />
+<rect x="124.4" y="83.6" width="10.2" height="23.4" rx="0" fill="#c9ccc8" stroke="#5f6b66" stroke-width="0.2" />
+<rect x="134.6" y="86.9" width="7.5" height="20.1" rx="0" fill="#dcdcd6" stroke="#5f6b66" stroke-width="0.2" />
+<rect x="122" y="17" width="2.4" height="23.1" rx="0" fill="#d4b06c" stroke="#8a6a2e" stroke-width="0.2" />
+<rect x="124.4" y="17" width="10.2" height="23.4" rx="0" fill="#c9ccc8" stroke="#5f6b66" stroke-width="0.2" />
+<rect x="134.6" y="17" width="7.5" height="20.1" rx="0" fill="#dcdcd6" stroke="#5f6b66" stroke-width="0.2" />
+<rect x="142.1" y="17" width="4.8" height="90" rx="0" fill="#1d5a35" stroke="#5f6b66" stroke-width="0.15" />
+<polygon points="122,41 134,41 137,38 138.2,38 138.2,51.5 126.8,51.5 126.8,72.5 138.2,72.5 138.2,86 137,86 134,83 122,83" fill="#2b2f31" stroke="#222826" stroke-width="0.3" />
+<rect x="131.6" y="53" width="10.5" height="18" rx="0" fill="#4a4f4d" stroke="#222826" stroke-width="0.3" />
+<rect x="127.1" y="56.75" width="4.5" height="10.5" rx="0" fill="#8e3b2e" stroke="none" stroke-width="0.3" />
+<rect x="142.1" y="67.7" width="7.8" height="2.1" rx="0" fill="#b9b7ad" stroke="#5f6b66" stroke-width="0.15" />
+<rect x="142.1" y="54.2" width="7.8" height="2.1" rx="0" fill="#b9b7ad" stroke="#5f6b66" stroke-width="0.15" />
+<line x1="122.9" y1="47" x2="89.8" y2="46" stroke="#a9b1ad" stroke-width="0.18" />
+<circle cx="122.9" cy="47" r="0.45" fill="#5f6b66" stroke="none" stroke-width="0.3"/>
+<text x="89" y="47" font-size="3.7" text-anchor="end" fill="#222826" font-weight="400" style="font-family:system-ui,-apple-system,'Segoe UI',sans-serif">Key cap, printed: face flush with the brass</text>
+<line x1="136.4" y1="84.8" x2="89.8" y2="83.8" stroke="#a9b1ad" stroke-width="0.18" />
+<circle cx="136.4" cy="84.8" r="0.45" fill="#5f6b66" stroke="none" stroke-width="0.3"/>
+<text x="89" y="84.8" font-size="3.7" text-anchor="end" fill="#222826" font-weight="400" style="font-family:system-ui,-apple-system,'Segoe UI',sans-serif">Lip: stops the cap at the panel</text>
 <line x1="123.2" y1="95" x2="89.8" y2="94" stroke="#a9b1ad" stroke-width="0.18" />
 <circle cx="123.2" cy="95" r="0.45" fill="#5f6b66" stroke="none" stroke-width="0.3"/>
 <text x="89" y="95" font-size="3.7" text-anchor="end" fill="#222826" font-weight="400" style="font-family:system-ui,-apple-system,'Segoe UI',sans-serif">Brass, 0.8</text>
-<line x1="134.6" y1="26" x2="148.8" y2="25" stroke="#a9b1ad" stroke-width="0.18" />
-<circle cx="134.6" cy="26" r="0.45" fill="#5f6b66" stroke="none" stroke-width="0.3"/>
-<text x="149.6" y="26" font-size="3.7" text-anchor="start" fill="#222826" font-weight="400" style="font-family:system-ui,-apple-system,'Segoe UI',sans-serif">Front panel</text>
-<line x1="137" y1="32" x2="148.8" y2="31.2" stroke="#a9b1ad" stroke-width="0.18" />
-<circle cx="137" cy="32" r="0.45" fill="#5f6b66" stroke="none" stroke-width="0.3"/>
-<text x="149.6" y="32.2" font-size="3.7" text-anchor="start" fill="#222826" font-weight="400" style="font-family:system-ui,-apple-system,'Segoe UI',sans-serif">Front board, 1.6, flat on the panel</text>
-<line x1="129.2" y1="40.1" x2="148.8" y2="39.1" stroke="#a9b1ad" stroke-width="0.18" />
-<circle cx="129.2" cy="40.1" r="0.45" fill="#5f6b66" stroke="none" stroke-width="0.3"/>
-<text x="149.6" y="40.1" font-size="3.7" text-anchor="start" fill="#222826" font-weight="400" style="font-family:system-ui,-apple-system,'Segoe UI',sans-serif">Clips catch the back of the 1.2 mm plate</text>
-<line x1="144.95" y1="75.5" x2="148.8" y2="74.5" stroke="#a9b1ad" stroke-width="0.18" />
-<circle cx="144.95" cy="75.5" r="0.45" fill="#5f6b66" stroke="none" stroke-width="0.3"/>
-<text x="149.6" y="75.5" font-size="3.7" text-anchor="start" fill="#222826" font-weight="400" style="font-family:system-ui,-apple-system,'Segoe UI',sans-serif">Pins plug into the hot-swap socket</text>
-<line x1="133.1" y1="89" x2="148.8" y2="88" stroke="#a9b1ad" stroke-width="0.18" />
-<circle cx="133.1" cy="89" r="0.45" fill="#5f6b66" stroke="none" stroke-width="0.3"/>
-<text x="149.6" y="89" font-size="3.7" text-anchor="start" fill="#222826" font-weight="400" style="font-family:system-ui,-apple-system,'Segoe UI',sans-serif">Pocket: room for the clips</text>
+<line x1="131.6" y1="26" x2="155.1" y2="25" stroke="#a9b1ad" stroke-width="0.18" />
+<circle cx="131.6" cy="26" r="0.45" fill="#5f6b66" stroke="none" stroke-width="0.3"/>
+<text x="155.9" y="26" font-size="3.7" text-anchor="start" fill="#222826" font-weight="400" style="font-family:system-ui,-apple-system,'Segoe UI',sans-serif">Front panel: its hole guides the cap</text>
+<line x1="138.35" y1="33.5" x2="155.1" y2="32.5" stroke="#a9b1ad" stroke-width="0.18" />
+<circle cx="138.35" cy="33.5" r="0.45" fill="#5f6b66" stroke="none" stroke-width="0.3"/>
+<text x="155.9" y="33.5" font-size="3.7" text-anchor="start" fill="#222826" font-weight="400" style="font-family:system-ui,-apple-system,'Segoe UI',sans-serif">Spacer, 2.5, printed</text>
+<line x1="127.1" y1="56.75" x2="155.1" y2="55.75" stroke="#a9b1ad" stroke-width="0.18" />
+<circle cx="127.1" cy="56.75" r="0.45" fill="#5f6b66" stroke="none" stroke-width="0.3"/>
+<text x="155.9" y="56.75" font-size="3.7" text-anchor="start" fill="#222826" font-weight="400" style="font-family:system-ui,-apple-system,'Segoe UI',sans-serif">Button: 0.1 mm from the cap, clicks after about 0.25 mm</text>
+<line x1="136.1" y1="68" x2="155.1" y2="67" stroke="#a9b1ad" stroke-width="0.18" />
+<circle cx="136.1" cy="68" r="0.45" fill="#5f6b66" stroke="none" stroke-width="0.3"/>
+<text x="155.9" y="68" font-size="3.7" text-anchor="start" fill="#222826" font-weight="400" style="font-family:system-ui,-apple-system,'Segoe UI',sans-serif">Tactile switch, 6 × 6 × 5 mm, in the cap's hollow</text>
+<line x1="144.5" y1="92" x2="155.1" y2="91" stroke="#a9b1ad" stroke-width="0.18" />
+<circle cx="144.5" cy="92" r="0.45" fill="#5f6b66" stroke="none" stroke-width="0.3"/>
+<text x="155.9" y="92" font-size="3.7" text-anchor="start" fill="#222826" font-weight="400" style="font-family:system-ui,-apple-system,'Segoe UI',sans-serif">Front board, 1.6, switch soldered on</text>
 <text x="8" y="124" font-size="4.6" text-anchor="start" fill="#222826" font-weight="650" style="font-family:system-ui,-apple-system,'Segoe UI',sans-serif">Through the volume encoder</text>
 <line x1="8" y1="116" x2="260" y2="116" stroke="#a9b1ad" stroke-width="0.2" />
 <rect x="132" y="200.95" width="2.4" height="46.05" rx="0" fill="#d4b06c" stroke="#8a6a2e" stroke-width="0.2" />

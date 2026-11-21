@@ -153,7 +153,7 @@ def stand_ins():
     cx, cz = c.cradle_centre()
     pcb_y = c.FRONT_T + c.LCD_GLASS
     pi_y, dac_z = c.PI_Y, c.DAC_Z  # the DAC straight on the Pi, its rear edge against the rear panel
-    board_back = c.FRONT_T + c.BOARD_T  # the back of the front board, where its parts stand
+    board_back = c.BOARD_Y + c.BOARD_T  # the back of the front board, where its parts stand
     lean = [(1, 0, 0, 0), (0, 1, c.TAN, -c.TAN * c.H), (0, 0, 1, 0)]
     reader_y = c.READER_Y  # antenna face, reader in the middle grooves
     out = {
@@ -165,7 +165,7 @@ def stand_ins():
         "Pi": c.box(c.PI_X, c.PI_X + 65, pi_y, pi_y + 30, c.FLOOR + c.STANDOFF_H, c.FLOOR + c.STANDOFF_H + 1.6 + 9),
         "ribbon plug on the DAC": c.box(c.PI_X + 4, c.PI_X + 61, pi_y - 2, pi_y + 9, dac_z + 1.6 + 2.5, dac_z + 1.6 + 6 + 9),
         "power key": c.cyly(c.POWER_X, c.CTRL_Z, c.FRONT_T + 0.05, c.FRONT_T + c.POWER_BODY[1], c.POWER_BODY[0]),
-        "front board": c.xf(c.FRONT_M, c.prism(c.BOARD_OUTLINE, -c.BOARD_T, -0.05)),
+        "front board": c.xf(c.FRONT_M, c.prism(c.BOARD_OUTLINE, -c.SPACER_T - c.BOARD_T, -c.SPACER_T - 0.05)),
         "board's sockets and small parts": c.box(c.BOARD_X[0] + 6, c.BOARD_X[1] - 0.5, board_back, board_back + 5, c.BOARD_Z[0] + 0.5, 38.0),
         "board's 40-pin header": c.box(c.PI_HEADER_X - 29.7, c.PI_HEADER_X + 29.7, board_back, board_back + 9, 41.0, 51.0),
         "ribbon plug on the board": c.box(c.PI_HEADER_X - 29.5, c.PI_HEADER_X + 29.5, board_back + 9, board_back + 18, 40.5, 51.5),
@@ -183,8 +183,17 @@ def stand_ins():
         out[f"DAC {name} barrel"] = c.cyly(x, z, c.DAC_Y1 - 1, c.DAC_Y1 + 2.5, 10.5 if name.startswith("RCA") else 6.0)
     if c.REAR_JACK:
         out["headphone socket"] = c.cyly(c.PHONES_X, c.PHONES_Z, c.D - c.REAR_T - 22, c.D - c.REAR_T - 0.05, 10.0)
-    for i, k in enumerate(c.KEYS_X):
-        out[f"switch {i + 1}"] = c.box(k - 6.9, k + 6.9, c.FRONT_T - c.BRASS_T - c.KEY_PLATE + 0.05, c.FRONT_T - 0.05, c.CTRL_Z - 6.9, c.CTRL_Z + 6.9)
+    for i, k in enumerate(c.KEYS_X):  # panel coordinates: d is the depth in front of the panel's inside face
+        cap = c.union(
+            c.prism(c.key_square(k, c.CTRL_Z, c.KEY_CAP), -c.KEY_LIP_T, c.FRONT_T + c.KEY_PROUD),
+            c.prism(c.key_square(k, c.CTRL_Z, c.KEY_CAP + 2 * c.KEY_LIP), -c.KEY_LIP_T, -0.05),  # the lip, square: a little more than the real chamfered one
+        )
+        out[f"key cap {i + 1} (printed)"] = c.xf(c.FRONT_M, cap)
+        body_front = c.BOARD_Y - c.TACT_BODY_H
+        out[f"key switch {i + 1}"] = c.union(
+            c.box(k - c.TACT / 2, k + c.TACT / 2, body_front, c.BOARD_Y - 0.05, c.CTRL_Z - c.TACT / 2, c.CTRL_Z + c.TACT / 2),
+            c.cyly(k, c.CTRL_Z, c.BOARD_Y - c.TACT_H, body_front, 3.5),
+        )
     return out
 
 
