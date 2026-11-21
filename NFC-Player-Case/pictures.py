@@ -79,7 +79,7 @@ def stand_ins():
         s[f"standoff screw {i}"] = (c.cylz(x, y, -1.6, 0, 4.5), METAL, "standoffs")
     s["Pi"] = (B(c.PI_X, c.PI_X + 65, PI_Y, PI_Y + 30, PI_Z, PI_Z + 1.6), PCB_PI, "pi")
     s["Pi header"] = (B(c.PI_X + 7, c.PI_X + 58, *HEADER_Y, PI_Z + 1.6, PI_Z + 1.6 + 2.5), BLACK, "pi")
-    s["Pi USB ports"] = (c.union(*[B(c.PI_X + x - 4, c.PI_X + x + 4, PI_Y + 25, PI_Y + 31, PI_Z + 1.6, PI_Z + 4.4) for x in (41.4, 54.0)]), METAL, "pi")
+    s["Pi USB ports"] = (c.union(*[B(c.PI_X + x - 4, c.PI_X + x + 4, PI_Y + 25, PI_Y + 31, PI_Z + 1.6, PI_Z + 4.4) for x in (65 - 41.4, 65 - 54.0)]), METAL, "pi")  # pin 1 and the SD card are on the right
     s["DAC"] = (B(c.PI_X, c.PI_X + 65, PI_Y, DAC_Y1, DAC_Z, DAC_Z + 1.6), PCB_DAC, "dac")
     s["DAC socket"] = (B(c.PI_X + 7, c.PI_X + 58, *HEADER_Y, PI_Z + 1.6 + 2.5, DAC_Z), BLACK, "dac")
     s["DAC pins"] = (B(c.PI_X + 7, c.PI_X + 58, HEADER_Y[0] + 0.8, HEADER_Y[1] - 0.8, DAC_Z + 1.6, PLUG_Z), METAL, "dac")
@@ -158,7 +158,7 @@ def wires():
         "reader wires": ([(c.CARD_X, READER_Y + 6.5, c.PN532_CENTRE_Z + 16), (c.CARD_X - 30, READER_Y + 4, 30), (j["J3"][0] + 4, lead + 10, 8), (j["J3"][0], lead, j["J3"][1])], WIRES["reader"], "wires"),
         "encoder wires": ([(c.KNOB_X, c.FRONT_T + 9, c.CTRL_Z - 7), (c.KNOB_X - 8, 24, 18), (j["J4"][0] + 6, lead + 4, 16), (j["J4"][0], lead, j["J4"][1])], WIRES["controls"], "wires"),
         "power key wires": ([(c.POWER_X, c.FRONT_T + 24, c.CTRL_Z), (c.POWER_X + 6, 30, 14), (26, 28, 9), (j["J5"][0] - 4, lead + 4, 14), (j["J5"][0], lead, j["J5"][1])], WIRES["power"], "wires"),
-        "USB lead": ([(c.USB_X, c.D - c.REAR_T - 14, c.USB_Z), (c.USB_X - 10, 110, 14), (90, 100, 12), (c.PI_X + 41.4, PI_Y + 33, PI_Z + 3)], WIRES["usb"], "usb lead"),
+        "USB lead": ([(c.USB_X, c.D - c.REAR_T - 14, c.USB_Z), (c.USB_X - 10, 110, 14), (90, 100, 12), (c.PI_X + 65 - 41.4, PI_Y + 33, PI_Z + 3)], WIRES["usb"], "usb lead"),
     }
     # the ribbon, drawn as a band of wires: straight back from the board and down onto the DAC's pins
     top = PLUG_Z + 9  # top of the plug on the DAC

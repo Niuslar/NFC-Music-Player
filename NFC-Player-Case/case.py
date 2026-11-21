@@ -131,10 +131,12 @@ DAC_Z = FLOOR + STANDOFF_H + 1.6 + 11  # underside of the DAC board, straight on
 PI_SLOT_Y = (40.0, 97.0)  # the standoffs sit at PI_Y + 3.5 and PI_Y + 26.5; room to slide either way
 # MEASURE: x, z of each socket's centre, and the hole for it. The barrels end about 1 mm inside
 # the panel's outer face, so each hole clears the plug's metal shell, not just the barrel.
+# The header's pin 1 is on the right seen from the front, so seen from behind the case the
+# sockets read as on the board: red RCA (left), white RCA (right), then the 3.5 mm socket.
 DAC_JACKS = (
-    ("RCA left", 42.0, DAC_Z + 1.6 + 6.5, 11.5),
-    ("RCA right", 56.0, DAC_Z + 1.6 + 6.5, 11.5),
-    ("headphones", 71.0, DAC_Z + 4.6, 9.0),
+    ("RCA left", 53.5, DAC_Z + 1.6 + 6.5, 11.5),
+    ("RCA right", 39.5, DAC_Z + 1.6 + 6.5, 11.5),
+    ("headphones", 24.5, DAC_Z + 4.6, 9.0),
 )
 USB_X, USB_Z = 130.0, 16.0  # panel-mount USB-C socket
 USB_SLOT = (12.5, 6.5)  # MEASURE: its body opening
