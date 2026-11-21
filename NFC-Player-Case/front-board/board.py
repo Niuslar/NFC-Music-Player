@@ -62,11 +62,11 @@ POWER_NETS = ("GND", "3V3", "5V")
 # Headers on the back of the board, pin 1 first. Pin names are printed beside the pins.
 HEADERS = {
     # ref: (title, pin names, nets, pin 1 x, z, value)
-    "J2": ("LCD", ("VCC", "GND", "DIN", "CLK", "CS", "DC", "RST", "BL"), ("3V3", "GND", "MOSI", "SCLK", "LCD_CS", "LCD_DC", "LCD_RST", "LCD_BL"), 118.78, 9.5, "Screen"),
-    "J3": ("NFC", ("SCK", "MISO", "MOSI", "SS", "VCC", "GND"), ("SCLK", "MISO", "MOSI", "NFC_CS", "3V3", "GND"), 140.7, 9.5, "NFC reader"),
-    "J5": ("PWR", ("KEY", "GND", "LED+", "LED-"), ("KEY", "GND", "LED_A", "LED_K"), 108.62, 16.0, "Power key"),
-    "J6": ("OLED", ("GND", "VCC", "SCL", "SDA"), ("GND", "3V3", "SCL", "SDA"), 123.62, 16.0, "OLED"),
-    "J4": ("ENC", ("A", "C", "B", "SW", "SW"), ("ENC_A", "GND", "ENC_B", "ENC_SW", "GND"), 141.16, 16.0, "Knob"),
+    "J2": ("LCD", ("VCC", "GND", "DIN", "CLK", "CS", "DC", "RST", "BL"), ("3V3", "GND", "MOSI", "SCLK", "LCD_CS", "LCD_DC", "LCD_RST", "LCD_BL"), 50.78, 9.5, "Screen"),
+    "J3": ("NFC", ("SCK", "MISO", "MOSI", "SS", "VCC", "GND"), ("SCLK", "MISO", "MOSI", "NFC_CS", "3V3", "GND"), 72.7, 9.5, "NFC reader"),
+    "J5": ("PWR", ("KEY", "GND", "LED+", "LED-"), ("KEY", "GND", "LED_A", "LED_K"), 40.62, 16.0, "Power key"),
+    "J6": ("OLED", ("GND", "VCC", "SCL", "SDA"), ("GND", "3V3", "SCL", "SDA"), 55.62, 16.0, "OLED"),
+    "J4": ("ENC", ("A", "C", "B", "SW", "SW"), ("ENC_A", "GND", "ENC_B", "ENC_SW", "GND"), 73.16, 16.0, "Knob"),
 }
 KEY_NAMES = ("PREV", "PLAY", "NEXT", "BACK")
 KEY_NETS = ("PREV", "PLAY", "NEXT", "BACK")
@@ -85,18 +85,18 @@ def part(ref, value, symbol, footprint, nets, at, side="back", rot=0.0, desc="")
 
 
 part("J1", "Pi GPIO, ribbon from the DAC", ("Connector_Generic", "Conn_02x20_Odd_Even"), ("Connector_IDC", "IDC-Header_2x20_P2.54mm_Vertical"),
-     {str(k): v for k, v in PI_PINS.items()}, (119.0, Y(46.0)), rot=90, desc="Shrouded 2x20 box header, 2.54 mm")
+     {str(k): v for k, v in PI_PINS.items()}, (c.PI_HEADER_X, Y(46.0)), rot=90, desc="Shrouded 2x20 box header, 2.54 mm")
 for i, (k, name, net) in enumerate(zip(c.KEYS_X, KEY_NAMES, KEY_NETS)):
     part(f"SW{i + 1}", f"{name.title()} key", ("Switch", "SW_Push"), (LOCAL_LIB, "Kailh_Choc_V1_Hotswap"), {"1": net, "2": "GND"}, (k, Y(c.CTRL_Z)), side="front",
          desc="Kailh Choc V1 switch in a CPG135001S30 hot-swap socket")
 for ref, (title, names, nets, x1, z, value) in HEADERS.items():
     part(ref, value, ("Connector_Generic", f"Conn_01x{len(nets):02d}"), ("Connector_PinHeader_2.54mm", f"PinHeader_1x{len(nets):02d}_P2.54mm_Vertical"),
          {str(i + 1): n for i, n in enumerate(nets)}, (x1, Y(z)), desc="Straight pin header, 2.54 mm")
-part("D1", "BAT43", ("Device", "D_Schottky"), ("Diode_THT", "D_DO-35_SOD27_P7.62mm_Horizontal"), {"1": "KEY", "2": "POWER"}, (147.5, 40.6), desc="Schottky diode, stripe (cathode) towards the key")
-part("D2", "BAT43", ("Device", "D_Schottky"), ("Diode_THT", "D_DO-35_SOD27_P7.62mm_Horizontal"), {"1": "KEY", "2": "SCL"}, (147.5, 43.9), desc="Schottky diode, stripe (cathode) towards the key")
-part("R1", "1k", ("Device", "R"), ("Resistor_THT", "R_Axial_DIN0207_L6.3mm_D2.5mm_P7.62mm_Horizontal"), {"1": "LIGHT", "2": "LED_BASE"}, (147.5, 47.5), desc="Base resistor")
-part("R2", "220", ("Device", "R"), ("Resistor_THT", "R_Axial_DIN0207_L6.3mm_D2.5mm_P7.62mm_Horizontal"), {"1": "5V", "2": "LED_A"}, (147.5, 51.1), desc="Sets the power light's current. A wire link if the button's LED has its own resistor")
-part("Q1", "2N3904", ("Transistor_BJT", "Q_NPN_EBC"), ("Package_TO_SOT_THT", "TO-92_Inline"), {"1": "GND", "2": "LED_BASE", "3": "LED_K"}, (159.8, 44.0), desc="Switches the power light from 5 V")
+part("D1", "BAT43", ("Device", "D_Schottky"), ("Diode_THT", "D_DO-35_SOD27_P7.62mm_Horizontal"), {"1": "KEY", "2": "POWER"}, (80.5, 40.6), desc="Schottky diode, stripe (cathode) towards the key")
+part("D2", "BAT43", ("Device", "D_Schottky"), ("Diode_THT", "D_DO-35_SOD27_P7.62mm_Horizontal"), {"1": "KEY", "2": "SCL"}, (80.5, 43.9), desc="Schottky diode, stripe (cathode) towards the key")
+part("R1", "1k", ("Device", "R"), ("Resistor_THT", "R_Axial_DIN0207_L6.3mm_D2.5mm_P7.62mm_Horizontal"), {"1": "LIGHT", "2": "LED_BASE"}, (80.5, 47.5), desc="Base resistor")
+part("R2", "220", ("Device", "R"), ("Resistor_THT", "R_Axial_DIN0207_L6.3mm_D2.5mm_P7.62mm_Horizontal"), {"1": "5V", "2": "LED_A"}, (80.5, 51.1), desc="Sets the power light's current. A wire link if the button's LED has its own resistor")
+part("Q1", "2N3904", ("Transistor_BJT", "Q_NPN_EBC"), ("Package_TO_SOT_THT", "TO-92_Inline"), {"1": "GND", "2": "LED_BASE", "3": "LED_K"}, (92.5, 44.0), desc="Switches the power light from 5 V")
 
 
 # ---- the Choc hot-swap footprint ------------------------------------------------------------
@@ -279,9 +279,22 @@ class Shape:
         return min(x0, x1) - hw, min(y0, y1) - hw, max(x0, x1) + hw, max(y0, y1) + hw
 
 
+def inside(poly, x, y):
+    hit = False
+    for (ax, ay), (bx, by) in zip(poly, poly[1:] + poly[:1]):
+        if (ay > y) != (by > y) and x < ax + (y - ay) * (bx - ax) / (by - ay):
+            hit = not hit
+    return hit
+
+
+def edge_distance(poly, x, y):
+    return min(Shape(None, (), "seg", ax, ay, bx, by, 0).dist(x, y) for (ax, ay), (bx, by) in zip(poly, poly[1:] + poly[:1]))
+
+
 class Router:
-    def __init__(self, outline, shapes, pads):
-        self.x0, self.y0, self.x1, self.y1 = outline
+    def __init__(self, bbox, shapes, pads, outline):
+        self.x0, self.y0, self.x1, self.y1 = bbox
+        self.outline = outline
         self.nx = int(round((self.x1 - self.x0) / GRID)) + 1
         self.ny = int(round((self.y1 - self.y0) / GRID)) + 1
         self.N = self.nx * self.ny
@@ -312,7 +325,7 @@ class Router:
                 y = self.y0 + j * GRID
                 for i in range(self.nx):
                     x = self.x0 + i * GRID
-                    if min(x - self.x0, self.x1 - x, y - self.y0, self.y1 - y) < edge:
+                    if not inside(self.outline, x, y) or edge_distance(self.outline, x, y) < edge:
                         g[j * self.nx + i] = 1
             cache[edge] = bytes(g)
         grids = [bytearray(cache[edge]), bytearray(cache[edge])]
@@ -545,13 +558,15 @@ def build_board(used_nets):
     # outline
     x0, x1 = c.BOARD_X
     y0, y1 = Y(c.BOARD_Z[1]), Y(c.BOARD_Z[0])
-    rect = pcbnew.PCB_SHAPE(board)
-    rect.SetShape(pcbnew.SHAPE_T_RECT)
-    rect.SetStart(pcbnew.VECTOR2I(mm(x0), mm(y0)))
-    rect.SetEnd(pcbnew.VECTOR2I(mm(x1), mm(y1)))
-    rect.SetLayer(pcbnew.Edge_Cuts)
-    rect.SetWidth(mm(0.1))
-    board.Add(rect)
+    outline = [(x, Y(z)) for x, z in c.BOARD_OUTLINE]
+    for (ax, ay), (bx, by) in zip(outline, outline[1:] + outline[:1]):
+        edge = pcbnew.PCB_SHAPE(board)
+        edge.SetShape(pcbnew.SHAPE_T_SEGMENT)
+        edge.SetStart(pcbnew.VECTOR2I(mm(ax), mm(ay)))
+        edge.SetEnd(pcbnew.VECTOR2I(mm(bx), mm(by)))
+        edge.SetLayer(pcbnew.Edge_Cuts)
+        edge.SetWidth(mm(0.1))
+        board.Add(edge)
 
     def text(s, x, y, size=1.0, layer=pcbnew.B_SilkS, angle=0, just=0, bold=False):
         t = pcbnew.PCB_TEXT(board)
@@ -578,11 +593,16 @@ def build_board(used_nets):
     for p in PARTS:
         if p["ref"][0] in "DR":
             text(p["ref"], p["at"][0] + 3.81, p["at"][1], 0.8)
-    text("Q1", 159.8, 47.6, 0.8)
-    text(f"NFC PLAYER FRONT BOARD  REV {REVISION}", 120.0, 21.4, 1.0)
-    text("PARTS ON THIS SIDE. TRIM LEADS ON THE OTHER SIDE TO 1.5 MM", 120.0, 38.4, 0.8)
-    text("THIS SIDE AGAINST THE PANEL", 120.0, 21.4, 1.0, layer=pcbnew.F_SilkS)
-    text("NO PARTS ON THIS SIDE", 120.0, 41.0, 0.8, layer=pcbnew.F_SilkS)
+    text("Q1", 92.5, 47.6, 0.8)
+    text(f"NFC PLAYER FRONT BOARD  REV {REVISION}", (c.BOARD_X[0] + 6 + c.BOARD_X[1]) / 2, 21.4, 1.0)
+    text("PARTS ON THIS SIDE. TRIM LEADS ON THE OTHER SIDE TO 1.5 MM", (c.BOARD_X[0] + 6 + c.BOARD_X[1]) / 2, 38.4, 0.8)
+    text("THIS SIDE AGAINST THE PANEL", (c.BOARD_X[0] + 6 + c.BOARD_X[1]) / 2, 21.4, 1.0, layer=pcbnew.F_SilkS)
+    text("NO PARTS ON THIS SIDE", (c.BOARD_X[0] + 6 + c.BOARD_X[1]) / 2, 41.0, 0.8, layer=pcbnew.F_SilkS)
+
+    j1 = {pad.GetNumber(): pad.GetPosition() for pad in board.FindFootprintByReference("J1").Pads()}
+    centre = (pcbnew.ToMM(j1["1"].x) + pcbnew.ToMM(j1["40"].x)) / 2
+    assert abs(centre - c.PI_HEADER_X) < 0.01, "J1 must sit straight in front of the Pi's header"
+    assert j1["1"].x > j1["39"].x and j1["1"].y > j1["2"].y, "J1 must have pin 1 on the right and on the lower row, seen from the front"
 
     # copper to route around
     shapes, pads, holes = [], {}, []
@@ -606,22 +626,23 @@ def build_board(used_nets):
             shapes.append(s)
             if pad.GetNetname():
                 pads.setdefault(pad.GetNetname(), []).append((s, f"{fp.GetReference()}.{pad.GetNumber()}"))
-    router = Router((x0, y0, x1, y1), shapes, pads)
-    router.holes = holes
-
     def span(net):
         xs = [((s.box()[0] + s.box()[2]) / 2) for s, _ in pads[net]]
         ys = [((s.box()[1] + s.box()[3]) / 2) for s, _ in pads[net]]
         return (max(xs) - min(xs)) + (max(ys) - min(ys))
 
+    # Route the short signals first and the power nets last. A net that fails goes to the front
+    # of the queue and everything is routed again, a few times at most.
     order = sorted((n for n in pads if n not in POWER_NETS), key=span) + ["5V", "3V3", "GND"]
-    for net in order:
-        try:
-            ok = router.route(net)
-        except IndexError:
-            ok = False
-            print("index", net, [(n, s.box()) for s, n in pads[net]])
-        print(f"  routed {net:10s}" if ok else f"  COULD NOT ROUTE {net}")
+    for attempt in range(6):
+        router = Router((x0, y0, x1, y1), list(shapes), pads, outline)
+        router.holes = list(holes)
+        for net in order:
+            router.route(net)
+        if not router.failed:
+            break
+        print(f"  attempt {attempt + 1}: could not route {', '.join(router.failed)}; routing those first")
+        order = router.failed + [n for n in order if n not in router.failed]
 
     router.stitch("GND", 3.0)
     for net, layer, ax, ay, bx, by, w in router.tracks:
@@ -658,7 +679,7 @@ def build_board(used_nets):
         z.SetThermalReliefSpokeWidth(mm(0.5))
         ol = z.Outline()
         ol.NewOutline()
-        for px, py in ((x0, y0), (x1, y0), (x1, y1), (x0, y1)):
+        for px, py in outline:
             ol.Append(mm(px), mm(py))
         board.Add(z)
     board.BuildConnectivity()

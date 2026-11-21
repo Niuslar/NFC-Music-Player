@@ -56,6 +56,7 @@ LEAN = [(1, 0, 0, 0), (0, 1, c.TAN, -c.TAN * c.H), (0, 0, 1, 0)]
 READER_Y = c.READER_Y
 BOARD_BACK = c.FRONT_T + c.BOARD_T  # the back of the front board
 J1_Z = 46.0  # centre of the board's 40-pin header
+J1_X = c.PI_HEADER_X  # straight in front of the Pi's header
 B = c.box
 
 
@@ -107,12 +108,10 @@ def stand_ins():
     s["power key ring"] = (ring_y(px, pz, -3.15, -2.9, 12.5, 10.5), LIGHT, "power key")
     s["power key nut"] = (ring_y(px, pz, c.FRONT_T + 0.05, c.FRONT_T + 3.0, c.POWER_BODY[0], 12.2), (0.20, 0.20, 0.21), "power nut")
     # the front board: flat on the panel, sockets and headers on its back
-    x0, x1 = c.BOARD_X
-    z0, z1 = c.BOARD_Z
-    s["front board"] = (B(x0, x1, c.FRONT_T + 0.05, BOARD_BACK, z0, z1), PCB_FRONT, "board")
+    s["front board"] = (c.xf(c.FRONT_M, c.prism(c.BOARD_OUTLINE, -c.BOARD_T, -0.05)), PCB_FRONT, "board")
     for i, k in enumerate(c.KEYS_X):
         s[f"hot-swap socket {i}"] = (B(k - 4.6, k + 9.6, BOARD_BACK, BOARD_BACK + 1.85, c.CTRL_Z - 7.25, c.CTRL_Z - 2.3), (0.93, 0.93, 0.90), "board")
-    s["board 40-pin header"] = (B(89.3, 148.7, BOARD_BACK, BOARD_BACK + 9, J1_Z - 5, J1_Z + 5), BLACK, "board")
+    s["board 40-pin header"] = (B(J1_X - 29.7, J1_X + 29.7, BOARD_BACK, BOARD_BACK + 9, J1_Z - 5, J1_Z + 5), BLACK, "board")
     for ref in fb.HEADERS:
         hx0, hx1, hz = header_span(ref)
         s[f"board header {ref}"] = (c.union(B(hx0, hx1, BOARD_BACK, BOARD_BACK + 2.5, hz - 1.27, hz + 1.27), *[B(x - 0.32, x + 0.32, BOARD_BACK + 2.5, BOARD_BACK + 8.5, hz - 0.32, hz + 0.32) for x in [hx0 + 1.27 + 2.54 * n for n in range(round((hx1 - hx0) / 2.54))]]), BLACK, "board")
@@ -120,8 +119,9 @@ def stand_ins():
         if p["ref"][0] in "DR":
             bx, by = p["at"]
             s[f"board {p['ref']}"] = (B(bx + 1.0, bx + 6.6, BOARD_BACK, BOARD_BACK + 2.2, fb.TOP - by - 1.1, fb.TOP - by + 1.1), (0.85, 0.75, 0.55) if p["ref"][0] == "R" else (0.55, 0.62, 0.85), "board")
-    s["board Q1"] = (B(157.4, 162.2, BOARD_BACK, BOARD_BACK + 4.5, fb.TOP - 44.0 - 1.0, fb.TOP - 44.0 + 2.5), BLACK, "board")
-    s["ribbon plug on the board"] = (B(89.8, 148.2, BOARD_BACK + 9, BOARD_BACK + 18, J1_Z - 4.5, J1_Z + 4.5), RIBBON_PLUG, "ribbon")
+    q = next(p for p in fb.PARTS if p["ref"] == "Q1")["at"]
+    s["board Q1"] = (B(q[0] - 2.4, q[0] + 2.4, BOARD_BACK, BOARD_BACK + 4.5, fb.TOP - q[1] - 1.0, fb.TOP - q[1] + 2.5), BLACK, "board")
+    s["ribbon plug on the board"] = (B(J1_X - 29.2, J1_X + 29.2, BOARD_BACK + 9, BOARD_BACK + 18, J1_Z - 4.5, J1_Z + 4.5), RIBBON_PLUG, "ribbon")
     for i, (x, z) in enumerate(c.BOARD_SCREWS):
         s[f"board screw {i}"] = (c.cyly(x, z, BOARD_BACK + 0.05, BOARD_BACK + 1.6, 3.8), METAL, "board")
     # NFC reader and card
@@ -157,15 +157,14 @@ def wires():
         "screen wires": ([(LCD_CX + 19, LCD_Y + 7, LCD_CZ), (LCD_CX + 22, 26, LCD_CZ - 8), (j["J2"][0] - 6, lead + 6, 9), (j["J2"][0], lead, j["J2"][1])], WIRES["screen"], "wires"),
         "reader wires": ([(c.CARD_X, READER_Y + 6.5, c.PN532_CENTRE_Z + 16), (c.CARD_X - 30, READER_Y + 4, 30), (j["J3"][0] + 4, lead + 10, 8), (j["J3"][0], lead, j["J3"][1])], WIRES["reader"], "wires"),
         "encoder wires": ([(c.KNOB_X, c.FRONT_T + 9, c.CTRL_Z - 7), (c.KNOB_X - 8, 24, 18), (j["J4"][0] + 6, lead + 4, 16), (j["J4"][0], lead, j["J4"][1])], WIRES["controls"], "wires"),
-        "power key wires": ([(c.POWER_X, c.FRONT_T + 24, c.CTRL_Z), (c.POWER_X + 6, 30, 14), (60, 28, 9), (j["J5"][0] - 4, lead + 4, 14), (j["J5"][0], lead, j["J5"][1])], WIRES["power"], "wires"),
+        "power key wires": ([(c.POWER_X, c.FRONT_T + 24, c.CTRL_Z), (c.POWER_X + 6, 30, 14), (26, 28, 9), (j["J5"][0] - 4, lead + 4, 14), (j["J5"][0], lead, j["J5"][1])], WIRES["power"], "wires"),
         "USB lead": ([(c.USB_X, c.D - c.REAR_T - 14, c.USB_Z), (c.USB_X - 10, 110, 14), (90, 100, 12), (c.PI_X + 41.4, PI_Y + 33, PI_Z + 3)], WIRES["usb"], "usb lead"),
     }
-    # the ribbon, drawn as a band of wires: back from the board, folded left, down onto the DAC's pins
+    # the ribbon, drawn as a band of wires: straight back from the board and down onto the DAC's pins
+    top = PLUG_Z + 9  # top of the plug on the DAC
     for i in range(9):
-        t = i / 8
-        bx = 92.0 + t * 54.0
-        dx = c.PI_X + 8 + t * 49.0
-        out[f"ribbon {i}"] = ([(bx, BOARD_BACK + 18, J1_Z), (bx - 4, BOARD_BACK + 28, J1_Z + 1), (dx + 30, 36, J1_Z), (dx, HEADER_Y[0] + 3, PLUG_Z + 20), (dx, HEADER_Y[0] + 3, PLUG_Z + 9)], RIBBON, "ribbon")
+        x = J1_X - 24 + 6 * i
+        out[f"ribbon {i}"] = ([(x, BOARD_BACK + 18.5, J1_Z - 4), (x, BOARD_BACK + 19.5, J1_Z - 9), (x, BOARD_BACK + 26, top + 1.5), (x, HEADER_Y[0] - 6, top + 1), (x, HEADER_Y[0] + 3, top + 0.5)], RIBBON, "ribbon")
     return out
 
 
@@ -327,8 +326,8 @@ SHOTS = {
         "marks": [
             ("Power key, its nut and its leads", (c.POWER_X, c.FRONT_T + 12, 45), "power key"),
             ("Screen, held upright in its cradle behind the window", (LCD_CX - 18, LCD_Y + 4, 47), "screen"),
-            ("Front board behind the keys, with its 40-pin header on top", (120, BOARD_BACK + 9, 51), "board"),
-            ("Ribbon from the board to the pins on top of the DAC", (100, 34, 48), "ribbon"),
+            ("Front board behind the keys, with its 40-pin header on top", (c.BOARD_X[1] - 8, BOARD_BACK + 5, 36), "board"),
+            ("Ribbon: straight back from the board and down onto the DAC's pins", (J1_X, 40, PLUG_Z + 10), "ribbon"),
             ("Encoder (volume knob)", (c.KNOB_X, 6, 40), "encoder"),
             ("Card guide, card slot leaning 5° back", (c.CARD_X + 24, c.CARD_Y - 3, 50), "guide"),
             ("NFC reader, held 20 mm behind the card slot", (c.CARD_X - 18, READER_Y + 3, 55), "reader"),
@@ -401,17 +400,17 @@ SHOTS = {
         ],
     },
     "step-3-board": {
-        "view": (1.0, 0.85, 0.5),  # from behind on the knob side, so the gap between board and panel shows
+        "view": (-1.0, 0.85, 0.5),  # from behind on the power key side, so the gap between board and panel shows
         "frame": ("board",) + KEYS,
         "margin": 0.12,
         "hide": ("chassis", "lid", "lid screws", "rear", "standoffs", "pi", "dac", "screen", "cradle", "guide", "reader", "wires", "usb lead", "feet", "card", "front screws", "ribbon plug on the DAC", "knob", "nut", "washer") + tuple(f"ribbon {i}" for i in range(9)),
         "focus": ("front",),
         "move": {"board": v(0, 26, 0), "ribbon plug on the board": v(0, 26, 0)},
-        "arrows": [((c.BOARD_X[1] + 6, 40, BOARD_MID[1]), (c.BOARD_X[1] + 6, 12, BOARD_MID[1]))],
+        "arrows": [((c.BOARD_X[0] - 5, 40, BOARD_MID[1]), (c.BOARD_X[0] - 5, 12, BOARD_MID[1]))],
         "marks": [
             ("Front board: the hot-swap sockets on its back take the switches' pins", (c.KEYS_X[2] + 9, BOARD_BACK + 1.85, c.CTRL_Z - 2), "board"),
-            ("Ribbon plug: press it onto the 40-pin header before fitting the board", (148.2, BOARD_BACK + 18, J1_Z + 4.5), "board"),
-            ("Pin headers for the screen, reader, knob, power key and OLED", (110, BOARD_BACK + 8.5, 16), "board"),
+            ("Ribbon plug: press it onto the 40-pin header before fitting the board", (J1_X - 29.2, BOARD_BACK + 18, J1_Z + 4.5), "board"),
+            ("Pin headers for the screen, reader, knob, power key and OLED", (45, BOARD_BACK + 8.5, 16), "board"),
             ("Three M2 × 4 screws into the panel", (c.BOARD_SCREWS[2][0], BOARD_BACK + 1.6, c.BOARD_SCREWS[2][1]), "board"),
             ("Shallow pockets in the panel take the solder joints on the board's front", (c.BOARD_POCKETS[0][0] + 2, c.FRONT_T, c.BOARD_POCKETS[0][3] - 2), "front"),
         ],
@@ -466,7 +465,7 @@ SHOTS = {
         "hide": ("lid", "lid screws", "rear", "card"),
         "margin": 0.04,
         "marks": [
-            ("Ribbon: red stripe to pin 1 at both ends", (100, 32, J1_Z + 2), "ribbon"),
+            ("Ribbon: red stripe to pin 1 at both ends, and no twist", (J1_X + 20, 40, PLUG_Z + 10), "ribbon"),
             ("Ribbon plug on the DAC's pins", (c.PI_X + 5, HEADER_Y[0] - 2, PLUG_Z + 9), "ribbon"),
             ("Screen lead to the LCD header", (LCD_CX + 22, 26, LCD_CZ - 8), "wires"),
             ("Power key leads to the PWR header", (40, 29, 11), "wires"),

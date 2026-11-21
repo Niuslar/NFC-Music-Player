@@ -40,16 +40,16 @@ CLEAR_M3 = 3.3
 
 # ---- front controls ---------------------------------------------------------
 CTRL_Z = 29.5  # centre line of screen, keys and knob (half the height)
-LCD_X = 57.5  # centre of the screen window
+LCD_X = 136.0  # centre of the screen window: right of the keys, clear of the front board
 LCD_WINDOW = (42.2, 32.0)  # the Waveshare 2 inch panel shows 40.8 x 30.6
 LCD_PCB = (58.0, 35.0, 1.6)
 LCD_GLASS = 3.0  # MEASURE: how far the glass stands in front of the board
 LCD_OFF_X = 2.0  # From Waveshare's drawing, with the pin pads on the left. Centre of the lit area minus centre of the board, seen from the
 LCD_OFF_Z = 0.0  #          front; x to the right, z up. Room for -4 to +4 in x, -2 to +2 in z.
-KEYS_X = (93.5, 111.5, 129.5, 147.5)  # Kailh Choc V1 at 18 mm pitch: previous, play, next, back
+KEYS_X = (37.0, 55.0, 73.0, 91.0)  # Kailh Choc V1 at 18 mm pitch: previous, play, next, back. Left, so the board behind them sits in front of the DAC
 KEY_HOLE = 13.9
 KEY_PLATE = 1.2  # plate thickness the Choc clips need
-KNOB_X = 177.0
+KNOB_X = 178.5
 KNOB_D = 34.0
 ENCODER_HOLE = 7.3  # M7 bushing
 ENCODER_BODY = (13.5, 14.5)  # pocket for the encoder body; it also stops the body turning
@@ -95,10 +95,15 @@ TRAY_FLOOR = 2.0
 # Kailh's PG1350 drawing puts the board 2.2 mm behind the underside of the switch plate, so
 # the panel is exactly that much thicker than brass plus plate and the board needs no spacers.
 CHOC_BELOW_PLATE = 2.2
-BOARD_X = (88.0, 169.0)  # clear of the screen cradle on the left and the encoder on the right
-BOARD_Z = (4.0, 53.0)
+# Its 40-pin header sits straight in front of the Pi's, the same way round, so the ribbon runs
+# back and down onto the DAC's pins with one bend and no twist (see front-board/board.py).
+PI_HEADER_X = None  # set below, from PI_X
+BOARD_OUTLINE = ((23.0, 4.0), (101.5, 4.0), (101.5, 53.0), (17.5, 53.0), (17.5, 40.0), (23.0, 40.0))  # x, z; the step at the
+# top left lets the 40-pin header reach over the power key's nut
+BOARD_X = (min(x for x, z in BOARD_OUTLINE), max(x for x, z in BOARD_OUTLINE))
+BOARD_Z = (min(z for x, z in BOARD_OUTLINE), max(z for x, z in BOARD_OUTLINE))
 BOARD_T = 1.6
-BOARD_SCREWS = ((91.5, 8.0), (165.0, 8.0), (165.0, 47.0))  # M2 x 4 into pilots in the panel
+BOARD_SCREWS = ((27.0, 8.0), (97.5, 8.0), (97.5, 47.0))  # M2 x 4 into pilots in the panel
 PILOT_M2 = 1.6
 PILOT_M2_DEPTH = 2.8
 # The through-hole parts sit on the back of the board and are soldered on its front, so the
@@ -106,9 +111,9 @@ PILOT_M2_DEPTH = 2.8
 # every through-hole pad lies inside one.
 BOARD_POCKET_DEPTH = 1.6
 BOARD_POCKETS = (
-    (89.5, 42.0, 148.5, 50.0),  # the 40-pin header
-    (95.0, 5.5, 145.0, 21.0),  # the headers for the screen, reader, knob, power key and OLED
-    (145.5, 5.5, 163.0, 21.5),  # diodes, transistor and resistors
+    (21.5, 42.5, 73.5, 49.5),  # the 40-pin header
+    (31.0, 5.5, 75.5, 21.0),  # the headers for the screen, reader, knob, power key and OLED
+    (78.5, 5.5, 95.5, 21.5),  # diodes, transistor and resistors
 )
 
 # ---- electronics ------------------------------------------------------------
@@ -116,6 +121,7 @@ BOARD_POCKETS = (
 # two slots in the floor, so it can slide front to back until the DAC's sockets meet the
 # rear panel.
 PI_X = 15.0  # left edge of the Pi; its mounting holes are 58 x 23 mm apart
+PI_HEADER_X = PI_X + 32.5  # centre of its 40-pin header, which the front board's header lines up with
 PI_SLOT_Y = (40.0, 93.0)
 STANDOFF_H = 5.0
 RCA_WINDOW = (17.0, 78.0, 19.5, 38.5)  # MEASURE: x0, x1, z0, z1 of the opening for the DAC's RCA and headphone sockets
