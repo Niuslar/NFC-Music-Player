@@ -9,3 +9,9 @@ demo/
 NFC-Player-Case/parts.blend
 NFC-Player-Case/pictures/
 *.blend1
+
+# KiCad: local settings, backups, and the loose Gerbers (the zip next to them is kept)
+*.kicad_prl
+*-backups/
+fp-info-cache
+NFC-Player-Case/front-board/fab/gerbers/

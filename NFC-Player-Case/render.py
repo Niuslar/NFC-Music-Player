@@ -50,6 +50,32 @@ for ob, (x, y) in zip(numbered("Lid screw"), [(x, y) for x in c.LID_SCREW_X for 
 for ob, (x, y) in zip(numbered("Foot"), [(x, y) for x in (18, c.W - 18) for y in (18, c.D - 18)]):
     ob.location = (x, y, -2.5)
 
+def material(name, colour, rough=0.45, emit=0.0):
+    m = D.materials.get(name) or D.materials.new(name)
+    m.use_nodes = True
+    bsdf = m.node_tree.nodes.get("Principled BSDF")
+    bsdf.inputs["Base Color"].default_value = (*colour, 1)
+    bsdf.inputs["Roughness"].default_value = rough
+    if emit:
+        bsdf.inputs["Emission Color"].default_value = (*colour, 1)
+        bsdf.inputs["Emission Strength"].default_value = emit
+    return m
+
+
+# The power key: a black 12 mm button with a lit ring, a stand-in made here each time.
+for name in ("Power key", "Power key ring", "Power key cap"):
+    if name in D.objects:
+        D.objects.remove(D.objects[name])
+for name, r, y0, y1, mat in (
+    ("Power key", 7.5, -2.6, 0.0, material("Black plastic", (0.015, 0.015, 0.016), 0.35)),
+    ("Power key ring", 6.3, -2.75, -2.6, material("Power light", (1.0, 0.62, 0.25), 0.4, 6.0)),
+    ("Power key cap", 5.3, -2.85, -2.6, material("Black plastic", (0.015, 0.015, 0.016), 0.35)),
+):
+    bpy.ops.mesh.primitive_cylinder_add(vertices=64, radius=r, depth=y1 - y0, location=(c.POWER_X, (y0 + y1) / 2, c.CTRL_Z), rotation=(1.5707963, 0, 0))
+    ob = bpy.context.active_object
+    ob.name = name
+    ob.data.materials.append(mat)
+
 knob = D.objects["Volume knob"]
 knob.location = (c.KNOB_X, -9.0, c.CTRL_Z)
 knob.scale = (c.KNOB_D / 26.0, c.KNOB_D / 26.0, 1.0)
@@ -58,12 +84,11 @@ for name, d, y in (("Jack surround", 9.0, c.D + 0.5), ("Jack aperture", 3.5, c.D
     D.objects[name].scale = (d / D.objects[name].dimensions.x * D.objects[name].scale.x,) * 2 + (1.0,)
     D.objects[name].hide_render = not c.REAR_JACK  # otherwise the DAC's own socket is used
 
-dx, dz = c.LCD_X - 40.0, c.CTRL_Z - 29.0  # the screen and its lettering move with the window
-screen = D.objects["Display"]
-screen.location = (c.LCD_X, c.FRONT_T - 0.3, c.CTRL_Z)
+screen = D.objects["Display"]  # the screen and its lettering move with the window
 for name in ("Now playing", "Alpine Echoes", "Progress"):
     ob = D.objects[name]
-    ob.location = (ob.location.x + dx, c.FRONT_T - 0.7, ob.location.z + dz)
+    ob.location = (c.LCD_X + ob.location.x - screen.location.x, c.FRONT_T - 0.7, c.CTRL_Z + ob.location.z - screen.location.z)
+screen.location = (c.LCD_X, c.FRONT_T - 0.3, c.CTRL_Z)
 shift = c.CARD_X - D.objects["Playing card"].location.x
 for name in ("Playing card", "ALPINE", "ECHOES"):  # the card in the slot and its print
     D.objects[name].location.x += shift

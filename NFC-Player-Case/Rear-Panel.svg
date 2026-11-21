@@ -4,7 +4,7 @@
 <rect width="250" height="111" fill="#ffffff"/>
 
 <polygon points="28.5,75 223.5,75 226,72.5 226,22 225.95,21.22 225.8,20.45 225.54,19.7 225.2,19 224.76,18.35 224.24,17.76 223.65,17.24 223,16.8 222.3,16.46 221.55,16.2 220.78,16.05 220,16 32,16 31.22,16.05 30.45,16.2 29.7,16.46 29,16.8 28.35,17.24 27.76,17.76 27.24,18.35 26.8,19 26.46,19.7 26.2,20.45 26.05,21.22 26,22 26,72.5" fill="#3b403e" stroke="#222826" stroke-width="0.3" />
-<rect x="148" y="24" width="61" height="19" rx="0" fill="#ffffff" stroke="#222826" stroke-width="0.3" />
+<rect x="148" y="36.5" width="61" height="19" rx="0" fill="#ffffff" stroke="#222826" stroke-width="0.3" />
 <rect x="89.75" y="55.75" width="12.5" height="6.5" rx="3.25" fill="#ffffff" stroke="#222826" stroke-width="0.3" />
 <circle cx="87.5" cy="59" r="1.65" fill="#ffffff" stroke="#222826" stroke-width="0.3"/>
 <circle cx="104.5" cy="59" r="1.65" fill="#ffffff" stroke="#222826" stroke-width="0.3"/>
@@ -48,15 +48,15 @@
 <line x1="219" y1="76" x2="219" y2="82" stroke="#a9b1ad" stroke-width="0.2" />
 <line x1="219" y1="81.1" x2="219" y2="82.9" stroke="#222826" stroke-width="0.25" />
 <text x="219" y="86" font-size="3" text-anchor="middle" fill="#222826" font-weight="400" style="font-family:system-ui,-apple-system,'Segoe UI',sans-serif">193</text>
-<line x1="19" y1="75" x2="19" y2="24" stroke="#5f6b66" stroke-width="0.2" />
+<line x1="19" y1="75" x2="19" y2="36.5" stroke="#5f6b66" stroke-width="0.2" />
 <line x1="25" y1="59" x2="19" y2="59" stroke="#a9b1ad" stroke-width="0.2" />
 <line x1="18.1" y1="59" x2="19.9" y2="59" stroke="#222826" stroke-width="0.25" />
 <text x="17.2" y="60.05" font-size="3" text-anchor="end" fill="#222826" font-weight="400" style="font-family:system-ui,-apple-system,'Segoe UI',sans-serif">16</text>
-<line x1="25" y1="43" x2="19" y2="43" stroke="#a9b1ad" stroke-width="0.2" />
-<line x1="18.1" y1="43" x2="19.9" y2="43" stroke="#222826" stroke-width="0.25" />
-<text x="17.2" y="44.05" font-size="3" text-anchor="end" fill="#222826" font-weight="400" style="font-family:system-ui,-apple-system,'Segoe UI',sans-serif">32</text>
-<line x1="25" y1="24" x2="19" y2="24" stroke="#a9b1ad" stroke-width="0.2" />
-<line x1="18.1" y1="24" x2="19.9" y2="24" stroke="#222826" stroke-width="0.25" />
-<text x="17.2" y="25.05" font-size="3" text-anchor="end" fill="#222826" font-weight="400" style="font-family:system-ui,-apple-system,'Segoe UI',sans-serif">51</text>
+<line x1="25" y1="55.5" x2="19" y2="55.5" stroke="#a9b1ad" stroke-width="0.2" />
+<line x1="18.1" y1="55.5" x2="19.9" y2="55.5" stroke="#222826" stroke-width="0.25" />
+<text x="17.2" y="56.55" font-size="3" text-anchor="end" fill="#222826" font-weight="400" style="font-family:system-ui,-apple-system,'Segoe UI',sans-serif">19.5</text>
+<line x1="25" y1="36.5" x2="19" y2="36.5" stroke="#a9b1ad" stroke-width="0.2" />
+<line x1="18.1" y1="36.5" x2="19.9" y2="36.5" stroke="#222826" stroke-width="0.25" />
+<text x="17.2" y="37.55" font-size="3" text-anchor="end" fill="#222826" font-weight="400" style="font-family:system-ui,-apple-system,'Segoe UI',sans-serif">38.5</text>
 <text x="26" y="107" font-size="2.8" text-anchor="start" fill="#5f6b66" font-weight="400" style="font-family:system-ui,-apple-system,'Segoe UI',sans-serif">Window 61 × 19 for the DAC's RCA and headphone sockets. USB-C slot 12.5 × 6.5, screws 17 apart.</text>
 </svg>

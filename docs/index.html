@@ -111,17 +111,17 @@
   <tr><th>Part</th><th>What to get</th><th>Approx.</th><th>Notes</th></tr>
   <tr><td>Computer</td><td>Raspberry Pi Zero 2 W</td><td class="num">£15</td><td>Needs a 2×20 pin header. Solder one on if yours has none (the "WH" version has it fitted).</td></tr>
   <tr><td>DAC</td><td>Raspberry Pi DAC Pro</td><td class="num">£24</td><td>3.5 mm and RCA (white and red) out.</td></tr>
-  <tr><td>GPIO splitter</td><td>A board that turns one 40-pin header into two or three (e.g. Pimoroni Mini Black HAT Hack3r, or a generic "GPIO 1 to 2 expansion board")</td><td class="num">£6–10</td><td>The DAC covers the whole header, so this is how the other parts reach the pins. <strong>A plain stacking header will not work here:</strong> a HAT's socket is closed on top.</td></tr>
+  <tr><td>Front board and ribbon (for the case)</td><td>The small board in <code>NFC-Player-Case/front-board/</code>, made by any board maker, and a 40-way IDC ribbon cable, female at both ends</td><td class="num">£10</td><td>Only for the finished case: it sits behind the keys and replaces the jumper wires of step 5. On the bench, wire straight to the DAC's pins. See the <a href="../NFC-Player-Case/NFC-Player-Assembly.html#board">case assembly guide</a>.</td></tr>
   <tr><td>SD card</td><td>256 GB microSD, A2 rated</td><td class="num">£20</td><td>About 700 FLAC albums. 512 GB also works.</td></tr>
   <tr><td>Display</td><td>Waveshare 2inch LCD Module (ST7789, 240×320, SPI)</td><td class="num">£12</td><td>Other ST7789 240×320 boards should work with the same wiring.</td></tr>
   <tr><td>Display (alternative)</td><td>0.91-inch 128×32 SSD1306 OLED (I2C, 4 pins)</td><td class="num">£4</td><td>Cheaper and simpler to wire, but much less nice: one colour, a compact text-only layout and no cover art. This is the screen tested on the real Pi so far. Get one or the other.</td></tr>
   <tr><td>NFC reader</td><td>PN532 NFC module V3 (the red Elechouse-style board)</td><td class="num">£8</td><td>Has two small switches to choose SPI mode.</td></tr>
   <tr><td>NFC cards</td><td>NTAG215 blank PVC cards</td><td class="num">£8</td><td>NTAG213/216 and MIFARE Classic cards also work. Only the card's ID is read.</td></tr>
   <tr><td>Knob encoder</td><td>24-click rotary encoder with push switch, from a known maker: The Pi Hut "Rotary Encoder + Extras", or a Bourns PEC11R or Alps EC11</td><td class="num">£4</td><td>Clicks as it turns. Normal-pitch pins that fit a breadboard. Avoid unbranded multi-packs; they feel loose and wear quickly.</td></tr>
-  <tr><td>Knob</td><td>Solid aluminium, 30–38 mm, with a set screw, to fit a 6 mm shaft</td><td class="num">£8</td><td>Most of the quality feel comes from this: weight, diameter and no wobble. Check your encoder's shaft (6 mm D-shaped or knurled) before buying.</td></tr>
-  <tr><td>Buttons</td><td>5 push buttons. Any tactile switch for testing; Kailh Choc switches with keycaps for the final build</td><td class="num">£10</td><td>Previous, play/pause, next, back, and a power key that turns the player off safely and on again.</td></tr>
+  <tr><td>Knob</td><td>Solid aluminium, 30 mm (the case takes up to 30 mm), with a set screw, to fit a 6 mm shaft</td><td class="num">£8</td><td>Most of the quality feel comes from this: weight, diameter and no wobble. Check your encoder's shaft (6 mm D-shaped or knurled) before buying.</td></tr>
+  <tr><td>Buttons</td><td>5 push buttons. Any tactile switch for testing; Kailh Choc switches with keycaps for the final build</td><td class="num">£10</td><td>Previous, play/pause, next, back, and a power key that turns the player off safely and on again. In the case, the power key is a 12 mm push button with its own light.</td></tr>
   <tr><td>Diodes</td><td>2 Schottky diodes, e.g. BAT43 or 1N5817</td><td class="num">£1</td><td>For the power key. Ordinary silicon diodes such as the 1N4148 drop too much voltage and may not register a press.</td></tr>
-  <tr><td>Power light</td><td>One 3 mm or 5 mm LED and a 330 Ω resistor</td><td class="num">£1</td><td>Lights within a couple of seconds of power, long before the screen, and goes off once the Pi has shut down.</td></tr>
+  <tr><td>Power light</td><td>One 3 mm or 5 mm LED and a 330 Ω resistor</td><td class="num">£1</td><td>Lights within a couple of seconds of power, long before the screen, and goes off once the Pi has shut down. In the case, the power key's own light does this, through the front board.</td></tr>
   <tr><td>Bench bits</td><td>Breadboard, jumper wires (male–female and male–male)</td><td class="num">£8</td><td></td></tr>
   <tr><td>USB cable</td><td>Micro-USB to USB-C (or to USB-A) <em>data</em> cable</td><td class="num">£5</td><td>Powers the Pi from the computer and carries the music. Charge-only cables will not work.</td></tr>
 </table>
@@ -133,7 +133,7 @@
 <h3>Tools</h3>
 <ul>
   <li>Soldering iron and solder (Pi header and reader pins if not fitted).</li>
-  <li>Multimeter, useful for finding pin 1 on the splitter and checking connections.</li>
+  <li>Multimeter, useful for finding pin 1 on the DAC's header and checking connections.</li>
 </ul>
 <h3>On your computer</h3>
 <ul>
@@ -179,8 +179,8 @@
 <h2 id="dac"><span class="step">Step 3</span>Fit the DAC</h2>
 <ol>
   <li>Shut the Pi down with <code>sudo poweroff</code>, wait for the green light to stop, and unplug it. Do this before every wiring change.</li>
-  <li>Plug the GPIO splitter onto the Pi's header, and the DAC Pro onto one of the splitter's headers. Check that pin 1 lines up on every board.</li>
-  <li>The splitter's free header is where the display, reader, knob and buttons connect in step 5.</li>
+  <li>Plug the DAC Pro straight onto the Pi's header. Check that pin 1 lines up.</li>
+  <li>The DAC's header passes every pin of the Pi through on top. Those pins are where the display, reader, knob and buttons connect in step 5, using female jumper leads. In the case, the front board's ribbon plugs onto them instead.</li>
   <li>Connect the DAC's 3.5 mm or RCA output to your speaker or amplifier, with its volume low.</li>
 </ol>
 <div class="note"><p>The DAC uses GPIO 2, 3, 18, 19, 20 and 21 and the two ID pins (physical pins 27 and 28). Never connect anything else to those. The one exception is the power key, which reaches GPIO 3 through a diode (<a href="#w-buttons">step 5</a>).</p></div>
@@ -659,7 +659,7 @@
 <div class="table-wrap"><table>
   <tr><th>Symptom</th><th>Try</th></tr>
   <tr><td><code>ssh nfcplayer.local</code> does not connect</td><td>Wait another minute. Check the Wi-Fi name and password set in Imager and that the network is 2.4 GHz. Find the Pi's address in your router and use that instead.</td></tr>
-  <tr><td>No DAC in <code>aplay -l</code></td><td>Reseat the DAC and splitter. Add <code>dtoverlay=rpi-dacpro</code> to the end of <code>/boot/firmware/config.txt</code>, reboot, run setup again.</td></tr>
+  <tr><td>No DAC in <code>aplay -l</code></td><td>Reseat the DAC. Add <code>dtoverlay=rpi-dacpro</code> to the end of <code>/boot/firmware/config.txt</code>, reboot, run setup again.</td></tr>
   <tr><td>Display stays dark</td><td>Recheck VCC, GND and BL. Check SPI is on: <code>ls /dev/spidev0.*</code> should list two devices.</td></tr>
   <tr><td>Display lit but blank or garbled</td><td>Recheck DC, RST, DIN and CLK. Shorten the wires.</td></tr>
   <tr><td>Display works alone but breaks when the reader is added</td><td>Check the reader's SS wire is on pin 26, not 24.</td></tr>
