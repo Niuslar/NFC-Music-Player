@@ -12,7 +12,7 @@
 <rect x="92.05" y="38.55" width="13.9" height="13.9" rx="0" fill="#ffffff" stroke="#222826" stroke-width="0.3" />
 <rect x="110.05" y="38.55" width="13.9" height="13.9" rx="0" fill="#ffffff" stroke="#222826" stroke-width="0.3" />
 <circle cx="204.5" cy="45.5" r="3.65" fill="#ffffff" stroke="#222826" stroke-width="0.3"/>
-<circle cx="204.5" cy="45.5" r="17" fill="none" stroke="#5f6b66" stroke-width="0.2"/>
+<circle cx="204.5" cy="45.5" r="15" fill="none" stroke="#5f6b66" stroke-width="0.2"/>
 <circle cx="40" cy="45.5" r="6.1" fill="#ffffff" stroke="#222826" stroke-width="0.3"/>
 <circle cx="33" cy="66" r="1.65" fill="#ffffff" stroke="#222826" stroke-width="0.3"/>
 <circle cx="33" cy="66" r="3" fill="none" stroke="#5f6b66" stroke-width="0.15"/>
@@ -73,5 +73,5 @@
 <line x1="25" y1="25" x2="19" y2="25" stroke="#a9b1ad" stroke-width="0.2" />
 <line x1="18.1" y1="25" x2="19.9" y2="25" stroke="#222826" stroke-width="0.25" />
 <text x="17.2" y="26.05" font-size="3" text-anchor="end" fill="#222826" font-weight="400" style="font-family:system-ui,-apple-system,'Segoe UI',sans-serif">50</text>
-<text x="26" y="107" font-size="2.8" text-anchor="start" fill="#5f6b66" font-weight="400" style="font-family:system-ui,-apple-system,'Segoe UI',sans-serif">Centre line 29.5. Power key hole 12.2. Dashed circles: the 34 mm knob and 6 mm screw heads.</text>
+<text x="26" y="107" font-size="2.8" text-anchor="start" fill="#5f6b66" font-weight="400" style="font-family:system-ui,-apple-system,'Segoe UI',sans-serif">Centre line 29.5. Power key hole 12.2. Dashed circles: the 30 mm knob and 6 mm screw heads.</text>
 </svg>

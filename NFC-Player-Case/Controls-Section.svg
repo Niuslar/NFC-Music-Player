@@ -61,12 +61,12 @@
 <rect x="130.5" y="172" width="1.5" height="36" rx="0" fill="#b9b7ad" stroke="#5f6b66" stroke-width="0.2" />
 <rect x="124.5" y="175" width="6" height="30" rx="0" fill="#9a9a94" stroke="#5f6b66" stroke-width="0.2" />
 <rect x="78.9" y="181" width="45" height="18" rx="0" fill="#c8c8c2" stroke="#5f6b66" stroke-width="0.2" />
-<polygon points="121.5,238 73.5,238 73.5,142 121.5,142 121.5,179.8 77.4,179.8 77.4,200.2 121.5,200.2" fill="#d4b06c" stroke="#8a6a2e" stroke-width="0.25" />
-<rect x="94.5" y="200.2" width="9" height="37.8" rx="0" fill="#6f5426" stroke="none" stroke-width="0.3" />
+<polygon points="121.5,232 73.5,232 73.5,148 121.5,148 121.5,179.8 77.4,179.8 77.4,200.2 121.5,200.2" fill="#d4b06c" stroke="#8a6a2e" stroke-width="0.25" />
+<rect x="94.5" y="200.2" width="9" height="31.8" rx="0" fill="#6f5426" stroke="none" stroke-width="0.3" />
 <rect x="135.9" y="173.2" width="3" height="3" rx="0" fill="none" stroke="#d2452d" stroke-width="0.3" stroke-dasharray="0.8 0.5"/>
 <line x1="97.5" y1="148" x2="68.3" y2="147" stroke="#a9b1ad" stroke-width="0.18" />
 <circle cx="97.5" cy="148" r="0.45" fill="#5f6b66" stroke="none" stroke-width="0.3"/>
-<text x="67.5" y="148" font-size="3.7" text-anchor="end" fill="#222826" font-weight="400" style="font-family:system-ui,-apple-system,'Segoe UI',sans-serif">Knob, up to 34 mm</text>
+<text x="67.5" y="148" font-size="3.7" text-anchor="end" fill="#222826" font-weight="400" style="font-family:system-ui,-apple-system,'Segoe UI',sans-serif">Knob, up to 30 mm</text>
 <line x1="127.5" y1="176.5" x2="68.3" y2="175.5" stroke="#a9b1ad" stroke-width="0.18" />
 <circle cx="127.5" cy="176.5" r="0.45" fill="#5f6b66" stroke="none" stroke-width="0.3"/>
 <text x="67.5" y="176.5" font-size="3.7" text-anchor="end" fill="#222826" font-weight="400" style="font-family:system-ui,-apple-system,'Segoe UI',sans-serif">Nut</text>
