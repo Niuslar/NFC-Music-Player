@@ -43,13 +43,13 @@ WIRES = {"screen": (0.95, 0.75, 0.10), "reader": (0.85, 0.20, 0.55), "controls":
 RIBBON, RIBBON_PLUG, LIGHT = (0.62, 0.63, 0.66), (0.36, 0.37, 0.39), (0.98, 0.80, 0.45)
 
 # ---- nominal positions of the bought parts --------------------------------------
-PI_Y = 62.0  # the Pi's front edge, with the DAC's sockets 6.5 mm inside the rear panel
+PI_Y = c.PI_Y  # the Pi's front edge, with the DAC's rear edge against the rear panel
 PI_Z = c.FLOOR + c.STANDOFF_H
-DAC_Z = PI_Z + 1.6 + 11  # underside of the DAC board, straight on the Pi
-DAC_Y1 = PI_Y + 56.5  # the DAC's rear edge, where its sockets are
+DAC_Z = c.DAC_Z  # underside of the DAC board, straight on the Pi
+DAC_Y1 = c.DAC_Y1  # the DAC's rear edge, where its sockets are
 HEADER_Y = (PI_Y + 1.0, PI_Y + 6.0)  # the 40-pin header row
 PLUG_Z = DAC_Z + 1.6 + 2.5  # underside of the ribbon plug on the DAC's pins
-RCA_X, PHONES_DAC_X = (42.0, 56.0), 71.0  # APPROXIMATE positions along the DAC's socket edge
+RCA_X, PHONES_DAC_X = tuple(x for name, x, z, d in c.DAC_JACKS if name.startswith("RCA")), c.DAC_JACKS[2][1]
 LCD_CX, LCD_CZ = c.cradle_centre()
 LCD_Y = c.FRONT_T + c.LCD_GLASS
 LEAN = [(1, 0, 0, 0), (0, 1, c.TAN, -c.TAN * c.H), (0, 0, 1, 0)]
@@ -83,9 +83,9 @@ def stand_ins():
     s["DAC"] = (B(c.PI_X, c.PI_X + 65, PI_Y, DAC_Y1, DAC_Z, DAC_Z + 1.6), PCB_DAC, "dac")
     s["DAC socket"] = (B(c.PI_X + 7, c.PI_X + 58, *HEADER_Y, PI_Z + 1.6 + 2.5, DAC_Z), BLACK, "dac")
     s["DAC pins"] = (B(c.PI_X + 7, c.PI_X + 58, HEADER_Y[0] + 0.8, HEADER_Y[1] - 0.8, DAC_Z + 1.6, PLUG_Z), METAL, "dac")
-    sz = DAC_Z + 1.6 + 6.5
+    sz, pz = c.DAC_JACKS[0][2], c.DAC_JACKS[2][2]
     s["DAC RCA sockets"] = (c.union(*[ring_y(x, sz, DAC_Y1 - 12, DAC_Y1 + 2.5, 10.5, 4) for x in RCA_X], *[B(x - 6, x + 6, DAC_Y1 - 14, DAC_Y1 - 2, DAC_Z + 1.6, sz + 6) for x in RCA_X]), BLACK, "dac")
-    s["DAC headphone socket"] = (c.union(B(PHONES_DAC_X - 3.5, PHONES_DAC_X + 3.5, DAC_Y1 - 12, DAC_Y1, DAC_Z + 1.6, DAC_Z + 7.6), ring_y(PHONES_DAC_X, DAC_Z + 4.6, DAC_Y1 - 1, DAC_Y1 + 1.5, 6.0, 3.5)), BLACK, "dac")
+    s["DAC headphone socket"] = (c.union(B(PHONES_DAC_X - 3.5, PHONES_DAC_X + 3.5, DAC_Y1 - 12, DAC_Y1, DAC_Z + 1.6, DAC_Z + 7.6), ring_y(PHONES_DAC_X, pz, DAC_Y1 - 1, DAC_Y1 + 1.5, 6.0, 3.5)), BLACK, "dac")
     s["ribbon plug on the DAC"] = (B(c.PI_X + 5, c.PI_X + 60, HEADER_Y[0] - 2, HEADER_Y[1] + 2, PLUG_Z, PLUG_Z + 9), RIBBON_PLUG, "ribbon")
     # screen
     s["screen board"] = (B(LCD_CX - 29, LCD_CX + 29, LCD_Y, LCD_Y + 1.6, LCD_CZ - 17.5, LCD_CZ + 17.5), PCB_LCD, "screen")
@@ -332,7 +332,7 @@ SHOTS = {
             ("Card guide, card slot leaning 5° back", (c.CARD_X + 24, c.CARD_Y - 3, 50), "guide"),
             ("NFC reader, held 20 mm behind the card slot", (c.CARD_X - 18, READER_Y + 3, 55), "reader"),
             ("DAC on top of the Pi", (c.PI_X + 33, PI_Y + 32, DAC_Z + 1.6), "dac"),
-            ("DAC's RCA and headphone sockets, at the rear window", (c.PI_X + 33, DAC_Y1, DAC_Z + 14), "dac"),
+            ("DAC's RCA and headphone sockets, in their holes in the rear panel", (c.PI_X + 33, DAC_Y1, DAC_Z + 14), "dac"),
             ("USB-C socket, wired to the Pi's USB port", (c.USB_X, c.D - 9, c.USB_Z + 4), "rear"),
             ("Air in through the floor, out through the lid and rear slots", (110, 25.5, c.FLOOR), "chassis"),
         ],
@@ -347,7 +347,7 @@ SHOTS = {
             ("Card guide and NFC reader", (c.CARD_X + 12, READER_Y + 2, 45), "reader"),
             ("Pi and DAC stack", (c.PI_X + 64, PI_Y + 40, DAC_Z + 1), "dac"),
             ("Ribbon plug on the pins on top of the DAC", (c.PI_X + 60, HEADER_Y[1] + 2, PLUG_Z + 9), "ribbon"),
-            ("DAC sockets: they come out through the rear window", (RCA_X[1], DAC_Y1 + 2, DAC_Z + 8), "dac"),
+            ("DAC sockets: each sits in its own hole in the rear panel", (RCA_X[1], DAC_Y1 + 2, DAC_Z + 8), "dac"),
             ("Floor slots: the stack slides front to back", (c.PI_X + 61.5, PI_Y + 26.5, c.FLOOR), "chassis"),
             ("USB lead from the rear socket to the Pi", (95, 101, 12), "usb lead"),
         ],
@@ -438,12 +438,12 @@ SHOTS = {
         "move": {"pi": v(0, -30, 12), "dac": v(0, -30, 50)},
         "arrows": [((c.PI_X + 72, PI_Y + 12, 90), (c.PI_X + 72, PI_Y + 38, 90)), ((c.PI_X + 72, PI_Y - 14, 74), (c.PI_X + 72, PI_Y - 14, 44))],
         "marks": [
-            ("Two floor slots, 53 mm long", (c.PI_X + 3.5, c.PI_SLOT_Y[0] + 4, c.FLOOR), "chassis"),
+            (f"Two floor slots, {c.PI_SLOT_Y[1] - c.PI_SLOT_Y[0]:g} mm long", (c.PI_X + 3.5, c.PI_SLOT_Y[0] + 4, c.FLOOR), "chassis"),
             ("Four 5 mm standoffs, screwed up from below", (c.PI_X + 61.5, PI_Y + 3.5, PI_Z), "standoffs"),
             ("Pi, its 40-pin header at the front", (c.PI_X + 32, PI_Y + 18, PI_Z + 1.6), "pi"),
             ("DAC straight onto the Pi; its header's pins stand up for the ribbon", (c.PI_X + 4, PI_Y + 3.5, PLUG_Z), "dac"),
             ("DAC's sockets at the rear edge", (c.PI_X + 30, DAC_Y1, DAC_Z + 8), "dac"),
-            ("Slide the stack back until the sockets meet the rear window, then tighten", (c.PI_X + 72, PI_Y + 25, 90), None),
+            ("Slide the stack back until the DAC meets the rear panel, then tighten", (c.PI_X + 72, PI_Y + 25, 90), None),
         ],
     },
     "step-6-reader": {
@@ -480,7 +480,7 @@ SHOTS = {
         "hide": ("lid", "lid screws", "card"),
         "focus": ("rear",),
         "marks": [
-            ("Window for the DAC's sockets: two RCA and the 3.5 mm headphone socket", (c.RCA_WINDOW[0] + 2, c.D, c.RCA_WINDOW[3] - 2), "rear"),
+            ("Holes for the DAC's sockets: two RCA and the 3.5 mm headphone socket", (c.DAC_JACKS[0][1], c.D, c.DAC_JACKS[0][2] + c.DAC_JACKS[0][3] / 2), "rear"),
             ("Panel-mount USB-C socket: power and the music drive", (c.USB_X + 12, c.D + 1.5, c.USB_Z + 4.5), "rear"),
             ("Warm air out", (c.W - 100, c.D, 47), "rear"),
             ("Four screws into the corner towers", (c.SCREW_X[1], c.D + 1.8, c.SCREW_Z[0]), "rear"),

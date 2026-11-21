@@ -152,8 +152,7 @@ def stand_ins():
     c = case
     cx, cz = c.cradle_centre()
     pcb_y = c.FRONT_T + c.LCD_GLASS
-    pi_y = 62.0  # with the DAC directly above the Pi and its sockets 6.5 mm from the rear panel
-    dac_z = c.FLOOR + c.STANDOFF_H + 1.6 + 11  # underside of the DAC board, straight on the Pi
+    pi_y, dac_z = c.PI_Y, c.DAC_Z  # the DAC straight on the Pi, its rear edge against the rear panel
     board_back = c.FRONT_T + c.BOARD_T  # the back of the front board, where its parts stand
     lean = [(1, 0, 0, 0), (0, 1, c.TAN, -c.TAN * c.H), (0, 0, 1, 0)]
     reader_y = c.READER_Y  # antenna face, reader in the middle grooves
@@ -171,14 +170,16 @@ def stand_ins():
         "ribbon plug on the board": c.box(c.PI_HEADER_X - 29.5, c.PI_HEADER_X + 29.5, board_back + 9, board_back + 18, 40.5, 51.5),
         "ribbon": c.box(c.PI_HEADER_X - 26, c.PI_HEADER_X + 26, board_back + 18, pi_y + 6, dac_z + 1.6 + 6 + 9, dac_z + 1.6 + 6 + 10),
         "leads on the board's headers": c.box(31.0, 76.0, board_back + 8.5, board_back + 23, 6.5, 18.5),
-        "DAC board": c.box(c.PI_X, c.PI_X + 65, pi_y, pi_y + 56.5, dac_z, dac_z + 1.6 + 8),
-        "DAC sockets": c.box(c.PI_X + 5, c.PI_X + 60, pi_y + 44, c.D - c.REAR_T - 0.3, dac_z + 1.6, dac_z + 1.6 + 13.5),
+        "DAC board": c.box(c.PI_X, c.PI_X + 65, pi_y, c.DAC_Y1, dac_z, dac_z + 1.6 + 8),
+        "DAC sockets": c.box(c.PI_X + 5, c.PI_X + 60, c.DAC_Y1 - 12.5, c.DAC_Y1, dac_z + 1.6, dac_z + 1.6 + 13.5),
         "NFC reader": c.xf(lean, c.box(c.CARD_X - 21.35, c.CARD_X + 21.35, reader_y + 0.05, reader_y + 1.65, c.PN532_CENTRE_Z - 20.2, c.PN532_CENTRE_Z + 20.2)),
         "NFC reader parts": c.xf(lean, c.box(c.CARD_X - 19, c.CARD_X + 19, reader_y + 1.65, reader_y + 5.5, c.PN532_CENTRE_Z - 16, c.PN532_CENTRE_Z + 20.2)),
         "card in slot": c.xf(lean, c.box(c.CARD_X - 27, c.CARD_X + 27, c.CARD_Y - 0.38, c.CARD_Y + 0.38, c.CARD_STOP_Z + 0.05, c.CARD_STOP_Z + 85.6)),
         "five stored cards": c.box(59.5 - 42.8, 59.5 + 42.8, 48.5 - 27, 48.5 + 27, c.H - c.TRAY_DEPTH + 0.05, c.H - c.TRAY_DEPTH + 3.85),
         "USB-C socket": c.cyly(c.USB_X, c.USB_Z, c.D - c.REAR_T - 25, c.D - c.REAR_T - 0.05, 11.0),
     }
+    for name, x, z, d in c.DAC_JACKS:  # each barrel, 2.5 mm past the DAC's edge, through its hole
+        out[f"DAC {name} barrel"] = c.cyly(x, z, c.DAC_Y1 - 1, c.DAC_Y1 + 2.5, 10.5 if name.startswith("RCA") else 6.0)
     if c.REAR_JACK:
         out["headphone socket"] = c.cyly(c.PHONES_X, c.PHONES_Z, c.D - c.REAR_T - 22, c.D - c.REAR_T - 0.05, 10.0)
     for i, k in enumerate(c.KEYS_X):

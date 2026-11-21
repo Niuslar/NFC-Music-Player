@@ -62,7 +62,7 @@ POWER_HOLE = 12.2  # MEASURE: the button's thread
 POWER_BODY = (16.0, 30.0)  # MEASURE: across its nut, and depth behind the panel including the solder tags
 TOWER_GAP_Z = (16.0, 43.0)
 # Headphones: the DAC Pro's own 3.5 mm socket sits on the same edge as its RCA sockets, so it
-# comes out through RCA_WINDOW with no extra parts. Set REAR_JACK to True only if you want a
+# comes out through its own hole in the rear panel with no extra parts. Set REAR_JACK to True only if you want a
 # separate panel socket on a short extension lead, at PHONES_X, PHONES_Z on the rear panel.
 REAR_JACK = False
 PHONES_X = 175.0
@@ -118,13 +118,24 @@ BOARD_POCKETS = (
 
 # ---- electronics ------------------------------------------------------------
 # The Pi and the DAC Pro form one stack. It stands on four M2.5 standoffs screwed up through
-# two slots in the floor, so it can slide front to back until the DAC's sockets meet the
-# rear panel.
+# two slots in the floor, so it can slide front to back. It goes right back, until the DAC's
+# rear edge meets the rear panel, so its sockets sit in round holes in the panel.
 PI_X = 15.0  # left edge of the Pi; its mounting holes are 58 x 23 mm apart
 PI_HEADER_X = PI_X + 32.5  # centre of its 40-pin header, which the front board's header lines up with
-PI_SLOT_Y = (40.0, 93.0)
 STANDOFF_H = 5.0
-RCA_WINDOW = (17.0, 78.0, 19.5, 38.5)  # MEASURE: x0, x1, z0, z1 of the opening for the DAC's RCA and headphone sockets
+DAC_LEN = 56.5  # front to back
+DAC_GAP = 0.5  # between the DAC's rear edge and the inside of the rear panel
+DAC_Y1 = D - REAR_T - DAC_GAP  # the DAC's rear edge, where its sockets are
+PI_Y = DAC_Y1 - DAC_LEN  # the front edge of the Pi and the DAC
+DAC_Z = FLOOR + STANDOFF_H + 1.6 + 11  # underside of the DAC board, straight on the Pi
+PI_SLOT_Y = (40.0, 97.0)  # the standoffs sit at PI_Y + 3.5 and PI_Y + 26.5; room to slide either way
+# MEASURE: x, z of each socket's centre, and the hole for it. The barrels end about 1 mm inside
+# the panel's outer face, so each hole clears the plug's metal shell, not just the barrel.
+DAC_JACKS = (
+    ("RCA left", 42.0, DAC_Z + 1.6 + 6.5, 11.5),
+    ("RCA right", 56.0, DAC_Z + 1.6 + 6.5, 11.5),
+    ("headphones", 71.0, DAC_Z + 4.6, 9.0),
+)
 USB_X, USB_Z = 130.0, 16.0  # panel-mount USB-C socket
 USB_SLOT = (12.5, 6.5)  # MEASURE: its body opening
 USB_SCREW_PITCH = 17.0  # MEASURE: its two fixing screws
@@ -132,6 +143,7 @@ CRADLE_Y = 14.0  # the screen cradle's two floor screws, 20 mm either side of LC
 CRADLE_BOSS_DX = 20.0
 
 assert abs(FRONT_T - BRASS_T - KEY_PLATE - CHOC_BELOW_PLATE) < 1e-9, "the board must sit flat on the panel"
+assert PI_SLOT_Y[0] <= PI_Y + 3.5 and PI_Y + 26.5 <= PI_SLOT_Y[1], "the standoffs must reach their place in the floor slots"
 
 
 # ---- shape tree ---------------------------------------------------------------
@@ -299,9 +311,8 @@ def front():
 def rear():
     """Panel coordinates as for the front, seen from behind, so x runs the other way."""
     u = lambda x: W - x
-    x0, x1, z0, z1 = RCA_WINDOW
     cuts = [cylz(u(x), z, -1, REAR_T + 1, CLEAR_M3) for x in SCREW_X for z in SCREW_Z]
-    cuts.append(box(u(x1), u(x0), z0, z1, -1, REAR_T + 1))
+    cuts += [cylz(u(x), z, -1, REAR_T + 1, d) for name, x, z, d in DAC_JACKS]
     cuts.append(prism(slot_x(u(USB_X), USB_Z, (USB_SLOT[0] - USB_SLOT[1]) / 2, USB_SLOT[1]), -1, REAR_T + 1))
     cuts += [cylz(u(USB_X) + s * USB_SCREW_PITCH / 2, USB_Z, -1, REAR_T + 1, CLEAR_M3) for s in (-1, 1)]
     cuts += [box(u(x) - 5, u(x), 44, 47, -1, REAR_T + 1) for x in range(100, 171, 10)]  # warm air out

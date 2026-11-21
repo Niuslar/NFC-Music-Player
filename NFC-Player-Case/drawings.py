@@ -165,8 +165,8 @@ def rear_panel():
     s.place(26, 16, c.H)
     u = lambda x: c.W - x
     s.poly(c.outline(), CHARCOAL)
-    x0, x1, z0, z1 = c.RCA_WINDOW
-    s.rect(u(x1), z0, u(x0), z1, PAPER)
+    for name, x, z, d in c.DAC_JACKS:
+        s.circle(u(x), z, d, PAPER)
     us = c.USB_SLOT
     s.rect(u(c.USB_X) - us[0] / 2, c.USB_Z - us[1] / 2, u(c.USB_X) + us[0] / 2, c.USB_Z + us[1] / 2, PAPER, rx=us[1] / 2)
     for d in (-1, 1):
@@ -180,10 +180,10 @@ def rear_panel():
         s.circle(u(c.PHONES_X), c.PHONES_Z, c.PHONES_HOLE, PAPER)
     s.hdim(0, c.W, s.Y(c.H) - 7, f"{n(c.W)}", s.Y(c.H) - 1)
     s.vdim(0, c.H, s.X(c.W) + 9, f"{n(c.H)}", s.X(c.W) + 1)
-    xs = [c.SCREW_X[0], u(c.USB_X), u(x1), u(x0), c.SCREW_X[1]] + ([u(c.PHONES_X)] if c.REAR_JACK else [])
+    xs = [c.SCREW_X[0], u(c.USB_X), *[u(x) for name, x, z, d in c.DAC_JACKS], c.SCREW_X[1]] + ([u(c.PHONES_X)] if c.REAR_JACK else [])
     s.ordinates_x(xs, s.Y(0) + 7, s.Y(0) + 1)
-    s.ordinates_z([c.USB_Z, z0, z1], s.X(0) - 7, s.X(0) - 1, -1)
-    s.text(s.X(0), s.h - 4, f"Window {n(x1 - x0)} × {n(z1 - z0)} for the DAC's RCA and headphone sockets. USB-C slot {n(us[0])} × {n(us[1])}, screws {n(c.USB_SCREW_PITCH)} apart.", 2.8, "start", DIM)
+    s.ordinates_z(sorted({c.USB_Z, *[z for name, x, z, d in c.DAC_JACKS]}), s.X(0) - 7, s.X(0) - 1, -1)
+    s.text(s.X(0), s.h - 4, f"Holes Ø{n(c.DAC_JACKS[0][3])} for the DAC's RCA sockets, Ø{n(c.DAC_JACKS[2][3])} for its headphone socket. USB-C slot {n(us[0])} × {n(us[1])}, screws {n(c.USB_SCREW_PITCH)} apart.", 2.8, "start", DIM)
     return s.svg()
 
 
@@ -194,15 +194,16 @@ def board_stack():
 
     pz = c.FLOOR + c.STANDOFF_H
     dac_z = pz + 1.6 + 11
-    pi_y, dac_y1 = 62.0, 62.0 + 56.5
+    pi_y, dac_y1 = c.PI_Y, c.DAC_Y1
     plug_z = dac_z + 1.6 + 2.5
     s = Sheet(c.D + 120, c.H + 30, "NFC Player: side section through the Pi and DAC stack, with the front board behind the keys, seen from the left. Millimetres.")
     s.place(60, 12, c.H)
     R = s.rect  # here x is depth from the front face (y), z is height
     R(0, 0, c.FRONT_T, c.H, "#e2e3df", FAINT)
     R(c.FRONT_T, 0, c.D - c.REAR_T, c.FLOOR, "#e2e3df", FAINT)
-    R(c.D - c.REAR_T, 0, c.D, c.RCA_WINDOW[2], "#e2e3df", FAINT)
-    R(c.D - c.REAR_T, c.RCA_WINDOW[3], c.D, c.H, "#e2e3df", FAINT)
+    rca_z, rca_d = c.DAC_JACKS[0][2], c.DAC_JACKS[0][3]  # the section runs through an RCA socket's hole
+    R(c.D - c.REAR_T, 0, c.D, rca_z - rca_d / 2, "#e2e3df", FAINT)
+    R(c.D - c.REAR_T, rca_z + rca_d / 2, c.D, c.H, "#e2e3df", FAINT)
     R(c.FRONT_T + 0.2, c.BODY_H, c.D - c.REAR_T - 0.2, c.H, "#e2e3df", FAINT)
     t0, t1 = c.TRAY[1] - 2, c.TRAY[3] + 2
     R(t0, c.BODY_H - (c.TRAY_DEPTH - c.LID_T) - c.TRAY_FLOOR, t1, c.BODY_H, "#e2e3df", FAINT)
@@ -243,7 +244,7 @@ def board_stack():
     column(1, [
         (c.H - 1.5, c.D - 12, f"Lid, {n(c.LID_T)} thick"),
         (c.BODY_H - 4, t1 - 2, f"Card tray, down to {n(c.BODY_H - 4)}"),
-        (dac_z + 8, dac_y1 + 1, "DAC sockets, at the rear window"),
+        (dac_z + 8, dac_y1 + 1, "DAC sockets, in holes in the rear panel"),
         (dac_z + 0.8, dac_y1 - 20, f"DAC board, underside at {n(dac_z)}"),
         (plug_z + 6, pi_y + 7, "Ribbon plug on the DAC's pins"),
         (pz + 0.8, pi_y + 28, f"Pi, underside at {n(pz)}"),
