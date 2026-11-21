@@ -2,19 +2,23 @@
 
     /Applications/Blender.app/Contents/MacOS/Blender -b NFC-Player-Render.blend -P render.py
 
-It reuses the scene's camera, lights and materials, swaps in the freshly built printed parts
-and brass, and moves the knob, keycaps, screws and cards to match case.py.
-The knob, keycaps, screw heads, feet, screen and cards are stand-ins for bought parts.
+It reuses the scene's camera, lights and materials, swaps in the freshly built printed parts,
+brass and keycaps, and moves the knob, screws and cards to match case.py. Run wood.py too
+to render the wood-grain chassis and front; otherwise the plain ones are shown, still in wood.
+The knob, screw heads, feet, screen and cards are stand-ins for bought parts.
 """
 
 import sys
 from pathlib import Path
 
 import bpy
+from mathutils import Matrix
 
 HERE = Path(__file__).resolve().parent
 sys.path.insert(0, str(HERE))
 import case as c  # noqa: E402
+import keycaps  # noqa: E402
+import wood  # noqa: E402
 
 D = bpy.data
 OLD = ("Brass panel", "Card guide", "Chassis", "Front support", "Lid", "Rear", "brass", *c.PARTS)
@@ -24,10 +28,79 @@ for name in OLD:  # the printed parts from the last render, or from revision 2.1
 
 with D.libraries.load(str(HERE / "parts.blend")) as (src, dst):
     dst.objects = list(src.objects)
+
+
+def stl_mesh(path, matrix):
+    """A mesh from an STL, moved by matrix (three rows of four)."""
+    bpy.ops.wm.stl_import(filepath=str(path))
+    ob = bpy.context.selected_objects[0]
+    me = ob.data
+    D.objects.remove(ob)
+    me.transform(Matrix([*matrix, (0, 0, 0, 1)]))
+    return me
+
+
+def wood_material():
+    """Wood-fill PLA, sanded and stained: wood-grain.png laid on the same way wood.py carves it."""
+    m = D.materials.get("Printed wood") or D.materials.new("Printed wood")
+    m.use_nodes = True
+    nt = m.node_tree
+    nt.nodes.clear()
+    n = nt.nodes.new
+    geo, sep, nsep = n("ShaderNodeNewGeometry"), n("ShaderNodeSeparateXYZ"), n("ShaderNodeSeparateXYZ")
+    nt.links.new(geo.outputs["Position"], sep.inputs[0])
+    nt.links.new(geo.outputs["Normal"], nsep.inputs[0])
+
+    def math(op, a, b=0.0):
+        node = n("ShaderNodeMath")
+        node.operation = op
+        for i, v in enumerate((a, b)):
+            if isinstance(v, float):
+                node.inputs[i].default_value = v
+            else:
+                nt.links.new(v, node.inputs[i])
+        return node.outputs[0]
+
+    def pick(flag, yes, no):  # flag ? yes : no, with flag 0 or 1
+        return math("ADD", math("MULTIPLY", flag, yes), math("MULTIPLY", math("SUBTRACT", 1.0, flag), no))
+
+    x, y, z = sep.outputs
+    nx, nz = math("ABSOLUTE", nsep.outputs[0]), math("ABSOLUTE", nsep.outputs[2])
+    left = math("LESS_THAN", x, c.W / 2)
+    if wood.GRAIN == "front-to-back":  # as wood.grain_uv, with the lid's top read across
+        u_side = pick(left, y, math("ADD", math("SUBTRACT", c.D, y), 37.0))
+        top = math("GREATER_THAN", nz, 0.7)
+        u, v = pick(top, y, u_side), pick(top, math("ADD", x, 23.0), z)
+    else:
+        side = math("GREATER_THAN", nx, nz)
+        u_side = pick(left, z, math("SUBTRACT", 2 * c.H + c.W, z))
+        u, v = pick(side, u_side, math("ADD", x, c.H)), y
+    u, v = math("DIVIDE", u, wood.TILE[0]), math("DIVIDE", v, wood.TILE[1])
+    uv = n("ShaderNodeCombineXYZ")
+    nt.links.new(u, uv.inputs[0])
+    nt.links.new(v, uv.inputs[1])
+    tex = n("ShaderNodeTexImage")
+    tex.image = D.images.load(str(wood.IMAGE), check_existing=True)
+    tex.extension = "MIRROR"
+    nt.links.new(uv.outputs[0], tex.inputs["Vector"])
+    bsdf, out = n("ShaderNodeBsdfPrincipled"), n("ShaderNodeOutputMaterial")
+    nt.links.new(tex.outputs["Color"], bsdf.inputs["Base Color"])
+    bsdf.inputs["Roughness"].default_value = 0.5
+    nt.links.new(bsdf.outputs[0], out.inputs[0])
+    return m
+
+
+# Chassis, front and lid in sanded wood-fill PLA with the grain from wood.py (when it has been
+# run); the rear stays charcoal.
+WOOD = {"chassis": ("chassis-wood", [(1, 0, 0, 0), (0, 1, 0, 0), (0, 0, 1, 0)]), "front": ("front-wood", c.FRONT_M), "lid": (None, None)}
 for ob in dst.objects:
     bpy.context.scene.collection.objects.link(ob)
+    if ob.name in WOOD and WOOD[ob.name][0] and (HERE / "STL" / f"{WOOD[ob.name][0]}.stl").exists():
+        old, ob.data = ob.data, stl_mesh(HERE / "STL" / f"{WOOD[ob.name][0]}.stl", WOOD[ob.name][1])
+        D.meshes.remove(old)
     ob.data.materials.clear()
-    ob.data.materials.append(D.materials["Brushed brass" if ob.name == "brass" else "Printed charcoal"])
+    mat = "Brushed brass" if ob.name == "brass" else "Printed charcoal"
+    ob.data.materials.append(wood_material() if ob.name in WOOD else D.materials[mat])
     for poly in ob.data.polygons:
         poly.use_smooth = False
 
@@ -36,9 +109,15 @@ def numbered(base):
     return [D.objects[n] for n in sorted(D.objects.keys()) if n == base or n.startswith(base + ".")]
 
 
-for ob, k in zip(numbered("Choc keycap"), c.KEYS_X):
-    ob.location = (k, -2.0, c.CTRL_Z)
-    ob.dimensions = (17.5, 4.0, 16.5)
+# The keycaps from keycaps.py, turned from their print orientation to sit on the switches:
+# underside 3 mm (the travel) in front of the switch housing, which stands 2 mm proud of the brass.
+CAP_TO_CASE = [(-1, 0, 0, 0), (0, 0, 1, -5.0 - keycaps.CAP_T), (0, 1, 0, 0)]
+for ob, k, name in zip(numbered("Choc keycap"), c.KEYS_X, keycaps.SYMBOLS):
+    old, ob.data = ob.data, stl_mesh(HERE / "STL" / f"keycap-{name}.stl", CAP_TO_CASE)
+    if old.users == 0:
+        D.meshes.remove(old)
+    ob.data.materials.append(D.materials["Printed charcoal"])
+    ob.location, ob.rotation_euler, ob.scale = (k, 0.0, c.CTRL_Z), (0, 0, 0), (1, 1, 1)
 spots = [(x, z) for x in c.SCREW_X for z in c.SCREW_Z]
 for ob, (x, z) in zip(numbered("Front M3 head"), spots):
     ob.location = (x, -0.9, z)
@@ -101,6 +180,6 @@ scene = bpy.context.scene
 scene.render.filepath = str(HERE / "NFC-Player-Render.png")
 scene.cycles.samples = 64
 scene.cycles.use_denoising = True
-bpy.ops.wm.save_as_mainfile(filepath=str(HERE / "NFC-Player-Render.blend"))
+bpy.ops.wm.save_as_mainfile(filepath=str(HERE / "NFC-Player-Render.blend"), compress=True)  # the wood grain makes it large
 bpy.ops.render.render(write_still=True)
 print("Rendered", scene.render.filepath)

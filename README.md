@@ -8,7 +8,7 @@
 
 A tabletop music player where each album is a card. Put a card in the slot and its album plays; take it out and it pauses. It is built for a Hi-Fi shelf: a proper DAC, a screen, a knob, and local storage for a whole collection.
 
-![Render of the case design: a charcoal box with a brass front set inside a thin rim, a lit power key, four keys, a screen and a knob, five cards in a tray on the lid and one card standing in a slot](NFC-Player-Case/NFC-Player-Render.png)
+![Render of the case design: a wood-grain box with a brass front set inside a thin rim and a black back, a lit power key, four keys marked previous, play/pause, next and back, a screen and a knob, five cards in a tray on the lid and one card standing in a slot](NFC-Player-Case/NFC-Player-Render.png)
 
 *Render of the case design, made from the same model as its printable parts. The case has not been printed yet; the real build is currently parts on a bench.*
 
