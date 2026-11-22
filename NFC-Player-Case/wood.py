@@ -14,6 +14,7 @@ Nothing on a face that prints against the bed or over support, where relief woul
 
 import math
 import os
+import struct
 import sys
 from pathlib import Path
 
@@ -27,16 +28,17 @@ sys.path.insert(0, str(HERE))
 import build  # noqa: E402
 import case  # noqa: E402
 
-IMAGE = HERE / "wood-grain.png"
+IMAGE = HERE / os.environ.get("WOOD_IMAGE", "wood-grain.png")  # WOOD_IMAGE tries another grain image, grain running across it
+IMAGE_SIZE = struct.unpack(">II", IMAGE.read_bytes()[16:24])  # a PNG's width and height, from its header
 # "front-to-back": the grain runs along the sides from front to back.
 # "side-to-side": it runs across the top and down both sides, like a waterfall edge, so it is
 # upright on the side walls. WOOD_GRAIN in the environment overrides this for a trial build.
 GRAIN = os.environ.get("WOOD_GRAIN", "side-to-side")
 GRAIN_DEPTH = 0.4  # deepest cut; a 0.4 mm nozzle resolves this on a vertical wall
 # mm the whole image covers, along the grain and across it
-TILE = (160.0, 80.0) if GRAIN == "front-to-back" else (256.0, 128.0)  # side to side, it spans the full 128 mm depth
+TILE = (160.0, 160.0 * IMAGE_SIZE[1] / IMAGE_SIZE[0]) if GRAIN == "front-to-back" else (256.0, 256.0 * IMAGE_SIZE[1] / IMAGE_SIZE[0])  # 256 x 128 for a 2:1 image: side to side, it spans the full 128 mm depth
 STEP = 0.3  # mesh spacing on the grained faces
-BLUR = 3  # pixels; removes detail finer than about 0.7 mm, which would not print
+BLUR_MM = 1.0  # blur this wide; removes detail too fine to print
 FADE_FLOOR = (0.0, 1.5)  # grain fades in over this height above the underside
 FADE_TOP = (49.0, case.BODY_H - 0.5)  # and out below the lid
 CLEAR = 0.05  # where there is no grain the carving surface stands this far outside the case
@@ -48,9 +50,10 @@ def grain():
     w, h = img.size
     px = np.array(img.pixels[:], dtype=np.float32).reshape(h, w, 4)  # Blender stores rows bottom up
     lum = px[..., 0] * 0.2126 + px[..., 1] * 0.7152 + px[..., 2] * 0.0722
-    k = np.ones(2 * BLUR + 1) / (2 * BLUR + 1)
+    blur = max(1, round(BLUR_MM * w / TILE[0]))  # in pixels
+    k = np.ones(2 * blur + 1) / (2 * blur + 1)
     for axis in (0, 1):
-        lum = np.apply_along_axis(lambda m: np.convolve(np.pad(m, BLUR, mode="reflect"), k, "valid"), axis, lum)
+        lum = np.apply_along_axis(lambda m: np.convolve(np.pad(m, blur, mode="reflect"), k, "valid"), axis, lum)
     lo, hi = np.percentile(lum, (2, 98))
     return 1 - np.clip((lum - lo) / (hi - lo), 0, 1)
 

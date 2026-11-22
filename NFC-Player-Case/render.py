@@ -8,6 +8,7 @@ to render the wood-grain chassis and front; otherwise the plain ones are shown, 
 The knob, screw heads, feet, screen and cards are stand-ins for bought parts.
 """
 
+import os
 import sys
 from pathlib import Path
 
@@ -176,9 +177,10 @@ cam.location = (325.0 + (c.W - 188.0) / 2, -390.0, 290.0)  # the original camera
 cam.data.ortho_scale = c.W + 97
 
 scene = bpy.context.scene
-scene.render.filepath = str(HERE / "NFC-Player-Render.png")
+scene.render.filepath = os.environ.get("RENDER_OUT", str(HERE / "NFC-Player-Render.png"))  # RENDER_OUT renders a trial elsewhere
 scene.cycles.samples = 64
 scene.cycles.use_denoising = True
-bpy.ops.wm.save_as_mainfile(filepath=str(HERE / "NFC-Player-Render.blend"), compress=True)  # the wood grain makes it large
+if "RENDER_OUT" not in os.environ:  # a trial leaves the scene as it was
+    bpy.ops.wm.save_as_mainfile(filepath=str(HERE / "NFC-Player-Render.blend"), compress=True)  # the wood grain makes it large
 bpy.ops.render.render(write_still=True)
 print("Rendered", scene.render.filepath)
