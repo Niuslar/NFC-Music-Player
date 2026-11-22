@@ -12,7 +12,7 @@ A tabletop music player where each album is a card. Put a card in the slot and i
 
 *Render of the case design, made from the same model as its printable parts. The case has not been printed yet; the real build is currently parts on a bench.*
 
-**Guides:** the [user manual](https://niuslar.github.io/NFC-Music-Player/docs/manual/), [build guide](https://niuslar.github.io/NFC-Music-Player/docs/) and [assembly guide](https://niuslar.github.io/NFC-Music-Player/NFC-Player-Case/NFC-Player-Assembly.html) are on the [project site](https://niuslar.github.io/NFC-Music-Player/).
+**Guides:** the [user manual](https://niuslar.github.io/NFC-Music-Player/docs/manual/), [electronics guide](https://niuslar.github.io/NFC-Music-Player/docs/), [3D printing guide](https://niuslar.github.io/NFC-Music-Player/NFC-Player-Case/NFC-Player-Printing.html) and [assembly guide](https://niuslar.github.io/NFC-Music-Player/NFC-Player-Case/NFC-Player-Assembly.html) are on the [project site](https://niuslar.github.io/NFC-Music-Player/).
 
 ## What it does
 
@@ -37,7 +37,7 @@ A tabletop music player where each album is a card. Put a card in the slot and i
 
 A 0.91-inch 128×32 SSD1306 I2C OLED also works as a stand-in screen, with a compact layout and no cover art. Wire it to 3.3 V, GND, SDA (GPIO 2) and SCL (GPIO 3); it shares that bus with the DAC. Choose the screen and knob on the web remote's **Setup** page (`/setup`), which also tests the screen, DAC, buttons, knob and NFC reader. The settings are saved in `/var/lib/nfc-player/hardware.json` and used after a restart.
 
-The full parts list, wiring diagrams and step-by-step instructions are in the [build guide](https://niuslar.github.io/NFC-Music-Player/docs/).
+The full parts list, wiring diagrams and step-by-step instructions are in the [electronics guide](https://niuslar.github.io/NFC-Music-Player/docs/).
 
 ## Status
 
@@ -45,7 +45,7 @@ The electronics and software are done. The only step left is the case.
 
 - The hardware has been built and tested on a real Pi: the DAC, NFC reader, knob, buttons, power key and light, and USB drive mode, along with setup and the web remote. The screen tested so far is the 0.91-inch SSD1306 OLED; the 2-inch ST7789 SPI display has not yet been tried on the real Pi, only in the simulator.
 - The player logic, screens and web remote are also tested without the hardware, using a browser simulator. Joining a new Wi-Fi network from the settings is new and has so far been tried only in the simulator.
-- The case is designed but not yet printed and assembled. Its printable parts, drawings and source files are in [NFC-Player-Case](NFC-Player-Case), and the [assembly guide](https://niuslar.github.io/NFC-Music-Player/NFC-Player-Case/NFC-Player-Assembly.html) is on the project site.
+- The case is designed but not yet printed and assembled. Its printable parts, drawings and source files are in [NFC-Player-Case](NFC-Player-Case), and the [3D printing guide](https://niuslar.github.io/NFC-Music-Player/NFC-Player-Case/NFC-Player-Printing.html) and [assembly guide](https://niuslar.github.io/NFC-Music-Player/NFC-Player-Case/NFC-Player-Assembly.html) are on the project site.
 
 ## Try it without any hardware
 
@@ -81,7 +81,7 @@ Run the tests with:
 - `player/wifi.py` reads the Wi-Fi signal and runs the setup network for joining a new one, through NetworkManager and a small root helper (`system/nfc-player-wifi`).
 - `player/playback.py` talks to [MPD](https://www.musicpd.org/), which does the decoding and audio output.
 - `system/` has the Raspberry Pi setup script and service files.
-- `NFC-Player-Case/` is the 3D-printed case. Every dimension is in `case.py`; Blender scripts build the STLs, pictures and assembly guide from it. `front-board/board.py` draws the circuit board behind the keys in KiCad from the same numbers, and `front-board/fab/` holds the files to order it.
+- `NFC-Player-Case/` is the 3D-printed case. Every dimension is in `case.py`; Blender scripts build the STLs and pictures from it, and `guide.py` writes the 3D printing and assembly guides. `front-board/board.py` draws the circuit board behind the keys in KiCad from the same numbers, and `front-board/fab/` holds the files to order it.
 
 ## A note on the web remote
 

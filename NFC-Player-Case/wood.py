@@ -1,6 +1,6 @@
 """Carves wood grain from wood-grain.png into the sides of the chassis and the front panel's edges.
 
-    /Applications/Blender.app/Contents/MacOS/Blender -b -P wood.py
+    blender -b -P wood.py
 
 Run build.py first; this only adds STL/chassis-wood.stl and STL/front-wood.stl beside the plain
 ones, in the same print orientation. Print them in wood-fill PLA. Nothing else changes: the grain

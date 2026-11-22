@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>NFC Album Player</title>
-<meta name="description" content="A tabletop music player where each album is a card. Build guide, case design, drawings and source.">
+<meta name="description" content="A tabletop music player where each album is a card. Electronics, 3D printing and assembly guides, case design, drawings and source.">
 <meta property="og:title" content="NFC Album Player">
 <meta property="og:description" content="A tabletop music player where each album is a card.">
 <meta property="og:image" content="docs/concept.jpg">
@@ -81,8 +81,9 @@
   <a href="#code">Code map</a>
   <hr>
   <a href="docs/manual/index.html">User manual</a>
-  <a href="docs/index.html">Build guide</a>
-  <a href="NFC-Player-Case/NFC-Player-Assembly.html">Case assembly</a>
+  <a href="docs/index.html">Electronics guide</a>
+  <a href="NFC-Player-Case/NFC-Player-Printing.html">3D printing guide</a>
+  <a href="NFC-Player-Case/NFC-Player-Assembly.html">Assembly guide</a>
   <a href="https://github.com/Niuslar/NFC-Music-Player">Source on GitHub</a>
 </nav>
 <main>
@@ -115,13 +116,18 @@
   </a>
   <a class="card" href="docs/index.html">
     <span class="kind">Guide</span>
-    <h3>Build guide</h3>
-    <p>Parts list, flashing the SD card, fitting the DAC, wiring each part with a check command, adding music, the web remote, backups and troubleshooting.</p>
+    <h3>Electronics guide</h3>
+    <p>Parts list, flashing the SD card, fitting the DAC, wiring each part with a check command, adding music, the web remote, the front board for the case, backups and troubleshooting.</p>
+  </a>
+  <a class="card" href="NFC-Player-Case/NFC-Player-Printing.html">
+    <span class="kind">Guide</span>
+    <h3>3D printing guide</h3>
+    <p>Measuring your parts, the fit gauge, which filament each part takes, slicer settings and orientation, the carved wood grain, and sanding and staining.</p>
   </a>
   <a class="card" href="NFC-Player-Case/NFC-Player-Assembly.html">
     <span class="kind">Guide</span>
-    <h3>Case assembly</h3>
-    <p>What goes where, measuring your parts, printing, the keys and knob, step-by-step assembly, dimensioned drawings and the brass face.</p>
+    <h3>Assembly guide</h3>
+    <p>Putting the case together: what goes where, the keys and knob, step-by-step assembly, dimensioned drawings and the brass face.</p>
   </a>
   <a class="card" href="https://github.com/Niuslar/NFC-Music-Player#readme">
     <span class="kind">Source</span>
@@ -130,7 +136,7 @@
   </a>
 </div>
 
-<h3 style="margin-top:24px">Jump into the build guide</h3>
+<h3 style="margin-top:24px">Jump into the electronics guide</h3>
 <ul class="files">
   <li><a href="docs/index.html#parts">Parts</a></li>
   <li><a href="docs/index.html#flash">1. Flash the SD card</a></li>
@@ -166,10 +172,10 @@
   <tr><td>Power light</td><td>An LED on GPIO 22, lit from early in boot until the Pi has shut down</td></tr>
 </table>
 </div>
-<p>Prices, alternatives and wiring are in the <a href="docs/index.html#parts">build guide's parts list</a>.</p>
+<p>Prices, alternatives and wiring are in the <a href="docs/index.html#parts">electronics guide's parts list</a>.</p>
 
 <h2 id="case">Case</h2>
-<p>A 3D-printed case with a brass front. Every dimension lives in <code>case.py</code>; Blender scripts build the STLs, pictures, drawings and the assembly guide from it, so they always match. Start with the <a href="NFC-Player-Case/NFC-Player-Assembly.html">assembly guide</a>, and print the fit gauge first to check your printer's tolerances.</p>
+<p>A 3D-printed case with a brass front. Every dimension lives in <code>case.py</code>; Blender scripts build the STLs, pictures, drawings and both case guides from it, so they always match. Start with the <a href="NFC-Player-Case/NFC-Player-Printing.html">3D printing guide</a>, and print the fit gauge first to check your printer's tolerances; then the <a href="NFC-Player-Case/NFC-Player-Assembly.html">assembly guide</a> puts the parts together.</p>
 
 <h3 style="margin-top:20px">Printable parts (STL)</h3>
 <ul class="files">
@@ -178,6 +184,8 @@
   <li><a href="NFC-Player-Case/STL/lid.stl" download>lid.stl</a></li>
   <li><a href="NFC-Player-Case/STL/front.stl" download>front.stl</a></li>
   <li><a href="NFC-Player-Case/STL/rear.stl" download>rear.stl</a></li>
+  <li><a href="NFC-Player-Case/STL/key-carrier.stl" download>key-carrier.stl</a></li>
+  <li><a href="NFC-Player-Case/STL/board-spacer.stl" download>board-spacer.stl</a></li>
   <li><a href="NFC-Player-Case/STL/card-guide.stl" download>card-guide.stl</a></li>
   <li><a href="NFC-Player-Case/STL/display-cradle.stl" download>display-cradle.stl</a></li>
 </ul>
@@ -206,6 +214,7 @@
 .venv/bin/pip install pillow numpy python-mpd2 pytest qrcode
 .venv/bin/python -m player.demo_library demo/music
 .venv/bin/python -m player.main --sim</code></pre>
+<p>On Windows, use <code>py</code> in place of <code>python3</code>, and <code>.venv\Scripts\</code> in place of <code>.venv/bin/</code>.</p>
 <p>Then open <code>http://localhost:8137</code> for the simulated device and <code>http://localhost:8080</code> for the web remote. The demo library is generated sine tones, and the simulator is silent unless you run it against MPD (<code>system/mpd-dev.sh</code>, then add <code>--playback mpd</code>). Add <code>mutagen</code> to the install line to read tags from your own music with <code>--music</code>.</p>
 <p>Run the tests with <code>.venv/bin/python -m pytest</code>.</p>
 
@@ -220,7 +229,7 @@
   <tr><td><a href="https://github.com/Niuslar/NFC-Music-Player/blob/main/player/wifi.py"><code>player/wifi.py</code></a></td><td>The Wi-Fi signal for the screen, and the setup network for joining a new one.</td></tr>
   <tr><td><a href="https://github.com/Niuslar/NFC-Music-Player/blob/main/player/playback.py"><code>player/playback.py</code></a></td><td>Talks to <a href="https://www.musicpd.org/">MPD</a>, which does the decoding and audio output.</td></tr>
   <tr><td><a href="https://github.com/Niuslar/NFC-Music-Player/tree/main/system"><code>system/</code></a></td><td>The Raspberry Pi setup script and service files.</td></tr>
-  <tr><td><a href="https://github.com/Niuslar/NFC-Music-Player/tree/main/NFC-Player-Case"><code>NFC-Player-Case/</code></a></td><td>The 3D-printed case: model, STLs, drawings and assembly guide.</td></tr>
+  <tr><td><a href="https://github.com/Niuslar/NFC-Music-Player/tree/main/NFC-Player-Case"><code>NFC-Player-Case/</code></a></td><td>The 3D-printed case: model, STLs, drawings, and the printing and assembly guides.</td></tr>
   <tr><td><a href="https://github.com/Niuslar/NFC-Music-Player/tree/main/tests"><code>tests/</code></a></td><td>Tests for the player, hardware drivers, web remote and deleting music.</td></tr>
 </table>
 </div>

@@ -1,6 +1,6 @@
 """Builds the case from case.py with Blender: STLs, the OpenSCAD copy, the brass template, and checks.
 
-    /Applications/Blender.app/Contents/MacOS/Blender -b -P build.py
+    blender -b -P build.py
 
 Every mesh is checked for being closed, and the assembled parts are checked against
 each other and against stand-ins for the boards, so a change that makes two things

@@ -1,6 +1,6 @@
 """Renders the case from the meshes build.py made. Run build.py first.
 
-    /Applications/Blender.app/Contents/MacOS/Blender -b NFC-Player-Render.blend -P render.py
+    blender -b NFC-Player-Render.blend -P render.py
 
 It reuses the scene's camera, lights and materials, swaps in the freshly built printed parts,
 brass and key carrier, and moves the knob, screws and cards to match case.py. Run wood.py too

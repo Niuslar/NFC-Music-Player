@@ -1,8 +1,13 @@
 """Draws the NFC Player front board in KiCad from case.py: schematic, footprints, layout and copper.
 
-Run it with the Python that comes with KiCad, from this folder:
+Run it from this folder with a Python that has KiCad's pcbnew module, KiCad 10 or later:
 
-    /Applications/KiCad/KiCad.app/Contents/Frameworks/Python.framework/Versions/Current/bin/python3 board.py
+    python board.py
+
+That is the Python that comes with KiCad: on Windows, open the KiCad Command Prompt; on Linux, the
+system python3 that KiCad installs pcbnew into; on macOS, the python3 inside KiCad.app. kicad-cli
+and KiCad's libraries are found by kicad_paths() below; set KICAD_CLI and KICAD_SHARE if they are
+somewhere else.
 
 It writes nfc-front-board.kicad_sch, .kicad_pcb and .kicad_pro, routes the copper with a
 simple two-layer router, pours ground on both sides, then runs KiCad's electrical rules
@@ -10,14 +15,18 @@ check and design rules check and writes the files a board maker needs to fab/.
 
 The board lies flat on a printed spacer behind the front panel, behind the four keys. The keys'
 6 x 6 mm tactile switches are soldered on its front, facing the panel, where the key caps press
-them. Everything else is through-hole on the back and soldered on the front; the spacer has
-openings under those joints.
+them. The pin headers are through-hole on the back and soldered on the front; the spacer has
+openings under those joints. The small parts (diodes, resistors, transistor and the two LEDs that
+show 3.3 V and 5 V) are surface-mount on the back, placed by the board maker: fab/ gets a BOM and
+a placement file in JLCPCB's format, with LCSC part numbers, beside the Gerbers.
 The 40-pin header takes a ribbon from the pins on top of the DAC, so the board sees every Pi pin.
 """
 
 import heapq
 import json
 import math
+import os
+import re
 import shutil
 import subprocess
 import sys
@@ -33,11 +42,32 @@ import case as c  # noqa: E402
 import sexpr  # noqa: E402
 
 NAME = "nfc-front-board"
-REVISION = "2"
-KICAD = Path("/Applications/KiCad/KiCad.app/Contents")
-CLI = KICAD / "MacOS" / "kicad-cli"
-FOOTPRINTS = KICAD / "SharedSupport" / "footprints"
-SYMBOLS = KICAD / "SharedSupport" / "symbols"
+REVISION = "3"
+def kicad_paths():
+    """kicad-cli and KiCad's shared folder (footprints, symbols, template), on any system.
+
+    KICAD_CLI and KICAD_SHARE override the search. Otherwise the shared folder comes from KiCad's
+    own KICADn_SYMBOL_DIR variable if set, then from beside the Python running this (KiCad's own,
+    on Windows and macOS), then from the usual install folders."""
+    py = Path(sys.executable).resolve()
+    shares = [os.environ.get("KICAD_SHARE")]
+    shares += [str(Path(v).parent) for k, v in sorted(os.environ.items(), reverse=True) if re.fullmatch(r"KICAD\d+_SYMBOL_DIR", k)]
+    for up in py.parents:  # KiCad's own Python: <KiCad>/bin/python.exe on Windows, inside KiCad.app on macOS
+        shares += [str(up / "share" / "kicad"), str(up / "SharedSupport")]
+    shares += ["/usr/share/kicad", "/usr/local/share/kicad", "/Applications/KiCad/KiCad.app/Contents/SharedSupport"]
+    shares += sorted((str(p) for p in Path("C:/Program Files/KiCad").glob("*/share/kicad")), reverse=True)
+    share = next((Path(s) for s in shares if s and (Path(s) / "symbols").is_dir() and (Path(s) / "footprints").is_dir()), None)
+    if share is None:
+        sys.exit("Could not find KiCad's libraries. Set KICAD_SHARE to the folder that holds its symbols and footprints folders.")
+    names = ("kicad-cli.exe", "kicad-cli")
+    near = [up / d / n for up in py.parents for d in ("bin", "MacOS") for n in names]
+    cli = os.environ.get("KICAD_CLI") or shutil.which("kicad-cli") or next((str(p) for p in near if p.is_file()), None)
+    if cli is None:
+        sys.exit("Could not find kicad-cli. Put it on your PATH or set KICAD_CLI to it.")
+    return Path(cli), share
+
+
+CLI = SHARE = FOOTPRINTS = SYMBOLS = None  # found by main(), so guide.py can import this file without KiCad
 FAB = HERE / "fab"
 
 # Board coordinates are the case's: x across the front, and y = TOP - z (KiCad's y runs down).
@@ -80,8 +110,11 @@ def uid():
     return str(uuid.uuid5(uuid.NAMESPACE_URL, f"nfc-front-board/{next(_UIDS)}"))
 
 
-def part(ref, value, symbol, footprint, nets, at, side="back", rot=0.0, desc=""):
-    PARTS.append({"ref": ref, "value": value, "symbol": symbol, "footprint": footprint, "nets": nets, "at": at, "side": side, "rot": rot, "desc": desc, "uuid": uid()})
+def part(ref, value, symbol, footprint, nets, at, side="back", rot=0.0, desc="", lcsc=None, label=None, box=None):
+    """lcsc: the LCSC part number for a part the board maker places. label: (x, y) of its name on the
+    back's silkscreen. box: (length, width, height) of its body, from its pad 1, for the case pictures."""
+    PARTS.append({"ref": ref, "value": value, "symbol": symbol, "footprint": footprint, "nets": nets, "at": at, "side": side, "rot": rot, "desc": desc,
+                  "lcsc": lcsc, "label": label, "box": box, "uuid": uid()})
 
 
 part("J1", "Pi GPIO, ribbon from the DAC", ("Connector_Generic", "Conn_02x20_Odd_Even"), ("Connector_IDC", "IDC-Header_2x20_P2.54mm_Vertical"),
@@ -92,11 +125,32 @@ for i, (k, name, net) in enumerate(zip(c.KEYS_X, KEY_NAMES, KEY_NETS)):
 for ref, (title, names, nets, x1, z, value) in HEADERS.items():
     part(ref, value, ("Connector_Generic", f"Conn_01x{len(nets):02d}"), ("Connector_PinHeader_2.54mm", f"PinHeader_1x{len(nets):02d}_P2.54mm_Vertical"),
          {str(i + 1): n for i, n in enumerate(nets)}, (x1, Y(z)), desc="Straight pin header, 2.54 mm")
-part("D1", "BAT43", ("Device", "D_Schottky"), ("Diode_THT", "D_DO-35_SOD27_P7.62mm_Horizontal"), {"1": "KEY", "2": "POWER"}, (80.5, 40.6), desc="Schottky diode, stripe (cathode) towards the key")
-part("D2", "BAT43", ("Device", "D_Schottky"), ("Diode_THT", "D_DO-35_SOD27_P7.62mm_Horizontal"), {"1": "KEY", "2": "SCL"}, (80.5, 43.9), desc="Schottky diode, stripe (cathode) towards the key")
-part("R1", "1k", ("Device", "R"), ("Resistor_THT", "R_Axial_DIN0207_L6.3mm_D2.5mm_P7.62mm_Horizontal"), {"1": "LIGHT", "2": "LED_BASE"}, (80.5, 47.5), desc="Base resistor")
-part("R2", "220", ("Device", "R"), ("Resistor_THT", "R_Axial_DIN0207_L6.3mm_D2.5mm_P7.62mm_Horizontal"), {"1": "5V", "2": "LED_A"}, (80.5, 51.1), desc="Sets the power light's current. A wire link if the button's LED has its own resistor")
-part("Q1", "2N3904", ("Transistor_BJT", "Q_NPN_EBC"), ("Package_TO_SOT_THT", "TO-92_Inline"), {"1": "GND", "2": "LED_BASE", "3": "LED_K"}, (92.5, 44.0), desc="Switches the power light from 5 V")
+# Surface-mount parts on the back, placed by the board maker. All but the orange LED are JLCPCB
+# "basic" parts when this was written (the orange one is "extended", a small one-off fee); check
+# the numbers on jlcpcb.com/parts before ordering, since stock changes.
+# The two LEDs run at about 1 mA: bright enough to see with the lid off, dim enough not to glow
+# through the card slot. Orange for 3.3 V and red for 5 V: both need about 2 V, where a green or
+# blue LED needs about 3 V and would barely light on 3.3 V.
+R0603, SOD123, LED0603 = ("Resistor_SMD", "R_0603_1608Metric"), ("Diode_SMD", "D_SOD-123"), ("LED_SMD", "LED_0603_1608Metric")
+part("D1", "B5819W", ("Device", "D_Schottky"), SOD123, {"1": "KEY", "2": "POWER"}, (80.0, 40.6), lcsc="C8598", label=(86.6, 40.6), box=(3.7, 1.6, 1.1),
+     desc="Schottky diode, 40 V 1 A, SOD-123. Cathode towards the key")
+part("D2", "B5819W", ("Device", "D_Schottky"), SOD123, {"1": "KEY", "2": "SCL"}, (80.0, 44.2), lcsc="C8598", label=(86.6, 44.2), box=(3.7, 1.6, 1.1),
+     desc="Schottky diode, 40 V 1 A, SOD-123. Cathode towards the key")
+part("R1", "1k", ("Device", "R"), R0603, {"1": "LIGHT", "2": "LED_BASE"}, (80.0, 47.8), lcsc="C21190", label=(84.6, 47.8), box=(1.6, 0.8, 0.5),
+     desc="Base resistor, 1 kΩ 1% 0603")
+part("R2", "220", ("Device", "R"), R0603, {"1": "5V", "2": "LED_A"}, (80.0, 51.4), lcsc="C22962", label=(84.6, 51.4), box=(1.6, 0.8, 0.5),
+     desc="Sets the power light's current, 220 Ω 1% 0603. If the button's LED has its own resistor, R2 can stay (a little dimmer) or be bridged with solder")
+part("Q1", "MMBT3904", ("Transistor_BJT", "Q_NPN_BEC"), ("Package_TO_SOT_SMD", "SOT-23"), {"1": "LED_BASE", "2": "GND", "3": "LED_K"}, (91.5, 41.0),
+     lcsc="C20526", label=(95.0, 41.0), box=(2.9, 1.3, 1.0), desc="NPN transistor, SOT-23. Switches the power light from 5 V")
+part("D3", "Orange", ("Device", "LED"), LED0603, {"1": "GND", "2": "LED_3V3"}, (88.5, 45.0), lcsc="C160478", label=(97.0, 45.0), box=(1.6, 0.8, 0.6),
+     desc="Orange LED, 0603 (Lite-On LTST-C191KFKT): lit while the board has 3.3 V")
+part("R3", "1k", ("Device", "R"), R0603, {"1": "LED_3V3", "2": "3V3"}, (92.0, 45.0), lcsc="C21190", box=(1.6, 0.8, 0.5),
+     desc="1 kΩ 1% 0603: about 1 mA through D3")
+part("D4", "Red", ("Device", "LED"), LED0603, {"1": "GND", "2": "LED_5V"}, (88.5, 48.6), lcsc="C2286", label=(96.6, 48.6), box=(1.6, 0.8, 0.6),
+     desc="Red LED, 0603: lit while the board has 5 V")
+part("R4", "2.2k", ("Device", "R"), R0603, {"1": "LED_5V", "2": "5V"}, (92.0, 48.6), lcsc="C4190", box=(1.6, 0.8, 0.5),
+     desc="2.2 kΩ 1% 0603: about 1 mA through D4")
+LABELS = {"D3": "3V3", "D4": "5V"}  # silkscreen names for the LEDs, in place of their references
 
 
 # ---- schematic ----------------------------------------------------------------------------
@@ -106,6 +160,7 @@ SCH_AT = {  # symbol origins on the sheet, mm (A4 landscape)
     "SW1": (152.4, 35.56), "SW2": (152.4, 45.72), "SW3": (152.4, 55.88), "SW4": (152.4, 66.04),
     "D1": (152.4, 86.36), "D2": (152.4, 96.52), "J5": (152.4, 114.3),
     "R1": (134.62, 152.4), "Q1": (160.02, 152.4), "R2": (190.5, 132.08),
+    "R3": (215.9, 152.4), "D3": (233.68, 152.4), "R4": (215.9, 172.72), "D4": (233.68, 172.72),
     "J2": (243.84, 40.64), "J3": (243.84, 71.12), "J4": (243.84, 99.06), "J6": (243.84, 124.46),
 }
 
@@ -149,7 +204,7 @@ def schematic():
         key = "{}:{}".format(*p["symbol"])
         sx, sy = SCH_AT[p["ref"]]
         props = [("Reference", p["ref"], (sx, sy - 7.62), False), ("Value", p["value"], (sx, sy + 7.62), False),
-                 ("Footprint", "{}:{}".format(*p["footprint"]), (sx, sy), True), ("Datasheet", "", (sx, sy), True), ("Description", p["desc"], (sx, sy), True)]
+                 ("Footprint", "{}:{}".format(*p["footprint"]), (sx, sy), True), ("Datasheet", "", (sx, sy), True), ("Description", p["desc"], (sx, sy), True)] + ([("LCSC", p["lcsc"], (sx, sy), True)] if p["lcsc"] else [])
         offsets = {"J1": ((1.27, -27.94), (1.27, 30.48)), "SW": ((0, -3.81), (0, 3.81)), "D": ((0, -3.81), (0, 3.81)),
                    "J": ((7.62, -1.27), (7.62, 1.27)), "R": ((5.08, -1.27), (5.08, 1.27)), "Q": ((10.16, -1.27), (10.16, 1.27))}
         kind = p["ref"] if p["ref"] == "J1" else p["ref"].rstrip("0123456789")
@@ -178,8 +233,10 @@ def schematic():
         (20.32, 160.02, "Keys and the knob pull a GPIO pin to ground; the Pi's own pull-ups hold them high."),
         (20.32, 165.1, "The power key reaches GPIO 24 and GPIO 3 through D1 and D2. GPIO 3 is the only pin that wakes a Pi that has shut down."),
         (20.32, 170.18, "GPIO 22 lights the key's LED through Q1 from 5 V. config.txt switches it on at boot and the shutdown hook switches it off."),
-        (20.32, 175.26, "R2 sets the LED current (about 10-13 mA). Fit a wire link instead if the button's LED has its own resistor (rated 5 V or 6 V)."),
+        (20.32, 175.26, "R2 sets the LED current (about 10-13 mA). If the button's LED has its own resistor (rated 5 V or 6 V), R2 can stay or be bridged."),
         (20.32, 180.34, "J6 is for the 0.91-inch OLED instead of the 2-inch screen. Fit one or the other."),
+        (20.32, 185.42, "D3 and D4 light while the board has 3.3 V and 5 V from the Pi, at about 1 mA each."),
+        (20.32, 190.5, "All the D, R and Q parts are surface-mount, placed by the board maker (LCSC numbers in their LCSC field)."),
     ]
     for x, y, text in notes:
         out.append(["text", S(text), ["exclude_from_sim", "no"], ["at", x, y, 0], eff(justify=["left", "bottom"]), ["uuid", S(uid())]])
@@ -191,7 +248,7 @@ def schematic():
 
 # ---- project ------------------------------------------------------------------------------
 def project():
-    base = json.loads((KICAD / "SharedSupport/template/RaspberryPi-HAT/RaspberryPi-HAT.kicad_pro").read_text())
+    base = json.loads((SHARE / "template/RaspberryPi-HAT/RaspberryPi-HAT.kicad_pro").read_text())
     rules = base["board"]["design_settings"]["rules"]
     rules.update({"min_clearance": 0.2, "min_copper_edge_clearance": 0.3, "min_track_width": 0.25, "min_via_diameter": 0.6,
                   "min_through_hole_diameter": 0.3, "min_hole_to_hole": 0.25, "min_hole_clearance": 0.25, "min_via_annular_width": 0.13, "min_resolved_spokes": 1})
@@ -516,6 +573,9 @@ def build_board(used_nets):
             if net:
                 pad.SetNet(nets[net])
         fp.SetField("Description", p["desc"])
+        if p["lcsc"]:
+            fp.SetField("LCSC", p["lcsc"])
+            next(f for f in fp.GetFields() if f.GetName() == "LCSC").SetVisible(False)
         fp.Reference().SetVisible(False)
     for i, (x, z) in enumerate(c.BOARD_SCREWS):
         fp = footprint("MountingHole", "MountingHole_2.2mm_M2")
@@ -561,11 +621,10 @@ def build_board(used_nets):
     for k, name in zip(c.KEYS_X, KEY_NAMES):
         text(name, k, Y(c.CTRL_Z) - 6.0, 1.0, bold=True)
     for p in PARTS:
-        if p["ref"][0] in "DR":
-            text(p["ref"], p["at"][0] + 3.81, p["at"][1], 0.8)
-    text("Q1", 92.5, 47.6, 0.8)
+        if p["label"]:
+            text(LABELS.get(p["ref"], p["ref"]), *p["label"], 0.8, bold=p["ref"] in LABELS)
     text(f"NFC PLAYER FRONT BOARD  REV {REVISION}", (c.BOARD_X[0] + 6 + c.BOARD_X[1]) / 2, 21.4, 1.0)
-    text("PARTS ON THIS SIDE. TRIM LEADS ON THE OTHER SIDE TO 1.5 MM. KEY SWITCHES GO ON THE OTHER SIDE", (c.BOARD_X[0] + 6 + c.BOARD_X[1]) / 2, 38.4, 0.8)
+    text("HEADERS ON THIS SIDE. TRIM LEADS ON THE OTHER SIDE TO 1.5 MM. KEY SWITCHES GO ON THE OTHER SIDE", (c.BOARD_X[0] + 6 + c.BOARD_X[1]) / 2, 38.4, 0.8)
     text("THIS SIDE TOWARDS THE PANEL", (c.BOARD_X[0] + 6 + c.BOARD_X[1]) / 2, 21.4, 1.0, layer=pcbnew.F_SilkS)
     text("ONLY THE FOUR KEY SWITCHES ON THIS SIDE", (c.BOARD_X[0] + 6 + c.BOARD_X[1]) / 2, 41.0, 0.8, layer=pcbnew.F_SilkS)
 
@@ -676,6 +735,34 @@ def check_pockets(board):
     return bad
 
 
+def assembly_files():
+    """JLCPCB's BOM and placement (CPL) files for the surface-mount parts, which it places on the back."""
+    import csv
+
+    placed = [p for p in PARTS if p["lcsc"]]
+    groups = {}
+    for p in placed:
+        groups.setdefault((p["value"], p["footprint"][1], p["lcsc"]), []).append(p["ref"])
+    with open(FAB / f"{NAME}-jlc-bom.csv", "w", newline="") as f:
+        w = csv.writer(f)
+        w.writerow(["Comment", "Designator", "Footprint", "LCSC Part #"])
+        for (value, fp, lcsc), refs in groups.items():
+            w.writerow([value, ",".join(refs), fp, lcsc])
+    pos = FAB / "positions.csv"
+    run("pcb", "export", "pos", "--output", pos, "--format", "csv", "--units", "mm", "--side", "both", "--smd-only", f"{NAME}.kicad_pcb")
+    rows = list(csv.DictReader(pos.open()))
+    pos.unlink()
+    wanted = {p["ref"] for p in placed}
+    got = {r["Ref"] for r in rows}
+    assert got == wanted, f"placement file has {sorted(got)}, expected {sorted(wanted)}"
+    with open(FAB / f"{NAME}-jlc-cpl.csv", "w", newline="") as f:
+        w = csv.writer(f)
+        w.writerow(["Designator", "Mid X", "Mid Y", "Layer", "Rotation"])
+        for r in sorted(rows, key=lambda r: r["Ref"]):
+            w.writerow([r["Ref"], f'{float(r["PosX"]):.3f}mm', f'{float(r["PosY"]):.3f}mm', "Top" if r["Side"] == "top" else "Bottom", f'{float(r["Rot"]):g}'])
+    print("  ", f"{NAME}-jlc-bom.csv, {NAME}-jlc-cpl.csv ({len(rows)} parts placed by the board maker)")
+
+
 def run(*args):
     r = subprocess.run([str(CLI), *map(str, args)], cwd=HERE, capture_output=True, text=True)
     return r.returncode, (r.stdout + r.stderr).strip()
@@ -689,6 +776,9 @@ def report_counts(path):
 
 
 def main():
+    global CLI, SHARE, FOOTPRINTS, SYMBOLS
+    CLI, SHARE = kicad_paths()
+    FOOTPRINTS, SYMBOLS = SHARE / "footprints", SHARE / "symbols"
     print("== footprints, schematic, project ==")
     used = schematic()
     project()
@@ -723,6 +813,7 @@ def main():
     run("pcb", "export", "drill", "--output", str(gerbers) + "/", "--format", "excellon", "--excellon-separate-th", f"{NAME}.kicad_pcb")
     archive = shutil.make_archive(str(FAB / f"{NAME}-gerbers"), "zip", gerbers)
     print("  ", Path(archive).name)
+    assembly_files()
     run("sch", "export", "pdf", "--output", FAB / f"{NAME}-schematic.pdf", f"{NAME}.kicad_sch")
     run("sch", "export", "bom", "--output", FAB / f"{NAME}-bom.csv", "--fields", "Reference,Value,Footprint,Description,${QUANTITY}", "--labels", "Refs,Value,Footprint,Description,Qty", "--group-by", "Value,Footprint", f"{NAME}.kicad_sch")
     for side in ("front", "back"):

@@ -1,6 +1,6 @@
 """Draws the assembly pictures for the guide from the built parts. Run build.py first.
 
-    /Applications/Blender.app/Contents/MacOS/Blender -b -P pictures.py
+    blender -b -P pictures.py
 
 Writes pictures/<name>.png and pictures/<name>.json. The JSON holds where each numbered
 marker and arrow lands on the picture, so guide.py can draw them as an overlay and list
@@ -117,12 +117,12 @@ def stand_ins():
     for ref in fb.HEADERS:
         hx0, hx1, hz = header_span(ref)
         s[f"board header {ref}"] = (c.union(B(hx0, hx1, BOARD_BACK, BOARD_BACK + 2.5, hz - 1.27, hz + 1.27), *[B(x - 0.32, x + 0.32, BOARD_BACK + 2.5, BOARD_BACK + 8.5, hz - 0.32, hz + 0.32) for x in [hx0 + 1.27 + 2.54 * n for n in range(round((hx1 - hx0) / 2.54))]]), BLACK, "board")
-    for p in fb.PARTS:
-        if p["ref"][0] in "DR":
-            bx, by = p["at"]
-            s[f"board {p['ref']}"] = (B(bx + 1.0, bx + 6.6, BOARD_BACK, BOARD_BACK + 2.2, fb.TOP - by - 1.1, fb.TOP - by + 1.1), (0.85, 0.75, 0.55) if p["ref"][0] == "R" else (0.55, 0.62, 0.85), "board")
-    q = next(p for p in fb.PARTS if p["ref"] == "Q1")["at"]
-    s["board Q1"] = (B(q[0] - 2.4, q[0] + 2.4, BOARD_BACK, BOARD_BACK + 4.5, fb.TOP - q[1] - 1.0, fb.TOP - q[1] + 2.5), BLACK, "board")
+    for p in fb.PARTS:  # the small surface-mount parts: diodes, resistors, transistor and LEDs
+        if p["box"]:
+            (bx, by), (length, wide, tall) = p["at"], p["box"]
+            x0 = bx - length / 2 if p["ref"][0] == "Q" else bx - 0.1  # the transistor is placed by its middle, the rest by pad 1
+            colour = {"R": BLACK, "Q": BLACK}.get(p["ref"][0], {"Red": (0.85, 0.2, 0.15), "Orange": (0.95, 0.5, 0.1)}.get(p["value"], (0.25, 0.25, 0.27)))
+            s[f"board {p['ref']}"] = (B(x0, x0 + length, BOARD_BACK, BOARD_BACK + tall, fb.TOP - by - wide / 2, fb.TOP - by + wide / 2), colour, "board")
     s["ribbon plug on the board"] = (B(J1_X - 29.2, J1_X + 29.2, BOARD_BACK + 9, BOARD_BACK + 18, J1_Z - 4.5, J1_Z + 4.5), RIBBON_PLUG, "ribbon")
     for i, (x, z) in enumerate(c.BOARD_SCREWS):
         s[f"board screw {i}"] = (c.cyly(x, z, BOARD_BACK + 0.05, BOARD_BACK + 1.6, 3.8), METAL, "board")

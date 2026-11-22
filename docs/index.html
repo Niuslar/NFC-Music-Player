@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>NFC Album Player — build guide</title>
+<title>NFC Album Player — electronics guide</title>
 <style>
   :root {
     --bg: #faf9f6; --panel: #ffffff; --ink: #1d1c1a; --dim: #66635d; --line: #e2dfd8; --accent: #b86e12;
@@ -63,7 +63,7 @@
 <body>
 <div class="layout">
 <nav>
-  <strong>Build guide</strong>
+  <strong>Electronics guide</strong>
   <a href="#overview">Overview</a>
   <a href="#parts">Parts</a>
   <a href="#tools">Tools and software</a>
@@ -81,15 +81,19 @@
   <a href="#use">7. Use it</a>
   <a class="sub" href="manual/index.html">User manual</a>
   <a href="#web">8. Web remote</a>
+  <a href="#board">Front board for the case</a>
   <a href="#wifi">Changing Wi-Fi</a>
   <a href="#backup">Backups and updates</a>
   <a href="#trouble">Troubleshooting</a>
   <a href="#reference">Reference</a>
+  <hr>
+  <a href="../NFC-Player-Case/NFC-Player-Printing.html">3D printing guide</a>
+  <a href="../NFC-Player-Case/NFC-Player-Assembly.html">Assembly guide</a>
 </nav>
 <main>
 
 <h1>NFC Album Player</h1>
-<p class="lede">Put a card in, the album plays. This guide takes you from a bag of parts to a working player on the bench. The case comes later.</p>
+<p class="lede">Put a card in, the album plays. This guide takes you from a bag of parts to a working player on the bench: the electronics, the wiring and the software. The case has two guides of its own: the <a href="../NFC-Player-Case/NFC-Player-Printing.html">3D printing guide</a> and the <a href="../NFC-Player-Case/NFC-Player-Assembly.html">assembly guide</a>.</p>
 
 <div class="note">
   <p><strong>What has been tested.</strong> Everything in this guide has been built and run on a real Pi except the 2-inch display, which so far has only run in the simulator; the screen tested on the Pi is the 0.91-inch OLED. That covers the setup script, the DAC, the NFC reader, the knob and buttons, the power key and light, USB drive mode and the web remote. The player logic, screens and web remote are also tested without the hardware, in the simulator. Joining a new Wi-Fi network from the player's settings is new and has so far been tried only in the simulator. Each wiring step below ends with a check command, so a fault shows up one part at a time.</p>
@@ -111,7 +115,7 @@
   <tr><th>Part</th><th>What to get</th><th>Approx.</th><th>Notes</th></tr>
   <tr><td>Computer</td><td>Raspberry Pi Zero 2 W</td><td class="num">£15</td><td>Needs a 2×20 pin header. Solder one on if yours has none (the "WH" version has it fitted).</td></tr>
   <tr><td>DAC</td><td>Raspberry Pi DAC Pro</td><td class="num">£24</td><td>3.5 mm and RCA (white and red) out.</td></tr>
-  <tr><td>Front board and ribbon (for the case)</td><td>The small board in <code>NFC-Player-Case/front-board/</code>, made by any board maker, and a 40-way IDC ribbon cable, female at both ends</td><td class="num">£10</td><td>Only for the finished case: it sits behind the keys and replaces the jumper wires of step 5. On the bench, wire straight to the DAC's pins. See the <a href="../NFC-Player-Case/NFC-Player-Assembly.html#board">case assembly guide</a>.</td></tr>
+  <tr><td>Front board and ribbon (for the case)</td><td>The small board in <code>NFC-Player-Case/front-board/</code>, made and fitted with its small parts by a board maker, and a 40-way IDC ribbon cable, female at both ends</td><td class="num">£25</td><td>Only for the finished case: it sits behind the keys and replaces the jumper wires of step 5. On the bench, wire straight to the DAC's pins. See <a href="#board">Front board for the case</a>.</td></tr>
   <tr><td>SD card</td><td>256 GB microSD, A2 rated</td><td class="num">£20</td><td>About 700 FLAC albums. 512 GB also works.</td></tr>
   <tr><td>Display</td><td>Waveshare 2inch LCD Module (ST7789, 240×320, SPI)</td><td class="num">£12</td><td>Other ST7789 240×320 boards should work with the same wiring.</td></tr>
   <tr><td>Display (alternative)</td><td>0.91-inch 128×32 SSD1306 OLED (I2C, 4 pins)</td><td class="num">£4</td><td>Cheaper and simpler to wire, but much less nice: one colour, a compact text-only layout and no cover art. This is the screen tested on the real Pi so far. Get one or the other.</td></tr>
@@ -593,6 +597,36 @@
   <p>The page cannot rename or move music. Do that over USB.</p>
 </div>
 
+<!-- front-board: written by NFC-Player-Case/guide.py from board.py and case.py -->
+<h2 id="board">Front board for the case</h2>
+<p>On the bench, the parts are wired straight to the DAC's pins as in step 5. In the case, a small printed circuit board, 84 × 47.5 mm, takes the place of those jumper wires. It lies flat behind the front panel, behind the four keys, on a 1.3 mm printed spacer (see <a href="../NFC-Player-Case/NFC-Player-Assembly.html#held">how the keys are held</a>). The keys' tactile switches are soldered to its front. A 40-way ribbon joins its box header to the pins on top of the DAC, so it reaches every pin of the Pi. The screen, NFC reader, knob and power key each plug into a labelled pin header on it. It also carries the two diodes the power key needs, a transistor that lights the power key from 5 V, and two small LEDs that light while the board is getting each supply from the Pi: orange for 3V3 and red for 5V. The small parts are surface-mount and come fitted by the board maker; you solder only the headers and the key switches.</p>
+<figure><img src="../NFC-Player-Case/front-board/fab/nfc-front-board-back.png" alt="Back of the front board: a 40-pin box header along the top, labelled pin headers for LCD, NFC, PWR, OLED and ENC, and small surface-mount diodes, resistors, a transistor and two LEDs marked 3V3 and 5V" style="display:block;width:100%;height:auto"><figcaption>The back of the board, where every part but the key switches goes. Seen from behind, so the keys read back, next, play, previous from left to right. The small parts at the lower left come fitted.</figcaption></figure>
+<figure><img src="../NFC-Player-Case/front-board/fab/nfc-front-board-front.png" alt="Front of the front board, marked This side towards the panel, with the four tactile switches" style="display:block;width:100%;height:auto"><figcaption>The front of the board, which faces the panel. Only the four key switches go on this side.</figcaption></figure>
+
+<h3>Order it</h3>
+<p>The board is drawn in KiCad by <code>NFC-Player-Case/front-board/board.py</code> from the numbers in <code>case.py</code>, so it always matches the panel. Upload <a href="../NFC-Player-Case/front-board/fab/nfc-front-board-gerbers.zip">nfc-front-board-gerbers.zip</a> to any board maker (JLCPCB, PCBWay, Aisler and others). Choose 2 layers, 1.6 mm FR-4, any colour and any finish.</p>
+<p>To have the small parts fitted, turn on the maker's assembly service and choose assembly on the <strong>bottom</strong> side: the board's back, where the parts go, is KiCad's bottom. For JLCPCB, upload <a href="../NFC-Player-Case/front-board/fab/nfc-front-board-jlc-bom.csv">nfc-front-board-jlc-bom.csv</a> as the BOM and <a href="../NFC-Player-Case/front-board/fab/nfc-front-board-jlc-cpl.csv">nfc-front-board-jlc-cpl.csv</a> as the placement (CPL) file. The BOM gives an LCSC part number for each part, all from JLCPCB's basic range when this was written except the orange LED, an extended part that adds a small one-off fee; if one is out of stock, pick another of the same value and package. In the placement preview, check each part sits on its pads and matches its outline on the board, above all the diodes, the LEDs and the transistor, which only work one way round. Boards drawn in KiCad often show a part turned 90° or 180° there, most often on the bottom side; turn any that are wrong in the preview before you order. Assembly is only worth it for at least two boards; with set-up and postage, expect a total of roughly £20–30. The <a href="../NFC-Player-Case/front-board/fab/nfc-front-board-schematic.pdf">schematic</a> is a PDF, and the KiCad project in <code>NFC-Player-Case/front-board/</code> opens in KiCad 10 if you want to change anything.</p>
+
+<h3>Parts on the board</h3>
+<div class="table-wrap"><table><tr><th>On the board</th><th>Part</th><th>Qty</th><th>Fitted by</th><th>Note</th></tr><tr><td>J1</td><td>2 × 20 shrouded box header, 2.54 mm, straight</td><td class="num">1</td><td>You</td><td>Shrouded 2x20 box header, 2.54 mm</td></tr><tr><td>SW1, SW2, SW3, SW4</td><td>6 × 6 mm through-hole tactile switch, 5 mm tall (sold as 6x6x5 mm)</td><td class="num">4</td><td>You</td><td>6 x 6 mm through-hole tactile switch, 5 mm tall, on the side facing the panel</td></tr><tr><td>J2</td><td>1 × 8 straight pin header, 2.54 mm</td><td class="num">1</td><td>You</td><td>Straight pin header, 2.54 mm</td></tr><tr><td>J3</td><td>1 × 6 straight pin header, 2.54 mm</td><td class="num">1</td><td>You</td><td>Straight pin header, 2.54 mm</td></tr><tr><td>J5, J6</td><td>1 × 4 straight pin header, 2.54 mm</td><td class="num">2</td><td>You</td><td>Straight pin header, 2.54 mm</td></tr><tr><td>J4</td><td>1 × 5 straight pin header, 2.54 mm</td><td class="num">1</td><td>You</td><td>Straight pin header, 2.54 mm</td></tr><tr><td>D1, D2</td><td>B5819W Schottky diode, SOD-123</td><td class="num">2</td><td>Board maker (LCSC C8598)</td><td>Schottky diode, 40 V 1 A, SOD-123. Cathode towards the key</td></tr><tr><td>R1</td><td>1 kΩ resistor, 0603</td><td class="num">1</td><td>Board maker (LCSC C21190)</td><td>Base resistor, 1 kΩ 1% 0603</td></tr><tr><td>R2</td><td>220 Ω resistor, 0603</td><td class="num">1</td><td>Board maker (LCSC C22962)</td><td>Sets the power light&#x27;s current, 220 Ω 1% 0603. If the button&#x27;s LED has its own resistor, R2 can stay (a little dimmer) or be bridged with solder</td></tr><tr><td>Q1</td><td>MMBT3904 NPN transistor, SOT-23</td><td class="num">1</td><td>Board maker (LCSC C20526)</td><td>NPN transistor, SOT-23. Switches the power light from 5 V</td></tr><tr><td>D3</td><td>Orange LED, 0603</td><td class="num">1</td><td>Board maker (LCSC C160478)</td><td>Orange LED, 0603 (Lite-On LTST-C191KFKT): lit while the board has 3.3 V</td></tr><tr><td>R3</td><td>1 kΩ resistor, 0603</td><td class="num">1</td><td>Board maker (LCSC C21190)</td><td>1 kΩ 1% 0603: about 1 mA through D3</td></tr><tr><td>D4</td><td>Red LED, 0603</td><td class="num">1</td><td>Board maker (LCSC C2286)</td><td>Red LED, 0603: lit while the board has 5 V</td></tr><tr><td>R4</td><td>2.2 kΩ resistor, 0603</td><td class="num">1</td><td>Board maker (LCSC C4190)</td><td>2.2 kΩ 1% 0603: about 1 mA through D4</td></tr></table></div>
+
+<h3>Build it</h3>
+<ol>
+<li>The diodes, resistors, transistor and LEDs come fitted on the back. If the power key's LED has its own resistor (one rated 5 V or 6 V), R2 can stay, and the key lights a little dimmer; bridge R2's two pads with solder for full brightness.</li>
+<li>The pin headers and the 40-pin box header go on the back too: the side with the part labels. The front is marked <em>This side towards the panel</em>. Fit the box header with its notch where the board shows it, and hold each header square while you solder its first pin.</li>
+<li>On the front, trim every lead to 1.5 mm or less, so the joints fit in the openings in the spacer and the key carrier.</li>
+<li>Last, the four key switches on the front, in the squares marked for them. Push each fully home so it sits flat and square; a tilted switch tilts its cap. Solder them from the back, and trim their legs too.</li>
+<li>With a multimeter, check there is no short between 3.3 V, 5 V and ground: pins 1, 2 and 6 of the box header.</li>
+<li>Plug the ribbon onto the DAC and power the Pi: both LEDs should light, orange for 3V3 and red for 5V. If one stays dark, unplug and look for a bad joint or a reversed ribbon before plugging anything else in.</li>
+</ol>
+
+<h3 id="board-leads">What plugs in where</h3>
+<div class="table-wrap"><table><tr><th>Header</th><th>For</th><th>Pins, from pin 1</th><th>Lead</th></tr><tr><td>J2 <strong>LCD</strong></td><td>Screen</td><td><code>1 VCC · 2 GND · 3 DIN · 4 CLK · 5 CS · 6 DC · 7 RST · 8 BL</code></td><td>The lead that comes with the Waveshare screen: its plug into the screen, its eight female ends onto these pins, by name.</td></tr><tr><td>J3 <strong>NFC</strong></td><td>NFC reader</td><td><code>1 SCK · 2 MISO · 3 MOSI · 4 SS · 5 VCC · 6 GND</code></td><td>Six female-to-female leads to the reader's pins of the same names. Leave its IRQ and RSTO pins free.</td></tr><tr><td>J5 <strong>PWR</strong></td><td>Power key</td><td><code>1 KEY · 2 GND · 3 LED+ · 4 LED-</code></td><td>Four wires soldered to the button. KEY and GND go to its switch tags (either way round); LED+ and LED− to its lamp tags, the right way round.</td></tr><tr><td>J6 <strong>OLED</strong></td><td>OLED (instead of the screen)</td><td><code>1 GND · 2 VCC · 3 SCL · 4 SDA</code></td><td>Only if you use the 0.91-inch OLED: four leads to the OLED's pins of the same names.</td></tr><tr><td>J4 <strong>ENC</strong></td><td>Knob (encoder)</td><td><code>1 A · 2 C · 3 B · 4 SW · 5 SW</code></td><td>Five wires soldered to the encoder, ending in female leads. A, C and B are its three-pin side, C in the middle; the two SW pins are the push switch.</td></tr></table></div>
+<p>The keys need no leads: their switches are on the board. The keys and the knob only pull a pin to ground, and the Pi's own pull-ups hold them high. The power key reaches GPIO 24 and GPIO 3 through D1 and D2, exactly as in <a href="#w-buttons">step 5</a>. GPIO 22 still switches the light, through Q1, so nothing changes in the software or in <code>config.txt</code>.</p>
+<div class="note"><p>The box header sits straight in front of the Pi's header, the same way round: pin 1 on the right seen from the front, on the lower row. So the ribbon leaves the board, bends once and comes down onto the DAC's pins, with no twist or fold. The ribbon's red stripe marks pin 1 at both ends. On the board, pin 1 is at the triangle beside the box header, and its notch only lets the plug in one way. On the DAC there is no notch, so check before you push it on: pin 1 is the corner pin with a square pad on the Pi, at the right-hand end seen from the front of the case, and with the Pi running it reads 3.3 V, while its neighbour across the header (pin 2) reads 5 V.</p></div>
+<p>Fitting the board in the case, and running the ribbon and leads, is in the <a href="../NFC-Player-Case/NFC-Player-Assembly.html#assembly">assembly guide</a>.</p>
+<!-- /front-board -->
+
 <h2 id="wifi">Changing Wi-Fi</h2>
 <p>The Wi-Fi icon in the corner of the screen shows the signal; struck through, the player is not on a network. To join a new network without a keyboard or SSH:</p>
 <ol>
@@ -720,7 +754,7 @@
   <tr><td><code>player/wifi.py</code></td><td>The Wi-Fi icon's signal, and the setup network for joining a new one.</td></tr>
   <tr><td><code>system/</code></td><td><code>setup.sh</code>, the USB and Wi-Fi helpers, the service files and <code>nfc-player-screen-off</code>, which turns the screen off at the end of a shutdown.</td></tr>
 </table></div>
-<p>To try changes without the hardware, run the simulator on your computer: <code>.venv/bin/python -m player.main --sim</code>, then open <code>http://localhost:8137</code>. The web remote runs alongside it at <code>http://localhost:8080</code>.</p>
+<p>To try changes without the hardware, run the simulator on your computer: <code>.venv/bin/python -m player.main --sim</code> (on Windows, <code>.venv\Scripts\python</code>), then open <code>http://localhost:8137</code>. The web remote runs alongside it at <code>http://localhost:8080</code>.</p>
 
 <h3>Sources</h3>
 <ul>

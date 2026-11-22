@@ -1,6 +1,6 @@
 """The key carrier: the four key caps, with their symbols cut into their faces, on one thin frame. Millimetres.
 
-    /Applications/Blender.app/Contents/MacOS/Blender -b -P keycaps.py
+    blender -b -P keycaps.py
 
 Writes STL/key-carrier.stl (build.py writes it too, and checks it against the rest of the case).
 

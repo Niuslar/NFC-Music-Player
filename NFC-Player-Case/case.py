@@ -3,7 +3,7 @@
 This file only describes shapes. build.py turns them into STLs with Blender and
 writes the OpenSCAD copy and the brass template, so all three always agree:
 
-    /Applications/Blender.app/Contents/MacOS/Blender -b -P build.py
+    blender -b -P build.py
 
 Axes: x across the front (0 = left), y front to back (0 = front face), z up (0 = underside).
 
