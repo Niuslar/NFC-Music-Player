@@ -8,10 +8,12 @@ to render the wood-grain chassis and front; otherwise the plain ones are shown, 
 The knob, screw heads, feet, screen and cards are stand-ins for bought parts.
 """
 
+import math
 import os
 import sys
 from pathlib import Path
 
+import bmesh
 import bpy
 from mathutils import Matrix
 
@@ -136,19 +138,63 @@ def material(name, colour, rough=0.45, emit=0.0):
     return m
 
 
-# The power key: a black 12 mm button with a lit ring, a stand-in made here each time.
-for name in ("Power key", "Power key ring", "Power key cap"):
-    if name in D.objects:
-        D.objects.remove(D.objects[name])
-for name, r, y0, y1, mat in (
-    ("Power key", 7.5, -2.6, 0.0, material("Black plastic", (0.015, 0.015, 0.016), 0.35)),
-    ("Power key ring", 6.3, -2.75, -2.6, material("Power light", (1.0, 0.62, 0.25), 0.4, 6.0)),
-    ("Power key cap", 5.3, -2.85, -2.6, material("Black plastic", (0.015, 0.015, 0.016), 0.35)),
-):
-    bpy.ops.mesh.primitive_cylinder_add(vertices=64, radius=r, depth=y1 - y0, location=(c.POWER_X, (y0 + y1) / 2, c.CTRL_Z), rotation=(1.5707963, 0, 0))
-    ob = bpy.context.active_object
-    ob.name = name
-    ob.data.materials.append(mat)
+def metal(name, colour, rough):
+    m = material(name, colour, rough)
+    m.node_tree.nodes["Principled BSDF"].inputs["Metallic"].default_value = 1.0
+    return m
+
+
+def lathe(name, profile, mat, steps=128):
+    """A solid of revolution about the power key's axis (pointing out of the front, -y) from
+    a profile of (radius, y) points, y negative in front of the panel."""
+    me = D.meshes.new(name)
+    bm = bmesh.new()
+    verts = [bm.verts.new((r, y, 0.0)) for r, y in profile]
+    edges = [bm.edges.new(pair) for pair in zip(verts, verts[1:])]
+    bmesh.ops.spin(bm, geom=verts + edges, cent=(0, 0, 0), axis=(0, 1, 0), angle=6.283185307, steps=steps, use_merge=True)
+    bmesh.ops.remove_doubles(bm, verts=bm.verts, dist=1e-4)
+    bm.to_mesh(me)
+    bm.free()
+    return placed(name, me, mat)
+
+
+def placed(name, me, mat):
+    ob = D.objects.new(name, me)
+    bpy.context.scene.collection.objects.link(ob)
+    ob.location = (c.POWER_X, 0.0, c.CTRL_Z)
+    me.materials.append(mat)
+    for poly in me.polygons:
+        poly.use_smooth = True
+    me.set_sharp_from_angle(angle=0.6)
+    return ob
+
+
+# The power key: the stainless 12 mm flat-head push button with a green ring and power symbol
+# (sourcing map, 1NO, 3-6 V), lit. A stand-in made here each time; only its face shows.
+for name in [n for n in D.objects.keys() if n.startswith("Power key")]:
+    D.objects.remove(D.objects[name])
+steel = metal("Stainless steel", (0.80, 0.79, 0.77), 0.22)
+green = material("Power light", (0.06, 1.0, 0.18), 0.4, 5.0)
+HEAD, FACE = 2.0, 1.85  # the bezel's height on the panel; the button's face, just behind it
+lathe("Power key bezel", [(4.95, -1.2), (4.95, -HEAD + 0.1), (5.05, -HEAD), (6.2, -HEAD), (6.6, -HEAD + 0.12), (6.9, -HEAD + 0.4),
+                          (7.0, -HEAD + 0.75), (7.0, 0.0), (4.95, 0.0)], steel)
+lathe("Power key ring", [(4.95, -1.6), (4.5, -1.6)], green)  # the lit gap round the button
+lathe("Power key button", [(0.0, -FACE), (4.15, -FACE), (4.4, -FACE + 0.1), (4.45, -FACE + 0.3), (4.45, -1.0)], steel)
+
+# The power symbol on the button's face: an open circle with a bar through its gap, lit.
+bm = bmesh.new()
+y, gap, n = -FACE - 0.02, 0.62, 48
+arc = [gap + (6.283185307 - 2 * gap) * i / n for i in range(n + 1)]
+inner = [bm.verts.new((1.6 * math.sin(a), y, 1.6 * math.cos(a))) for a in arc]
+outer = [bm.verts.new((2.2 * math.sin(a), y, 2.2 * math.cos(a))) for a in arc]
+for i in range(n):
+    bm.faces.new((inner[i], inner[i + 1], outer[i + 1], outer[i]))
+bm.faces.new([bm.verts.new((x, y, z)) for x, z in ((-0.3, 0.3), (0.3, 0.3), (0.3, 2.6), (-0.3, 2.6))])
+bm.normal_update()
+me = D.meshes.new("Power key symbol")
+bm.to_mesh(me)
+bm.free()
+placed("Power key symbol", me, green)
 
 knob = D.objects["Volume knob"]
 knob.location = (c.KNOB_X, -9.0, c.CTRL_Z)
