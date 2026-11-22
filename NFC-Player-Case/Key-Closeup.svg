@@ -4,10 +4,8 @@
 <rect width="360" height="214" fill="#ffffff"/>
 
 <text x="8" y="8" font-size="4.6" text-anchor="start" fill="#222826" font-weight="650" style="font-family:system-ui,-apple-system,'Segoe UI',sans-serif">Pulled apart, in the order it goes together</text>
-<rect x="66" y="22" width="12.8" height="3.2" rx="0" fill="#d4b06c" stroke="#8a6a2e" stroke-width="0.2" />
-<rect x="66" y="25.2" width="13.2" height="13.6" rx="0" fill="#c9ccc8" stroke="#5f6b66" stroke-width="0.2" />
-<rect x="137.2" y="22" width="12.8" height="3.2" rx="0" fill="#d4b06c" stroke="#8a6a2e" stroke-width="0.2" />
-<rect x="136.8" y="25.2" width="13.2" height="13.6" rx="0" fill="#c9ccc8" stroke="#5f6b66" stroke-width="0.2" />
+<rect x="66" y="22" width="13.2" height="16.8" rx="0" fill="#c9ccc8" stroke="#5f6b66" stroke-width="0.2" />
+<rect x="136.8" y="22" width="13.2" height="16.8" rx="0" fill="#c9ccc8" stroke="#5f6b66" stroke-width="0.2" />
 <polygon points="136,54 136,74 141.2,74 141.2,75.6 122,75.6 122,60.4 94,60.4 94,75.6 74.8,75.6 74.8,74 80,74 80,54" fill="#2b2f31" stroke="#222826" stroke-width="0.3" />
 <rect x="66" y="70.8" width="6.8" height="4.8" rx="0" fill="#2b2f31" stroke="none" stroke-width="0.3" />
 <rect x="143.2" y="70.8" width="6.8" height="4.8" rx="0" fill="#2b2f31" stroke="none" stroke-width="0.3" />
@@ -29,9 +27,6 @@
 <line x1="180" y1="108.8" x2="180" y2="29.6" stroke="#d2452d" stroke-width="0.5" />
 <polygon points="180,31.2 178.7,28.6 181.3,28.6" fill="#d2452d"/>
 <text x="182.2" y="71.2" font-size="3.5" text-anchor="start" fill="#b3361f" font-weight="650" style="font-family:system-ui,-apple-system,'Segoe UI',sans-serif">3</text>
-<line x1="66" y1="23.6" x2="50.8" y2="22.6" stroke="#a9b1ad" stroke-width="0.18" />
-<circle cx="66" cy="23.6" r="0.45" fill="#5f6b66" stroke="none" stroke-width="0.3"/>
-<text x="50" y="23.6" font-size="3.5" text-anchor="end" fill="#222826" font-weight="400" style="font-family:system-ui,-apple-system,'Segoe UI',sans-serif">Brass face</text>
 <line x1="66" y1="34.8" x2="50.8" y2="33.8" stroke="#a9b1ad" stroke-width="0.18" />
 <circle cx="66" cy="34.8" r="0.45" fill="#5f6b66" stroke="none" stroke-width="0.3"/>
 <text x="50" y="34.8" font-size="3.5" text-anchor="end" fill="#222826" font-weight="400" style="font-family:system-ui,-apple-system,'Segoe UI',sans-serif">Front panel</text>
@@ -60,10 +55,8 @@
 <text x="8" y="197.2" font-size="3.5" text-anchor="start" fill="#222826" font-weight="400" style="font-family:system-ui,-apple-system,'Segoe UI',sans-serif">2  Lay the spacer on the carrier.</text>
 <text x="8" y="202.4" font-size="3.5" text-anchor="start" fill="#222826" font-weight="400" style="font-family:system-ui,-apple-system,'Segoe UI',sans-serif">3  Fit the board, switches towards the panel, with three M2 × 6 screws.</text>
 <text x="190" y="8" font-size="4.6" text-anchor="start" fill="#222826" font-weight="650" style="font-family:system-ui,-apple-system,'Segoe UI',sans-serif">Put together</text>
-<rect x="190" y="60" width="12.8" height="3.2" rx="0" fill="#d4b06c" stroke="#8a6a2e" stroke-width="0.2" />
-<rect x="190" y="63.2" width="13.2" height="13.6" rx="0" fill="#c9ccc8" stroke="#5f6b66" stroke-width="0.2" />
-<rect x="261.2" y="60" width="12.8" height="3.2" rx="0" fill="#d4b06c" stroke="#8a6a2e" stroke-width="0.2" />
-<rect x="260.8" y="63.2" width="13.2" height="13.6" rx="0" fill="#c9ccc8" stroke="#5f6b66" stroke-width="0.2" />
+<rect x="190" y="60" width="13.2" height="16.8" rx="0" fill="#c9ccc8" stroke="#5f6b66" stroke-width="0.2" />
+<rect x="260.8" y="60" width="13.2" height="16.8" rx="0" fill="#c9ccc8" stroke="#5f6b66" stroke-width="0.2" />
 <rect x="190" y="81.6" width="6.8" height="5.2" rx="0" fill="#dcdcd6" stroke="#5f6b66" stroke-width="0.2" />
 <rect x="267.2" y="81.6" width="6.8" height="5.2" rx="0" fill="#dcdcd6" stroke="#5f6b66" stroke-width="0.2" />
 <rect x="190" y="86.8" width="84" height="6.4" rx="0" fill="#1d5a35" stroke="#5f6b66" stroke-width="0.15" />
@@ -78,7 +71,7 @@
 <rect x="267.2" y="76.8" width="6.8" height="4.8" rx="0" fill="#2b2f31" stroke="none" stroke-width="0.3" />
 <line x1="258" y1="60.4" x2="289.2" y2="59.4" stroke="#a9b1ad" stroke-width="0.18" />
 <circle cx="258" cy="60.4" r="0.45" fill="#5f6b66" stroke="none" stroke-width="0.3"/>
-<text x="290" y="60.4" font-size="3.5" text-anchor="start" fill="#222826" font-weight="400" style="font-family:system-ui,-apple-system,'Segoe UI',sans-serif">Face flush with the brass</text>
+<text x="290" y="60.4" font-size="3.5" text-anchor="start" fill="#222826" font-weight="400" style="font-family:system-ui,-apple-system,'Segoe UI',sans-serif">Face flush with the panel</text>
 <line x1="239" y1="66.8" x2="289.2" y2="65.8" stroke="#a9b1ad" stroke-width="0.18" />
 <circle cx="239" cy="66.8" r="0.45" fill="#5f6b66" stroke="none" stroke-width="0.3"/>
 <text x="290" y="66.8" font-size="3.5" text-anchor="start" fill="#222826" font-weight="400" style="font-family:system-ui,-apple-system,'Segoe UI',sans-serif">0.1 mm to the button</text>

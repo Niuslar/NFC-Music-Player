@@ -1,7 +1,7 @@
 """NFC Player Case v3: the one source of truth for every dimension. Millimetres throughout.
 
 This file only describes shapes. build.py turns them into STLs with Blender and
-writes the OpenSCAD copy and the brass template, so all three always agree:
+writes the OpenSCAD copy, so both always agree:
 
     blender -b -P build.py
 
@@ -17,18 +17,13 @@ import math
 W, D, H = 200.0, 128.0, 59.0  # outside size, without feet, knob or screw heads
 BODY_H = 56.0  # top of the chassis walls; the lid sits on this
 LID_T = 3.0
-FRONT_T = 4.2  # front panel: 3.4 of plastic behind a 0.8 deep pocket for the brass
+FRONT_T = 4.2  # front panel, solid: printed in black, its face is the finished front
 REAR_T = 3.0
 WALL = 4.0
 FLOOR = 3.0
 R_TOP = 6.0  # radius of the two top edges
 CHAMFER = 2.5  # 45 degree chamfer on the two bottom edges; prints cleanly, a radius does not
 TOWER_X, TOWER_Y = 14.0, 16.0  # corner blocks that take the panel and lid screws
-
-# ---- brass ------------------------------------------------------------------
-RIM = 1.2  # printed rim left around the brass; thinner than this is fragile
-BRASS_T = 0.8  # sheet thickness = pocket depth, so the brass sits flush with the rim
-BRASS_GAP = 0.15  # clearance all round between brass and rim
 
 # ---- screws -----------------------------------------------------------------
 SCREW_X = (7.0, W - 7.0)
@@ -55,8 +50,8 @@ CLEAR_M25 = 2.9
 CRADLE_TRAVEL = (2.5, 4.0)  # how far the bracket slides forward and back from where the glass meets the panel
 KEYS_X = (37.0, 55.0, 73.0, 91.0)  # previous, play, next, back, 18 mm apart. Left, so the board behind them sits in front of the DAC
 # Keys: the four printed caps are one part, the key carrier, with a thin frame that lies on the
-# inside of the panel. Each cap slides in a square hole through the brass and the panel, flush with
-# the brass, and hangs from two thin bridges, one above it and one below, by a short tab in the
+# inside of the panel. Each cap slides in a square hole through the panel, flush with its face,
+# and hangs from two thin bridges, one above it and one below, by a short tab in the
 # middle of each edge. A press bends the bridges a little and the cap presses a 6 x 6 mm tactile
 # switch soldered to the front board; the switch gives the click and pushes it back. The bridges
 # keep each cap centred in its hole, so it does not rattle, and keep it from falling out. Two pegs
@@ -65,8 +60,7 @@ KEYS_X = (37.0, 55.0, 73.0, 91.0)  # previous, play, next, back, 18 mm apart. Le
 KEY_CAP = 14.0  # the cap, square
 KEY_CAP_R = 2.0  # its corner radius
 KEY_HOLE = 14.4  # the hole through the panel that guides it
-KEY_BRASS_HOLE = 14.6  # and through the brass, a little larger since the brass is cut by hand
-KEY_PROUD = 0.0  # how far the cap's face stands in front of the brass; 0 is flush
+KEY_PROUD = 0.0  # how far the cap's face stands in front of the panel; 0 is flush
 KEY_FACE_T = 1.6  # solid face of the cap, in front of the switch (its symbol is cut 0.6 into it)
 KEY_FREE = 0.1  # between the cap and the switch's button at rest, so the switch is never held down
 TACT = 6.0  # MEASURE: the switch body, square
@@ -89,7 +83,7 @@ KNOB_X = 178.5
 KNOB_D = 30.0  # the largest knob the front takes: it sits close to the screen window
 ENCODER_HOLE = 7.3  # M7 bushing
 ENCODER_BODY = (13.5, 14.5)  # pocket for the encoder body; it also stops the body turning
-PANEL_AT_NUT = 1.5  # plastic left where the encoder and socket nuts tighten (plus the brass)
+PANEL_AT_NUT = 2.3  # plastic left where the encoder and socket nuts tighten
 # Power key: a 12 mm panel push button with its own LED, left of the screen. It must be
 # momentary (not latching). Its body reaches into the case past the front corner tower, so
 # that tower is cut away between TOWER_GAP_Z; its screw pilots stay above and below.
@@ -342,13 +336,11 @@ def lid():
 
 def front():
     """Panel coordinates: x, height, and depth measured from the inside face (the print bed)."""
-    back = FRONT_T - BRASS_T  # plastic thickness behind the brass
-    cuts = [prism(outline(RIM), back, FRONT_T + 1)]  # the pocket the brass drops into
-    cuts.append(box(LCD_X - LCD_WINDOW[0] / 2, LCD_X + LCD_WINDOW[0] / 2, CTRL_Z - LCD_WINDOW[1] / 2, CTRL_Z + LCD_WINDOW[1] / 2, -1, FRONT_T + 1))
+    cuts = [box(LCD_X - LCD_WINDOW[0] / 2, LCD_X + LCD_WINDOW[0] / 2, CTRL_Z - LCD_WINDOW[1] / 2, CTRL_Z + LCD_WINDOW[1] / 2, -1, FRONT_T + 1)]
     cuts += [prism(key_square(k, CTRL_Z, KEY_HOLE), -1, FRONT_T + 1) for k in KEYS_X]
     cuts += [cylz(x, z, -1, FRONT_T + 1, CLEAR_M3) for x in SCREW_X for z in SCREW_Z]
     cuts.append(cylz(KNOB_X, CTRL_Z, -1, FRONT_T + 1, ENCODER_HOLE))
-    cuts.append(box(KNOB_X - ENCODER_BODY[0] / 2, KNOB_X + ENCODER_BODY[0] / 2, CTRL_Z - ENCODER_BODY[1] / 2, CTRL_Z + ENCODER_BODY[1] / 2, -1, back - PANEL_AT_NUT))
+    cuts.append(box(KNOB_X - ENCODER_BODY[0] / 2, KNOB_X + ENCODER_BODY[0] / 2, CTRL_Z - ENCODER_BODY[1] / 2, CTRL_Z + ENCODER_BODY[1] / 2, -1, FRONT_T - PANEL_AT_NUT))
     cuts.append(cylz(POWER_X, CTRL_Z, -1, FRONT_T + 1, POWER_HOLE))
     cuts += [cylz(x, z, -1, PILOT_M2_DEPTH, PILOT_M2) for x, z in BOARD_SCREWS]
     cuts += [cylz(x, z, -1, PEG_DEPTH, PEG_HOLE) for x, z in PEGS]  # the key carrier's pegs
@@ -451,15 +443,13 @@ def display_cradle():
 
 def fit_gauge():
     """Print this first, on the settings you will use for the case, and try every part in it."""
-    back = FRONT_T - BRASS_T
     cuts = [prism(key_square(12, 17, KEY_HOLE), -1, FRONT_T + 1)]  # a cap must slide freely in this
     cuts.append(cylz(60, 24, -1, PEG_DEPTH, PEG_HOLE))  # and a carrier peg go into this
-    cuts += [cylz(32, 15, -1, FRONT_T + 1, ENCODER_HOLE), box(32 - ENCODER_BODY[0] / 2, 32 + ENCODER_BODY[0] / 2, 15 - ENCODER_BODY[1] / 2, 15 + ENCODER_BODY[1] / 2, -1, back - PANEL_AT_NUT)]
+    cuts += [cylz(32, 15, -1, FRONT_T + 1, ENCODER_HOLE), box(32 - ENCODER_BODY[0] / 2, 32 + ENCODER_BODY[0] / 2, 15 - ENCODER_BODY[1] / 2, 15 + ENCODER_BODY[1] / 2, -1, FRONT_T - PANEL_AT_NUT)]
     if REAR_JACK:
         cuts.append(cylz(52, 15, -1, FRONT_T + 1, PHONES_HOLE))
     cuts += [cylz(x, 15, -1, FRONT_T + 1, d) for x, d in ((66, CLEAR_M3), (73, PILOT_M3), (80, 2.9))]
     cuts.append(box(15, 15 + CHANNEL_W, 30, 30 + CHANNEL_T, -1, FRONT_T + 1))
-    cuts.append(box(-1, 90 - RIM, -1, 36 - RIM, back, FRONT_T + 1))  # a corner of the brass pocket and its rim
     return diff(box(0, 90, 0, 36, 0, FRONT_T), *cuts)
 
 
@@ -476,46 +466,6 @@ PLACE = {
     "display-cradle": move(0, 0, 0),
     "fit-gauge": None,
 }
-
-
-# ---- brass ---------------------------------------------------------------------
-def brass_shapes():
-    """The brass face as flat shapes in x, z: an outline, then the openings to cut."""
-    return {
-        "outline": outline(RIM + BRASS_GAP),
-        "rects": [
-            (LCD_X - LCD_WINDOW[0] / 2 - 0.6, CTRL_Z - LCD_WINDOW[1] / 2 - 0.6, LCD_X + LCD_WINDOW[0] / 2 + 0.6, CTRL_Z + LCD_WINDOW[1] / 2 + 0.6),
-        ],
-        "rounded": [key_square(k, CTRL_Z, KEY_BRASS_HOLE) for k in KEYS_X],  # the keys
-        "circles": [(x, z, CLEAR_M3) for x in SCREW_X for z in SCREW_Z] + [(KNOB_X, CTRL_Z, ENCODER_HOLE), (POWER_X, CTRL_Z, POWER_HOLE)],
-    }
-
-
-def brass():
-    """The brass as a solid, in front-panel coordinates, for the render and the clearance checks."""
-    s = brass_shapes()
-    back = FRONT_T - BRASS_T
-    cuts = [box(x0, x1, z0, z1, back - 1, FRONT_T + 1) for x0, z0, x1, z1 in s["rects"]]
-    cuts += [cylz(x, z, back - 1, FRONT_T + 1, d) for x, z, d in s["circles"]]
-    cuts += [prism(p, back - 1, FRONT_T + 1) for p in s["rounded"]]
-    return diff(prism(s["outline"], back, FRONT_T), *cuts)
-
-
-def brass_svg():
-    s = brass_shapes()
-    f = lambda v: f"{v:.3f}".rstrip("0").rstrip(".")
-    path = "M " + " L ".join(f"{f(x)},{f(H - z)}" for x, z in s["outline"]) + " Z"
-    out = [
-        '<?xml version="1.0" encoding="UTF-8"?>',
-        f'<svg xmlns="http://www.w3.org/2000/svg" width="{f(W)}mm" height="{f(H)}mm" viewBox="0 0 {f(W)} {f(H)}">',
-        f"<title>NFC Player brass face, {f(BRASS_T)} mm sheet. Drawn at actual size, seen from the front.</title>",
-        '<g fill="none" stroke="black" stroke-width="0.1">',
-        f'<path d="{path}"/>',
-    ]
-    out += [f'<rect x="{f(x0)}" y="{f(H - z1)}" width="{f(x1 - x0)}" height="{f(z1 - z0)}"/>' for x0, z0, x1, z1 in s["rects"]]
-    out += [f'<circle cx="{f(x)}" cy="{f(H - z)}" r="{f(d / 2)}"/>' for x, z, d in s["circles"]]
-    out += ['<path d="M ' + " L ".join(f"{f(x)},{f(H - z)}" for x, z in p) + ' Z"/>' for p in s["rounded"]]
-    return "\n".join(out + ["</g>", "</svg>", ""])
 
 
 # ---- OpenSCAD copy ---------------------------------------------------------------
@@ -549,17 +499,12 @@ def scad_file():
     names = {k: k.replace("-", "_") for k in PARTS}
     for key, make in PARTS.items():
         out.append(f"module {names[key]}() {{\n{scad(make())}}}\n")
-    out.append(f"module brass() {{\n{scad(brass())}}}\n")
     for key in PARTS:
         out.append(f'if (part == "{key}") {names[key]}();')
-    out.append('if (part == "brass") brass();')
-    out.append('if (part == "brass-template") projection() brass();')
     out.append('if (part == "assembly") {')
     for key, place in PLACE.items():
         if place is not None:
             rows = ",".join("[" + ",".join(str(float(v)) for v in r) + "]" for r in place.p["m"])
             out.append(f"    multmatrix([{rows},[0,0,0,1]]) {names[key]}();")
-    rows = ",".join("[" + ",".join(str(float(v)) for v in r) + "]" for r in FRONT_M)
-    out.append(f'    color("#b68a4e") multmatrix([{rows},[0,0,0,1]]) brass();')
     out.append("}")
     return "\n".join(out) + "\n"

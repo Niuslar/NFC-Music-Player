@@ -4,8 +4,8 @@
 
 Writes STL/key-carrier.stl (build.py writes it too, and checks it against the rest of the case).
 
-Each cap slides in a square hole through the brass and the front panel, its face flush with the
-brass, and presses a 6 x 6 mm tactile switch on the front board behind it. It hangs from two thin
+Each cap slides in a square hole through the front panel, its face flush with the panel's,
+and presses a 6 x 6 mm tactile switch on the front board behind it. It hangs from two thin
 bridges, one above and one below, each joined to the middle of its edge by a short tab. The bridges
 run between the frame's webs either side of the key. They bend a little when the key is pressed,
 and they keep the cap centred in its hole, so it does not rattle, and stop it falling out. The cap's

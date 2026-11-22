@@ -5,7 +5,6 @@
 Front-Panel.svg       the front as built, seen from the front, with the controls' positions
 Rear-Panel.svg        the rear panel seen from behind, with the socket openings
 Board-Stack.svg       a side section through the Pi and DAC stack and the front board, with heights
-Brass-Front-Template.svg   the brass at actual size, to print at 100% and cut round
 
 Every label sits outside the part, in its own row or column, so none can overlap.
 """
@@ -19,7 +18,7 @@ sys.path.insert(0, str(HERE))
 import case as c  # noqa: E402
 
 INK, DIM, FAINT = "#222826", "#5f6b66", "#a9b1ad"
-CHARCOAL, BRASS, PAPER = "#3b403e", "#d4b06c", "#ffffff"
+CHARCOAL, BLACK, SILVER, PAPER = "#3b403e", "#1f2221", "#c3c7ca", "#ffffff"
 FONT = "font-family:system-ui,-apple-system,'Segoe UI',sans-serif"
 
 
@@ -134,15 +133,13 @@ class Sheet:
 def front_panel():
     s = Sheet(c.W + 50, c.H + 52, "NFC Player front panel, seen from the front. Millimetres.")
     s.place(26, 16, c.H)
-    s.poly(c.outline(), CHARCOAL)
-    b = c.brass_shapes()
-    s.poly(b["outline"], BRASS, stroke="#8a6a2e", sw=0.2)
-    for p in b["rounded"]:  # the keys' holes in the brass, and the caps in them
-        s.poly(p, PAPER, stroke="#8a6a2e", sw=0.2)
+    s.poly(c.outline(), BLACK)
+    for k in c.KEYS_X:  # the keys' holes, and the caps in them
+        s.poly(c.key_square(k, c.CTRL_Z, c.KEY_HOLE), PAPER)
     w, h = c.LCD_WINDOW
     s.rect(c.LCD_X - w / 2, c.CTRL_Z - h / 2, c.LCD_X + w / 2, c.CTRL_Z + h / 2, "#1d3138")
     for k in c.KEYS_X:
-        s.poly(c.key_square(k, c.CTRL_Z, c.KEY_CAP), CHARCOAL)
+        s.poly(c.key_square(k, c.CTRL_Z, c.KEY_CAP), SILVER)
     s.circle(c.KNOB_X, c.CTRL_Z, c.ENCODER_HOLE, PAPER)
     s.circle(c.KNOB_X, c.CTRL_Z, c.KNOB_D, "none", stroke=DIM, sw=0.2)
     s.circle(c.POWER_X, c.CTRL_Z, c.POWER_HOLE, PAPER)
@@ -276,12 +273,10 @@ KNOB_GAP, KNOB_DEPTH = 1.0, 16.0
 
 def controls_section():
     """Two side sections, seen from the left (front of the case on the left): through a key, and through the encoder."""
-    back = c.FRONT_T - c.BRASS_T  # plastic behind the brass, measured from the inside face
-    plate_front = c.BRASS_T  # y of the plastic's front face (the back of the brass)
-    pocket_front = c.FRONT_T - (back - c.PANEL_AT_NUT)  # y where the encoder pocket's floor is
+    pocket_front = c.PANEL_AT_NUT  # y where the encoder pocket's floor is, from the front face
     K = 3.0  # drawn three times full size
     s = Sheet(268, 268, "NFC Player: sections through a key and through the volume encoder, seen from the left, three times full size. Millimetres.")
-    PANEL, BRASSC, PART = "#c9ccc8", BRASS, "#4a4f4d"
+    PANEL, KNOB, PART = "#c9ccc8", SILVER, "#4a4f4d"
 
     def callouts(origin_y, items_left, items_right, x_left, x_right):
         for side, items in ((-1, items_left), (1, items_right)):
@@ -302,10 +297,8 @@ def controls_section():
     for sgn in (-1, 1):
         def span(half):  # from the opening out to the edge of the drawing, on one side
             return sorted((c.CTRL_Z + sgn * half, c.CTRL_Z + sgn * 15))
-        a, b = span(c.KEY_BRASS_HOLE / 2)
-        s.rect(0, a, c.BRASS_T, b, BRASSC, "#8a6a2e", 0.2)
         a, b = span(c.KEY_HOLE / 2)
-        s.rect(plate_front, a, c.FRONT_T, b, PANEL, DIM, 0.2)
+        s.rect(0, a, c.FRONT_T, b, PANEL, DIM, 0.2)
         a, b = span(c.KEY_WIN_Z)
         s.rect(c.FRONT_T, a, c.FRONT_T + c.CARRIER_T, b, "#2b2f31", DIM, 0.2)  # the key carrier's frame
         s.rect(c.FRONT_T + c.CARRIER_T, a, c.BOARD_Y, b, "#dcdcd6", DIM, 0.2)  # the spacer
@@ -319,8 +312,7 @@ def controls_section():
     back = c.FRONT_T + c.CARRIER_T
     bridge = c.KEY_CAP / 2 + c.BRIDGE_GAP + c.BRIDGE_W / 2
     callouts(0, [
-        (c.CTRL_Z + 5, 0.3, "Key cap, printed: face flush with the brass"),
-        (c.CTRL_Z - 11, c.BRASS_T / 2, f"Brass, {n(c.BRASS_T)}"),
+        (c.CTRL_Z + 5, 0.3, "Key cap, printed: face flush with the panel"),
         (c.CTRL_Z - bridge, back - c.BRIDGE_T / 2, f"Bridge, {n(c.BRIDGE_T)} thick: holds the cap and bends"),
     ], [
         (c.CTRL_Z + 12, c.FRONT_T - 1, "Front panel: its hole guides the cap"),
@@ -337,12 +329,10 @@ def controls_section():
     s.line(8, 116, s.w - 8, 116, FAINT, 0.2)
     z0, z1 = c.CTRL_Z - 19, c.CTRL_Z + 19
     eh, ph = c.ENCODER_HOLE / 2, c.ENCODER_BODY[1] / 2
-    for a, b in ((z0, c.CTRL_Z - eh), (c.CTRL_Z + eh, z1)):
-        s.rect(0, a, c.BRASS_T, b, BRASSC, "#8a6a2e", 0.2)
     for a, b in ((z0, c.CTRL_Z - ph), (c.CTRL_Z + ph, z1)):
-        s.rect(plate_front, a, c.FRONT_T, b, PANEL, DIM, 0.2)
+        s.rect(0, a, c.FRONT_T, b, PANEL, DIM, 0.2)
     for a, b in ((c.CTRL_Z - ph, c.CTRL_Z - eh), (c.CTRL_Z + eh, c.CTRL_Z + ph)):
-        s.rect(plate_front, a, pocket_front, b, PANEL, DIM, 0.2)
+        s.rect(0, a, pocket_front, b, PANEL, DIM, 0.2)
     bh = ENC_BODY[0] / 2
     s.rect(pocket_front, c.CTRL_Z - bh, pocket_front + ENC_BODY[1], c.CTRL_Z + bh, PART)
     s.rect(pocket_front + ENC_BODY[1], c.CTRL_Z - bh, pocket_front + ENC_BODY[1] + 3.5, c.CTRL_Z - bh + 0.7, "#b9b7ad", DIM, 0.15)
@@ -352,8 +342,8 @@ def controls_section():
     shaft_end = pocket_front - ENC_THREAD - SHAFT
     s.rect(shaft_end, c.CTRL_Z - 3, pocket_front - ENC_THREAD, c.CTRL_Z + 3, "#c8c8c2", DIM, 0.2)
     k0 = -WASHER_T - NUT_T - KNOB_GAP
-    s.poly([(k0, c.CTRL_Z - c.KNOB_D / 2 + 1), (k0 - KNOB_DEPTH, c.CTRL_Z - c.KNOB_D / 2 + 1), (k0 - KNOB_DEPTH, c.CTRL_Z + c.KNOB_D / 2 - 1), (k0, c.CTRL_Z + c.KNOB_D / 2 - 1), (k0, c.CTRL_Z + 3.4), (shaft_end - 0.5, c.CTRL_Z + 3.4), (shaft_end - 0.5, c.CTRL_Z - 3.4), (k0, c.CTRL_Z - 3.4)], BRASSC, "#8a6a2e", 0.25)
-    s.rect(k0 - 9, c.CTRL_Z - c.KNOB_D / 2 + 1, k0 - 6, c.CTRL_Z - 3.4, "#6f5426", "none")  # set screw
+    s.poly([(k0, c.CTRL_Z - c.KNOB_D / 2 + 1), (k0 - KNOB_DEPTH, c.CTRL_Z - c.KNOB_D / 2 + 1), (k0 - KNOB_DEPTH, c.CTRL_Z + c.KNOB_D / 2 - 1), (k0, c.CTRL_Z + c.KNOB_D / 2 - 1), (k0, c.CTRL_Z + 3.4), (shaft_end - 0.5, c.CTRL_Z + 3.4), (shaft_end - 0.5, c.CTRL_Z - 3.4), (k0, c.CTRL_Z - 3.4)], KNOB, "#7d8285", 0.25)
+    s.rect(k0 - 9, c.CTRL_Z - c.KNOB_D / 2 + 1, k0 - 6, c.CTRL_Z - 3.4, "#4a4f52", "none")  # set screw
     lug = pocket_front - 1.0
     s.rect(lug, c.CTRL_Z + 4.6, pocket_front, c.CTRL_Z + 5.6, "none", "#d2452d", 0.3, extra='stroke-dasharray="0.8 0.5"')
     callouts(0, [
@@ -368,13 +358,13 @@ def controls_section():
         (c.CTRL_Z - 4, pocket_front + ENC_BODY[1] / 2, "Body in the pocket: it cannot turn"),
         (c.CTRL_Z - 9, pocket_front + ENC_BODY[1] + 3, "Five pins, wired to the board's ENC header"),
     ], s.X(-21.5), s.X(c.FRONT_T + 5))
-    s.text(s.w / 2, s.h - 3, "Bought parts at nominal sizes. The nut clamps brass and panel between itself and the encoder body.", 3.3, "middle", DIM)
+    s.text(s.w / 2, s.h - 3, f"Bought parts at nominal sizes. The nut clamps {n(c.PANEL_AT_NUT)} mm of panel between itself and the encoder body.", 3.3, "middle", DIM)
     return s.svg()
 
 
 # ---- key close-up -----------------------------------------------------------------
 def cap_profile():
-    """A key cap and its two bridges, cut through its middle: (depth from the brass face, offset
+    """A key cap and its two bridges, cut through its middle: (depth from the panel's face, offset
     across), round the outline. The cut runs through the tabs, so cap, tabs and bridges are one piece."""
     half, hollow = c.KEY_CAP / 2, c.KEY_HOLLOW / 2
     outer = half + c.BRIDGE_GAP + c.BRIDGE_W  # the far edge of a bridge
@@ -389,7 +379,7 @@ def cap_profile():
 def key_closeup():
     """One key cut through its middle, front of the case at the top: pulled apart, then put together.
 
-    Drawn with u across the key (sheet x) and d into the case from the brass face (sheet y, down)."""
+    Drawn with u across the key (sheet x) and d into the case from the panel's face (sheet y, down)."""
     K = 4.0
     W = 10.5  # half the width drawn
     body = c.BOARD_Y - c.TACT_BODY_H
@@ -401,8 +391,7 @@ def key_closeup():
 
     def panel():
         for sgn in (-1, 1):
-            R(sgn * c.KEY_BRASS_HOLE / 2, 0, sgn * W, c.BRASS_T, BRASS, "#8a6a2e", 0.2)
-            R(sgn * c.KEY_HOLE / 2, c.BRASS_T, sgn * W, c.FRONT_T, PANEL, DIM, 0.2)
+            R(sgn * c.KEY_HOLE / 2, 0, sgn * W, c.FRONT_T, PANEL, DIM, 0.2)
 
     def spacer(o):
         for sgn in (-1, 1):
@@ -456,7 +445,6 @@ def key_closeup():
         (-c.KEY_CAP / 2, CAP + 1.5, "Key cap, printed"),
         (-bridge, back + CAP - c.BRIDGE_T / 2, "Bridge and tab"),
         (-W, c.FRONT_T + c.CARRIER_T / 2 + CAP, "Carrier's frame"),
-        (-W, c.BRASS_T / 2, "Brass face"),
         (-W, c.FRONT_T - 1, "Front panel"),
         (-W, (c.FRONT_T + c.BOARD_Y) / 2 + SP, "Spacer, printed"),
         (-c.TACT / 2, body + 1.5 + BD, "Tactile switch"),
@@ -480,7 +468,7 @@ def key_closeup():
     board(0)
     cap(0)
     callouts([
-        (c.KEY_CAP / 2 - 0.5, 0.1, "Face flush with the brass"),
+        (c.KEY_CAP / 2 - 0.5, 0.1, "Face flush with the panel"),
         (bridge, back - c.BRIDGE_T / 2, f"Bridge, {n(c.BRIDGE_T)} thick: bends when pressed"),
         (W, c.FRONT_T + c.CARRIER_T / 2, f"Carrier's frame, {n(c.CARRIER_T)} mm, on the panel"),
         (1.75, c.BOARD_Y - c.TACT_H, f"{n(c.KEY_FREE)} mm to the button"),
@@ -500,40 +488,12 @@ def key_closeup():
     return s.svg()
 
 
-# ---- brass ------------------------------------------------------------------------
-def brass_template():
-    b = c.brass_shapes()
-    xs = [p[0] for p in b["outline"]]
-    zs = [p[1] for p in b["outline"]]
-    s = Sheet(c.W + 20, c.H + 34, f"NFC Player brass face template. {n(c.BRASS_T)} mm brass. Print at 100% (actual size), seen from the front.")
-    s.place(10 - min(xs) + c.RIM, 10, c.H)
-    cut = "#000000"
-    s.poly(b["outline"], "none", stroke=cut, sw=0.15)
-    for x0, z0, x1, z1 in b["rects"]:
-        s.rect(x0, z0, x1, z1, "none", stroke=cut, sw=0.15)
-    for p in b["rounded"]:
-        s.poly(p, "none", stroke=cut, sw=0.15)
-    for x, z, d in b["circles"]:
-        s.circle(x, z, d, "none", stroke=cut, sw=0.15)
-        s.line(s.X(x) - d, s.Y(z), s.X(x) + d, s.Y(z), FAINT, 0.1)  # centre marks for a punch
-        s.line(s.X(x), s.Y(z) - d, s.X(x), s.Y(z) + d, FAINT, 0.1)
-    s.text(s.X(c.W / 2), s.Y(c.CTRL_Z + 22), "FRONT FACE · cut on the black lines", 2.6, colour=FAINT)
-    y = s.Y(min(zs)) + 9
-    s.line(s.X(min(xs)), y, s.X(min(xs)) + 100, y, INK, 0.3)
-    for k in range(11):
-        s.line(s.X(min(xs)) + 10 * k, y - (1.5 if k % 5 == 0 else 0.8), s.X(min(xs)) + 10 * k, y, INK, 0.2)
-    s.text(s.X(min(xs)) + 50, y + 4.5, "Check: this bar must measure exactly 100 mm", 2.8)
-    s.text(s.X(max(xs)), y + 4.5, f"Outline {n(max(xs) - min(xs))} × {n(max(zs) - min(zs))} mm, {n(c.BRASS_GAP)} mm inside the pocket all round", 2.8, "end", DIM)
-    return s.svg()
-
-
 DRAWINGS = {
     "Front-Panel.svg": front_panel,
     "Rear-Panel.svg": rear_panel,
     "Board-Stack.svg": board_stack,
     "Controls-Section.svg": controls_section,
     "Key-Closeup.svg": key_closeup,
-    "Brass-Front-Template.svg": brass_template,
 }
 
 if __name__ == "__main__":

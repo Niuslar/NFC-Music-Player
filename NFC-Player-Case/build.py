@@ -1,4 +1,4 @@
-"""Builds the case from case.py with Blender: STLs, the OpenSCAD copy, the brass template, and checks.
+"""Builds the case from case.py with Blender: STLs, the OpenSCAD copy, and checks.
 
     blender -b -P build.py
 
@@ -214,11 +214,6 @@ def main():
             world[name] = ob
         else:
             _drop(ob)
-    brass = make(case.xf(case.FRONT_M, case.brass()))
-    brass.name = "brass"
-    closed, volume, box = describe(brass)
-    print(f"{'brass':15s} closed={closed}  {volume:6.1f} cm3  " + " x ".join(f"{hi - lo:g}" for lo, hi in box) + " mm")
-    world["brass"] = brass
 
     print("\n== printed parts against each other (shared volume, mm3) ==")
     names = list(world)
@@ -240,7 +235,6 @@ def main():
         _drop(ob)
 
     (HERE / "NFC-Player-Case.scad").write_text(case.scad_file())
-    (HERE / "Brass-Front-Template.svg").write_text(case.brass_svg())
     bpy.ops.wm.save_as_mainfile(filepath=str(HERE / "parts.blend"))
     print("\n== result ==")
     print("\n".join("PROBLEM: " + p for p in problems) or "No problems found.")

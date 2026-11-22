@@ -1,9 +1,9 @@
-"""Carves wood grain from wood-grain.png into the sides of the chassis and the front panel's edges.
+"""Carves wood grain from wood-grain.png into the sides of the chassis.
 
     blender -b -P wood.py
 
-Run build.py first; this only adds STL/chassis-wood.stl and STL/front-wood.stl beside the plain
-ones, in the same print orientation. Print them in wood-fill PLA. Nothing else changes: the grain
+Run build.py first; this only adds STL/chassis-wood.stl beside the plain one, in the same
+print orientation. Print it in wood-fill PLA. (The front panel is printed in black and has no grain.) Nothing else changes: the grain
 is cut inwards only, so every face where parts meet keeps its size.
 
 The grain runs side to side: across the top and down the sides (or front to back; see GRAIN).
@@ -133,9 +133,6 @@ def carver(depth):
     return build._object(bm, "carver")
 
 
-FRONT_BACK = Matrix(((1, 0, 0, 0), (0, 0, 1, 0), (0, -1, 0, case.FRONT_T), (0, 0, 0, 1)))  # case to panel coordinates
-
-
 def main():
     for ob in list(bpy.data.objects):
         bpy.data.objects.remove(ob)
@@ -143,7 +140,6 @@ def main():
     problems = []
     jobs = {
         "chassis-wood": (case.chassis(), Matrix.Identity(4)),
-        "front-wood": (case.xf(case.FRONT_M, case.front()), FRONT_BACK),
     }
     for name, (node, back) in jobs.items():
         part = build.make(node)
