@@ -23,7 +23,6 @@ HERE = Path(__file__).resolve().parent
 sys.path.insert(0, str(HERE))
 import build  # noqa: E402
 import case as c  # noqa: E402
-import keycaps  # noqa: E402
 
 sys.path.insert(0, str(HERE / "front-board"))
 import board as fb  # noqa: E402  (the front board's parts and where they sit)
@@ -98,9 +97,6 @@ def stand_ins():
     s["screen front screws"] = (c.union(*[c.cyly(x, z, LCD_Y - 1.6, LCD_Y, 4.5) for x, z in corners]), METAL, "screen")
     s["screen screws"] = (c.union(*[c.cyly(x, z, c.CRADLE_PLATE_Y + c.CRADLE_PLATE_T, c.CRADLE_PLATE_Y + c.CRADLE_PLATE_T + 1.7, 4.5) for x, z in corners]), METAL, "screen")
     # front controls
-    for i, (k, name) in enumerate(zip(c.KEYS_X, keycaps.SYMBOLS)):  # the printed caps, in their holes
-        at = [(1, 0, 0, k), (0, 0, -1, c.KEY_LENGTH - c.KEY_PROUD), (0, 1, 0, c.CTRL_Z)]  # from the cap's own coordinates, back at z = 0
-        s[f"keycap {i}"] = (c.xf(at, keycaps.keycap(name)), KEYCAP, f"keycap {i}")
     enc_face = c.FRONT_T - (c.FRONT_T - c.BRASS_T - c.PANEL_AT_NUT)  # floor of the encoder's pocket
     s["encoder"] = (c.union(B(c.KNOB_X - 6.25, c.KNOB_X + 6.25, enc_face, enc_face + 6.5, c.CTRL_Z - 6.7, c.CTRL_Z + 6.7), c.cyly(c.KNOB_X, c.CTRL_Z, enc_face - 5.0, enc_face, 7.0), c.cyly(c.KNOB_X, c.CTRL_Z, enc_face - 20.0, enc_face - 5.0, 6.0), *[B(c.KNOB_X + dx - 0.4, c.KNOB_X + dx + 0.4, enc_face + 6.5, enc_face + 10, c.CTRL_Z - 8, c.CTRL_Z - 6.5) for dx in (-2.5, 0, 2.5)]), METAL, "encoder")
     s["encoder washer"] = (ring_y(c.KNOB_X, c.CTRL_Z, -0.5, -0.05, 12.0, 7.2), (0.80, 0.80, 0.78), "washer")
@@ -112,7 +108,7 @@ def stand_ins():
     s["power key ring"] = (ring_y(px, pz, -3.15, -2.9, 12.5, 10.5), LIGHT, "power key")
     s["power key nut"] = (ring_y(px, pz, c.FRONT_T + 0.05, c.FRONT_T + 3.0, c.POWER_BODY[0], 12.2), (0.20, 0.20, 0.21), "power nut")
     # the front board: on its spacer behind the panel, the key switches on its front, headers on its back
-    s["front board"] = (c.xf(c.FRONT_M, c.prism(c.BOARD_OUTLINE, -c.SPACER_T - c.BOARD_T, -c.SPACER_T - 0.05)), PCB_FRONT, "board")
+    s["front board"] = (c.xf(c.FRONT_M, c.prism(c.BOARD_OUTLINE, c.FRONT_T - c.BOARD_Y - c.BOARD_T, c.FRONT_T - c.BOARD_Y - 0.05)), PCB_FRONT, "board")
     for i, k in enumerate(c.KEYS_X):
         body = c.BOARD_Y - c.TACT_BODY_H
         s[f"key switch {i}"] = (B(k - c.TACT / 2, k + c.TACT / 2, body, c.BOARD_Y - 0.05, c.CTRL_Z - c.TACT / 2, c.CTRL_Z + c.TACT / 2), BLACK, "board")
@@ -208,7 +204,7 @@ def setup():
     for ob in dst.objects:
         bpy.context.scene.collection.objects.link(ob)
         ob.color = (*(BRASS if ob.name == "brass" else PRINT), 1)
-        GROUP[ob.name] = {"brass": "brass", "front": "front", "rear": "rear", "lid": "lid", "card-guide": "guide", "display-cradle": "cradle", "board-spacer": "board"}.get(ob.name, ob.name)
+        GROUP[ob.name] = {"brass": "brass", "front": "front", "rear": "rear", "lid": "lid", "card-guide": "guide", "display-cradle": "cradle", "board-spacer": "board", "key-carrier": "keys"}.get(ob.name, ob.name)
     for name, (node, colour, group) in stand_ins().items():
         add_mesh(name, node, colour, group)
     for name, (pts, colour, group) in wires().items():
@@ -255,7 +251,7 @@ def pose(shot):
         ob.hide_render = ob.name in hide or g in hide
         ob.location = where(ob.name)
         if ob.name in c.PARTS:
-            ob.color = (*(FOCUS if ob.name in focus or g in focus else PRINT), 1)
+            ob.color = (*(FOCUS if ob.name in focus or g in focus else KEYCAP if g == "keys" else PRINT), 1)
     bpy.context.view_layer.update()
 
 
@@ -305,7 +301,7 @@ ISO_FR = (1.0, -1.25, 0.95)
 ISO_RL = (-1.0, 1.2, 1.0)  # from the rear left, above
 ISO_RR = (1.0, 1.2, 1.0)
 INSIDE = ("chassis", "standoffs", "pi", "dac", "screen", "cradle", "guide", "reader", "wires", "usb lead", "encoder", "knob", "nut", "board", "ribbon", "power key", "power nut")
-KEYS = tuple(f"keycap {i}" for i in range(4))
+KEYS = ("keys",)  # the key carrier: the four caps on their frame
 BACKS = (c.FRONT_T + 2, c.D - c.REAR_T - 2)  # just inside the panels
 BOARD_MID = ((c.BOARD_X[0] + c.BOARD_X[1]) / 2, (c.BOARD_Z[0] + c.BOARD_Z[1]) / 2)
 SHOTS = {
@@ -316,7 +312,7 @@ SHOTS = {
         "marks": [
             ("Lid with the card tray and slot", (60, 30, c.H), "lid"),
             ("Chassis: floor, side walls and screw towers", (4, 70, 30), "chassis"),
-            ("Front panel, with the power key, the four key caps and the encoder fitted", (25, 4, 52), "front"),
+            ("Front panel, with the power key, the key carrier and the encoder fitted", (25, 4, 52), "front"),
             ("Brass face", (25, 0, 8), "brass"),
             ("Knob", (c.KNOB_X, -18.5, c.CTRL_Z + 12), "knob"),
             ("Front board on its spacer, behind the keys: its switches face the caps", (c.BOARD_X[1], c.BOARD_Y, c.BOARD_Z[1] - 3), "board"),
@@ -382,7 +378,7 @@ SHOTS = {
         "arrows": [((c.KNOB_X, -36, c.CTRL_Z - 22), (c.KNOB_X, -6, c.CTRL_Z - 22)), ((c.POWER_X, -40, c.CTRL_Z + 12), (c.POWER_X, -8, c.CTRL_Z + 12))],
         "marks": [
             ("Power key: goes in from the front; its nut goes on from behind", (c.POWER_X + 7.5, -27, c.CTRL_Z + 7.5), "power key"),
-            ("Key caps: their faces sit flush with the brass. They go in from behind (next picture)", (c.KEYS_X[3] + c.KEY_CAP / 2 - 1, 0, c.CTRL_Z + c.KEY_CAP / 2 - 1), "keycap 3"),
+            ("Key caps: their faces sit flush with the brass. They go in from behind, all four on one carrier (next picture)", (c.KEYS_X[3] + c.KEY_CAP / 2 - 1, 0, c.CTRL_Z + c.KEY_CAP / 2 - 1), "keys"),
             ("Brass: a square hole for each key", (c.KEYS_X[0] - c.KEY_BRASS_HOLE / 2, 0, c.CTRL_Z + c.KEY_BRASS_HOLE / 2 - 1), "brass"),
             ("Encoder: goes in from behind, bushing through the hole", (c.KNOB_X + 6.25, 2.3, c.CTRL_Z + 6.7), "encoder"),
             ("Washer, then nut: clamps panel and brass against the encoder body", (c.KNOB_X + 5, -2.5, c.CTRL_Z + 3), "nut"),
@@ -393,11 +389,13 @@ SHOTS = {
         "view": (-0.75, 1.0, 0.55),  # from behind the front panel, looking forward
         "frame": ("front", "brass", "encoder", "knob", "nut", "power key", "power nut") + KEYS,
         "hide": ("chassis", "lid", "lid screws", "rear", "standoffs", "pi", "dac", "screen", "cradle", "guide", "reader", "wires", "usb lead", "feet", "card", "front screws", "board", "ribbon"),
-        "focus": ("front",),
-        "move": {"keycap 3": v(0, 20, 0), "encoder": v(0, 22, 0), "nut": v(0, -16, 0), "washer": v(0, -12, 0), "knob": v(0, -42, 0)},
-        "arrows": [((c.KEYS_X[3], 30, c.CTRL_Z + 12), (c.KEYS_X[3], 10, c.CTRL_Z + 12)), ((c.KNOB_X, 26, c.CTRL_Z + 12), (c.KNOB_X, 10, c.CTRL_Z + 12))],
+        "focus": ("keys",),
+        "move": {"keys": v(0, 22, 0), "encoder": v(0, 22, 0), "nut": v(0, -16, 0), "washer": v(0, -12, 0), "knob": v(0, -42, 0)},
+        "arrows": [((c.BOARD_X[0] - 4, 34, c.CTRL_Z), (c.BOARD_X[0] - 4, 12, c.CTRL_Z)), ((c.KNOB_X, 26, c.CTRL_Z + 12), (c.KNOB_X, 10, c.CTRL_Z + 12))],
         "marks": [
-            ("Key caps drop into their holes from behind, face first, with the panel face down. The lip stops them", (c.KEYS_X[3] + c.KEY_CAP / 2 + c.KEY_LIP, c.FRONT_T + c.KEY_LIP_T, c.CTRL_Z + c.KEY_CAP / 2), "keycap 3"),
+            ("Key carrier: all four caps on one frame. With the panel face down, lay it on, caps into their holes", (c.BOARD_X[1], c.FRONT_T + c.CARRIER_T, c.BOARD_Z[1] - 4), "keys"),
+            ("Bridges: each cap hangs from one above it and one below", (c.KEYS_X[1] + 5, c.FRONT_T + c.CARRIER_T, c.CTRL_Z + c.KEY_CAP / 2 + c.BRIDGE_GAP + c.BRIDGE_W / 2), "keys"),
+            ("Two pegs drop into holes in the panel and line it up", (c.PEGS[1][0], c.FRONT_T - c.PEG_L, c.PEGS[1][1]), "keys"),
             ("Three screw pilots for the board", (c.BOARD_SCREWS[0][0], c.FRONT_T, c.BOARD_SCREWS[0][1]), "front"),
             ("Encoder goes in from behind; its body sits in the pocket", (c.KNOB_X + 6.25, 9, c.CTRL_Z + 6.7), "encoder"),
             ("Power key nut, tightened from behind", (c.POWER_X, c.FRONT_T + 3, c.CTRL_Z + 8), "power nut"),
@@ -413,11 +411,11 @@ SHOTS = {
         "arrows": [((c.BOARD_X[0] - 5, 40, BOARD_MID[1]), (c.BOARD_X[0] - 5, 12, BOARD_MID[1]))],
         "marks": [
             ("Front board: the four key switches are soldered on its front, facing the caps", (c.KEYS_X[2] + c.TACT / 2, c.BOARD_Y - c.TACT_BODY_H, c.CTRL_Z + c.TACT / 2), "board"),
-            ("Spacer: lay it on the back of the panel first, over the caps' lips", (c.BOARD_X[1], c.FRONT_T + c.SPACER_T / 2, c.BOARD_Z[0] + 2), "board"),
+            ("Spacer: lay it on the key carrier first", (c.BOARD_X[1], c.FRONT_T + c.CARRIER_T + c.SPACER_T / 2, c.BOARD_Z[0] + 2), "board"),
             ("Ribbon plug: press it onto the 40-pin header before fitting the board", (J1_X - 29.2, BOARD_BACK + 18, J1_Z + 4.5), "board"),
             ("Pin headers for the screen, reader, knob, power key and OLED", (45, BOARD_BACK + 8.5, 16), "board"),
-            ("Three M2 × 6 screws, through the spacer into the panel", (c.BOARD_SCREWS[2][0], BOARD_BACK + 1.6, c.BOARD_SCREWS[2][1]), "board"),
-            ("Openings in the spacer take the solder joints on the board's front", (c.BOARD_POCKETS[0][0] + 2, c.FRONT_T + c.SPACER_T, c.BOARD_POCKETS[0][3] - 2), "board"),
+            ("Three M2 × 6 screws, through the spacer and the carrier into the panel", (c.BOARD_SCREWS[2][0], BOARD_BACK + 1.6, c.BOARD_SCREWS[2][1]), "board"),
+            ("Openings in the spacer and the carrier take the solder joints on the board's front", (c.BOARD_POCKETS[0][0] + 2, c.BOARD_Y, c.BOARD_POCKETS[0][3] - 2), "board"),
         ],
     },
     "step-4-screen": {

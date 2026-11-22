@@ -54,16 +54,18 @@ LCD_STANDOFF = 6.0  # MEASURE: how far the standoffs stand out behind the board
 CLEAR_M25 = 2.9
 CRADLE_TRAVEL = (2.5, 4.0)  # how far the bracket slides forward and back from where the glass meets the panel
 KEYS_X = (37.0, 55.0, 73.0, 91.0)  # previous, play, next, back, 18 mm apart. Left, so the board behind them sits in front of the DAC
-# Keys: a printed cap slides in a square hole through the brass and the panel, flush with the
-# brass, and presses a 6 x 6 mm tactile switch soldered to the front board. A lip round the
-# cap's back stops it falling out of the front. A printed spacer between the panel and the
-# board gives the lips and the switches their room. keycaps.py makes the caps.
+# Keys: the four printed caps are one part, the key carrier, with a thin frame that lies on the
+# inside of the panel. Each cap slides in a square hole through the brass and the panel, flush with
+# the brass, and hangs from two thin bridges, one above it and one below, by a short tab in the
+# middle of each edge. A press bends the bridges a little and the cap presses a 6 x 6 mm tactile
+# switch soldered to the front board; the switch gives the click and pushes it back. The bridges
+# keep each cap centred in its hole, so it does not rattle, and keep it from falling out. Two pegs
+# on the carrier locate it in the panel, and the board's screws clamp it between the panel and a
+# printed spacer. keycaps.py makes the carrier.
 KEY_CAP = 14.0  # the cap, square
 KEY_CAP_R = 2.0  # its corner radius
 KEY_HOLE = 14.4  # the hole through the panel that guides it
 KEY_BRASS_HOLE = 14.6  # and through the brass, a little larger since the brass is cut by hand
-KEY_LIP, KEY_LIP_T = 1.0, 1.2  # the lip round the cap's back: how far it stands out, and how thick
-KEY_ROOM = KEY_CAP + 2 * KEY_LIP + 0.6  # the opening in the spacer round each lip
 KEY_PROUD = 0.0  # how far the cap's face stands in front of the brass; 0 is flush
 KEY_FACE_T = 1.6  # solid face of the cap, in front of the switch (its symbol is cut 0.6 into it)
 KEY_FREE = 0.1  # between the cap and the switch's button at rest, so the switch is never held down
@@ -71,9 +73,18 @@ TACT = 6.0  # MEASURE: the switch body, square
 TACT_BODY_H = 3.5  # MEASURE: its body height, without the button
 TACT_H = 5.0  # MEASURE: its height with the button, from the board; the "6x6x5" of the listing
 TACT_TRAVEL = 0.25  # about this much until it clicks
-KEY_LENGTH = KEY_PROUD + FRONT_T + KEY_LIP_T  # the cap, from its face to its back
-KEY_LIP_FLAT = 0.4  # the lip's full width runs this far, then a 45 degree chamfer so it prints without support
+CARRIER_T = 1.2  # the carrier's frame, between the panel and the spacer
+BRIDGE_T = 0.4  # the bridges and tabs: two 0.2 mm layers. They add about 0.5 N to a press; 0.6 would add three times that
+BRIDGE_W = 0.8  # each bridge's width, in the plane of the carrier
+BRIDGE_GAP = 0.5  # the slots either side of a bridge, and between a cap and the frame beside it
+TAB_W = 2.0  # the tab joining a bridge to the middle of its cap's edge
+KEY_LENGTH = KEY_PROUD + FRONT_T + CARRIER_T  # the cap, from its face to its back, which is flush with the carrier's
 KEY_HOLLOW = TACT + 1.0  # the hollow in the cap's back, round the switch body
+KEY_WIN_X = KEY_CAP / 2 + BRIDGE_GAP  # from a key's centre to the frame beside it, in the carrier and the spacer
+KEY_WIN_Z = KEY_CAP / 2 + 2 * BRIDGE_GAP + BRIDGE_W  # and to the frame above and below, past its bridges
+PEGS = ((26.0, CTRL_Z), (88.0, 45.0))  # x, z of the carrier's two locating pegs, in blind holes in the panel
+PEG_D, PEG_L = 2.0, 1.8  # the pegs, standing on the carrier's front
+PEG_HOLE, PEG_DEPTH = 2.3, 2.2  # their holes in the inside of the panel
 KNOB_X = 178.5
 KNOB_D = 30.0  # the largest knob the front takes: it sits close to the screen window
 ENCODER_HOLE = 7.3  # M7 bushing
@@ -114,12 +125,13 @@ TRAY_DEPTH = 5.0
 TRAY_FLOOR = 2.0
 
 # ---- front board ------------------------------------------------------------
-# A printed circuit board lies flat behind the front panel, on a printed spacer, behind the keys.
+# A printed circuit board lies flat behind the front panel, behind the keys, on a printed spacer
+# that lies on the key carrier.
 # The four key switches are soldered to its front, and a 40-pin ribbon runs from it to the
 # pins on top of the DAC. front-board/board.py draws it from these numbers.
 # The spacer sets the board just far back that a switch's button sits KEY_FREE behind its cap.
-SPACER_T = -KEY_PROUD + KEY_FACE_T + KEY_FREE + TACT_H - FRONT_T
-BOARD_Y = FRONT_T + SPACER_T  # the board's front face, in the case
+SPACER_T = -KEY_PROUD + KEY_FACE_T + KEY_FREE + TACT_H - FRONT_T - CARRIER_T
+BOARD_Y = FRONT_T + CARRIER_T + SPACER_T  # the board's front face, in the case
 # Its 40-pin header sits straight in front of the Pi's, the same way round, so the ribbon runs
 # back and down onto the DAC's pins with one bend and no twist (see front-board/board.py).
 PI_HEADER_X = None  # set below, from PI_X
@@ -128,16 +140,17 @@ BOARD_OUTLINE = ((23.0, 4.0), (101.5, 4.0), (101.5, 51.5), (17.5, 51.5), (17.5, 
 BOARD_X = (min(x for x, z in BOARD_OUTLINE), max(x for x, z in BOARD_OUTLINE))
 BOARD_Z = (min(z for x, z in BOARD_OUTLINE), max(z for x, z in BOARD_OUTLINE))
 BOARD_T = 1.6
-BOARD_SCREWS = ((27.0, 8.0), (97.5, 8.0), (97.5, 47.0))  # M2 x 6, through pilots in the spacer and into the panel
+BOARD_SCREWS = ((27.0, 8.0), (97.5, 8.0), (97.5, 47.0))  # M2 x 6, through pilots in the spacer and the carrier and into the panel
 PILOT_M2 = 1.6
 PILOT_M2_DEPTH = 2.8
 # The other through-hole parts sit on the back of the board and are soldered on its front, so
-# the spacer has openings under their solder joints: x0, z0, x1, z1. board.py checks that every
-# through-hole pad lies inside one of these or inside a key's opening.
+# the spacer and the key carrier have openings under their solder joints: x0, z0, x1, z1. board.py
+# checks that every through-hole pad lies inside one of these or inside a key's opening. The lower
+# two stop just short of the bridges under the keys.
 BOARD_POCKETS = (
     (21.5, 42.5, 73.5, 49.5),  # the 40-pin header
-    (31.0, 5.5, 75.5, 21.0),  # the headers for the screen, reader, knob, power key and OLED
-    (78.5, 5.5, 95.5, 21.5),  # diodes, transistor and resistors
+    (31.0, 5.5, 75.5, 18.0),  # the headers for the screen, reader, knob, power key and OLED
+    (78.5, 5.5, 95.5, 20.6),  # diodes, transistor and resistors
 )
 
 # ---- electronics ------------------------------------------------------------
@@ -172,9 +185,11 @@ CRADLE_BASE_Y = FRONT_T + 0.2 + CRADLE_TRAVEL[0]  # front edge of its base
 CRADLE_Y = 14.0  # the floor screws; their heads pass under the upright through an arch
 CRADLE_ARCH_Z = 11.5  # top of those arches: base, washer and screw head
 
-assert FRONT_T + KEY_LIP_T + TACT_TRAVEL + 0.3 <= BOARD_Y, "a pressed cap's lip must clear the board"
+assert FRONT_T + CARRIER_T + TACT_TRAVEL + 0.3 <= BOARD_Y, "a pressed cap's back must clear the board"
+assert SPACER_T >= 0.8, "the spacer would be too thin to print"
 assert BOARD_Y - TACT_BODY_H >= -KEY_PROUD + KEY_FACE_T, "the switch body must fit in the hollow behind the cap's face"
-assert KEYS_X[1] - KEYS_X[0] - KEY_ROOM >= 1.2, "the spacer between two keys would be too thin"
+assert KEYS_X[1] - KEYS_X[0] - 2 * KEY_WIN_X >= 2.0, "the frame between two keys would be too thin"
+assert all(z1 <= CTRL_Z - KEY_WIN_Z + BRIDGE_GAP + 0.01 for x0, z0, x1, z1 in BOARD_POCKETS[1:]), "a pocket would cut into the bridges under the keys"
 assert CRADLE_Y - CRADLE_TRAVEL[1] - CLEAR_M3 / 2 - 1 >= CRADLE_BASE_Y, "the bracket's slots must stay inside its base"
 assert PI_SLOT_Y[0] <= PI_Y + 3.5 and PI_Y + 26.5 <= PI_SLOT_Y[1], "the standoffs must reach their place in the floor slots"
 
@@ -263,6 +278,7 @@ def slot_y(cx, y0, y1, d, n=12):
 
 TAN = math.tan(math.radians(CARD_ANGLE))
 FRONT_M = [(1, 0, 0, 0), (0, 0, -1, FRONT_T), (0, 1, 0, 0)]  # panel coordinates (x, height, depth from the inside face) to the case
+CARRIER_M = [(1, 0, 0, 0), (0, 0, -1, FRONT_T + CARRIER_T), (0, 1, 0, 0)]  # the carrier's coordinates (x, height, from its back) to the case
 REAR_M = [(-1, 0, 0, W), (0, 0, 1, D - REAR_T), (0, 1, 0, 0)]
 
 
@@ -335,6 +351,7 @@ def front():
     cuts.append(box(KNOB_X - ENCODER_BODY[0] / 2, KNOB_X + ENCODER_BODY[0] / 2, CTRL_Z - ENCODER_BODY[1] / 2, CTRL_Z + ENCODER_BODY[1] / 2, -1, back - PANEL_AT_NUT))
     cuts.append(cylz(POWER_X, CTRL_Z, -1, FRONT_T + 1, POWER_HOLE))
     cuts += [cylz(x, z, -1, PILOT_M2_DEPTH, PILOT_M2) for x, z in BOARD_SCREWS]
+    cuts += [cylz(x, z, -1, PEG_DEPTH, PEG_HOLE) for x, z in PEGS]  # the key carrier's pegs
     return diff(prism(outline(), 0, FRONT_T), *cuts)
 
 
@@ -344,12 +361,24 @@ def key_square(x, z, size, r=None):
     return rrect(x - size / 2, z - size / 2, x + size / 2, z + size / 2, r)
 
 
+def key_window(x):
+    """The opening round a key in the carrier and the spacer: its cap, its bridges and their slots."""
+    return rrect(x - KEY_WIN_X, CTRL_Z - KEY_WIN_Z, x + KEY_WIN_X, CTRL_Z + KEY_WIN_Z, 1.0)
+
+
 def spacer():
     """Printed flat. Panel coordinates as for the front, but z = 0 is the side against the board."""
-    cuts = [prism(key_square(k, CTRL_Z, KEY_ROOM), -1, SPACER_T + 1) for k in KEYS_X]
+    cuts = [prism(key_window(k), -1, SPACER_T + 1) for k in KEYS_X]
     cuts += [box(x0, x1, z0, z1, -1, SPACER_T + 1) for x0, z0, x1, z1 in BOARD_POCKETS]
     cuts += [cylz(x, z, -1, SPACER_T + 1, PILOT_M2) for x, z in BOARD_SCREWS]
     return diff(prism(BOARD_OUTLINE, 0, SPACER_T), *cuts)
+
+
+def key_carrier():
+    """The four key caps on their frame; keycaps.py draws it, since the symbols live there."""
+    import keycaps
+
+    return keycaps.carrier()
 
 
 def rear():
@@ -424,6 +453,7 @@ def fit_gauge():
     """Print this first, on the settings you will use for the case, and try every part in it."""
     back = FRONT_T - BRASS_T
     cuts = [prism(key_square(12, 17, KEY_HOLE), -1, FRONT_T + 1)]  # a cap must slide freely in this
+    cuts.append(cylz(60, 24, -1, PEG_DEPTH, PEG_HOLE))  # and a carrier peg go into this
     cuts += [cylz(32, 15, -1, FRONT_T + 1, ENCODER_HOLE), box(32 - ENCODER_BODY[0] / 2, 32 + ENCODER_BODY[0] / 2, 15 - ENCODER_BODY[1] / 2, 15 + ENCODER_BODY[1] / 2, -1, back - PANEL_AT_NUT)]
     if REAR_JACK:
         cuts.append(cylz(52, 15, -1, FRONT_T + 1, PHONES_HOLE))
@@ -433,12 +463,13 @@ def fit_gauge():
     return diff(box(0, 90, 0, 36, 0, FRONT_T), *cuts)
 
 
-PARTS = {"chassis": chassis, "lid": lid, "front": front, "board-spacer": spacer, "rear": rear, "card-guide": card_guide, "display-cradle": display_cradle, "fit-gauge": fit_gauge}
+PARTS = {"chassis": chassis, "lid": lid, "front": front, "key-carrier": key_carrier, "board-spacer": spacer, "rear": rear, "card-guide": card_guide, "display-cradle": display_cradle, "fit-gauge": fit_gauge}
 # Where each part's own coordinates sit in the assembled case.
 PLACE = {
     "chassis": move(0, 0, 0),
     "lid": move(0, 0, BODY_H),
     "front": xf(FRONT_M),
+    "key-carrier": xf(CARRIER_M),
     "board-spacer": xf([(1, 0, 0, 0), (0, 0, -1, BOARD_Y), (0, 1, 0, 0)]),  # its z = 0 against the board
     "rear": xf(REAR_M),
     "card-guide": move(GUIDE_X[0], GUIDE_Y, 5),

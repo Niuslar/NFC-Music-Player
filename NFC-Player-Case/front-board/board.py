@@ -659,7 +659,7 @@ def build_board(used_nets):
 
 
 def check_pockets(board):
-    """Every through-hole solder joint must sit over an opening in the spacer: its pockets, or a key's opening."""
+    """Every through-hole solder joint must sit over an opening in the spacer and the key carrier: their pockets, or a key's window."""
     import pcbnew
 
     bad = []
@@ -670,7 +670,7 @@ def check_pockets(board):
             bb = pad.GetBoundingBox()
             x0, x1 = pcbnew.ToMM(bb.GetLeft()) - 0.4, pcbnew.ToMM(bb.GetRight()) + 0.4
             z0, z1 = TOP - pcbnew.ToMM(bb.GetBottom()) - 0.4, TOP - pcbnew.ToMM(bb.GetTop()) + 0.4
-            keys = [(k - c.KEY_ROOM / 2 + 2, c.CTRL_Z - c.KEY_ROOM / 2 + 2, k + c.KEY_ROOM / 2 - 2, c.CTRL_Z + c.KEY_ROOM / 2 - 2) for k in c.KEYS_X]  # clear of the rounded corners
+            keys = [(k - c.KEY_WIN_X + 1, c.CTRL_Z - c.KEY_WIN_Z + 1, k + c.KEY_WIN_X - 1, c.CTRL_Z + c.KEY_WIN_Z - 1) for k in c.KEYS_X]  # clear of the rounded corners
             if not any(a <= x0 and x1 <= b and lo <= z0 and z1 <= hi for a, lo, b, hi in (*c.BOARD_POCKETS, *keys)):
                 bad.append(f"{fp.GetReference()}.{pad.GetNumber()}")
     return bad

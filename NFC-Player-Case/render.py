@@ -3,7 +3,7 @@
     /Applications/Blender.app/Contents/MacOS/Blender -b NFC-Player-Render.blend -P render.py
 
 It reuses the scene's camera, lights and materials, swaps in the freshly built printed parts,
-brass and key caps, and moves the knob, screws and cards to match case.py. Run wood.py too
+brass and key carrier, and moves the knob, screws and cards to match case.py. Run wood.py too
 to render the wood-grain chassis and front; otherwise the plain ones are shown, still in wood.
 The knob, screw heads, feet, screen and cards are stand-ins for bought parts.
 """
@@ -18,7 +18,6 @@ from mathutils import Matrix
 HERE = Path(__file__).resolve().parent
 sys.path.insert(0, str(HERE))
 import case as c  # noqa: E402
-import keycaps  # noqa: E402
 import wood  # noqa: E402
 
 D = bpy.data
@@ -110,14 +109,10 @@ def numbered(base):
     return [D.objects[n] for n in sorted(D.objects.keys()) if n == base or n.startswith(base + ".")]
 
 
-# The key caps from keycaps.py, turned from their print orientation to sit in their holes,
-# face flush with the brass. (The scene still names them "Choc keycap", from the earlier keys.)
-for ob, k, name in zip(numbered("Choc keycap"), c.KEYS_X, keycaps.SYMBOLS):
-    old, ob.data = ob.data, stl_mesh(HERE / "STL" / f"keycap-{name}.stl", keycaps.TO_CASE)
-    if old.users == 0:
-        D.meshes.remove(old)
-    ob.data.materials.append(D.materials["Printed charcoal"])
-    ob.location, ob.rotation_euler, ob.scale = (k, 0.0, c.CTRL_Z), (0, 0, 0), (1, 1, 1)
+# The key caps now come in with the printed parts, on the key carrier; the scene's own separate
+# caps (named "Choc keycap", from the earlier keys) go.
+for ob in numbered("Choc keycap"):
+    D.objects.remove(ob)
 spots = [(x, z) for x in c.SCREW_X for z in c.SCREW_Z]
 for ob, (x, z) in zip(numbered("Front M3 head"), spots):
     ob.location = (x, -0.9, z)

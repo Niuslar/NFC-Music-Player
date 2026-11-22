@@ -215,7 +215,8 @@ def board_stack():
     R(pi_y + 1, dac_z + 1.6, pi_y + 6, plug_z, "#9a9a94")  # the header's pins above the DAC
     R(pi_y - 1, plug_z, pi_y + 8, plug_z + 9, "#55595a")  # ribbon plug
     bz0, bz1 = c.BOARD_Z
-    R(c.FRONT_T, bz0, c.BOARD_Y, bz1, "#c9c9c4")  # the spacer
+    R(c.FRONT_T, bz0, c.FRONT_T + c.CARRIER_T, bz1, "#6d7370")  # the key carrier's frame
+    R(c.FRONT_T + c.CARRIER_T, bz0, c.BOARD_Y, bz1, "#c9c9c4")  # the spacer
     R(c.BOARD_Y, bz0, c.BOARD_Y + c.BOARD_T, bz1, "#1d5a35")
     hb = c.BOARD_Y + c.BOARD_T
     R(hb, 41.0, hb + 9, 51.0, "#1c1c1e")  # 40-pin header on the board
@@ -255,7 +256,7 @@ def board_stack():
     column(-1, [
         (51.0, hb + 13, "Ribbon plug on the board"),
         (c.CTRL_Z + 12, lcd_y + 0.8, "Screen board (nearer the left)"),
-        (bz0 + 4, c.BOARD_Y + 0.8, f"Front board, on a {n(c.SPACER_T)} mm printed spacer, {n(bz0)}–{n(bz1)}"),
+        (bz0 + 4, c.BOARD_Y + 0.8, f"Front board, on a {n(c.SPACER_T)} mm spacer and the {n(c.CARRIER_T)} mm key carrier, {n(bz0)}–{n(bz1)}"),
         (pz + 6, pi_y + 3.5, "40-pin header"),
     ])
     s.text(s.X(0), s.Y(-9), "Front", 3, "start", DIM, 600)
@@ -305,8 +306,9 @@ def controls_section():
         s.rect(0, a, c.BRASS_T, b, BRASSC, "#8a6a2e", 0.2)
         a, b = span(c.KEY_HOLE / 2)
         s.rect(plate_front, a, c.FRONT_T, b, PANEL, DIM, 0.2)
-        a, b = span(c.KEY_ROOM / 2)
-        s.rect(c.FRONT_T, a, c.BOARD_Y, b, "#dcdcd6", DIM, 0.2)  # the spacer
+        a, b = span(c.KEY_WIN_Z)
+        s.rect(c.FRONT_T, a, c.FRONT_T + c.CARRIER_T, b, "#2b2f31", DIM, 0.2)  # the key carrier's frame
+        s.rect(c.FRONT_T + c.CARRIER_T, a, c.BOARD_Y, b, "#dcdcd6", DIM, 0.2)  # the spacer
     s.rect(c.BOARD_Y, z0, c.BOARD_Y + c.BOARD_T, z1, "#1d5a35", DIM, 0.15)
     s.poly([(y, c.CTRL_Z + u) for y, u in cap_profile()], "#2b2f31")
     body = c.BOARD_Y - c.TACT_BODY_H
@@ -314,14 +316,16 @@ def controls_section():
     s.rect(c.BOARD_Y - c.TACT_H, c.CTRL_Z - 1.75, body, c.CTRL_Z + 1.75, "#8e3b2e", "none")  # the button
     for u in (-2.25, 2.25):  # its legs, through the board
         s.rect(c.BOARD_Y, c.CTRL_Z + u - 0.35, c.BOARD_Y + c.BOARD_T + 1.0, c.CTRL_Z + u + 0.35, "#b9b7ad", DIM, 0.15)
-    back = c.FRONT_T + c.KEY_LIP_T
+    back = c.FRONT_T + c.CARRIER_T
+    bridge = c.KEY_CAP / 2 + c.BRIDGE_GAP + c.BRIDGE_W / 2
     callouts(0, [
         (c.CTRL_Z + 5, 0.3, "Key cap, printed: face flush with the brass"),
         (c.CTRL_Z - 11, c.BRASS_T / 2, f"Brass, {n(c.BRASS_T)}"),
-        (c.CTRL_Z - 7.6, back - 0.6, "Lip: stops the cap at the panel"),
+        (c.CTRL_Z - bridge, back - c.BRIDGE_T / 2, f"Bridge, {n(c.BRIDGE_T)} thick: holds the cap and bends"),
     ], [
         (c.CTRL_Z + 12, c.FRONT_T - 1, "Front panel: its hole guides the cap"),
-        (c.CTRL_Z + 9.5, (c.FRONT_T + c.BOARD_Y) / 2, f"Spacer, {n(c.SPACER_T)}, printed"),
+        (c.CTRL_Z + 13, c.FRONT_T + c.CARRIER_T / 2, f"Key carrier's frame, {n(c.CARRIER_T)}"),
+        (c.CTRL_Z + 9.5, (back + c.BOARD_Y) / 2, f"Spacer, {n(c.SPACER_T)}, printed"),
         (c.CTRL_Z + 1.75, c.BOARD_Y - c.TACT_H, f"Button: {n(c.KEY_FREE)} mm from the cap, clicks after about {n(c.TACT_TRAVEL)} mm"),
         (c.CTRL_Z - 2, body + 1.5, f"Tactile switch, {n(c.TACT)} × {n(c.TACT)} × {n(c.TACT_H)} mm, in the cap's hollow"),
         (c.CTRL_Z - 10, c.BOARD_Y + c.BOARD_T / 2, f"Front board, {n(c.BOARD_T)}, switch soldered on"),
@@ -370,13 +374,15 @@ def controls_section():
 
 # ---- key close-up -----------------------------------------------------------------
 def cap_profile():
-    """The key cap cut through its middle: (depth from the brass face, offset across), round the outline."""
-    half, lip, hollow = c.KEY_CAP / 2, c.KEY_CAP / 2 + c.KEY_LIP, c.KEY_HOLLOW / 2
+    """A key cap and its two bridges, cut through its middle: (depth from the brass face, offset
+    across), round the outline. The cut runs through the tabs, so cap, tabs and bridges are one piece."""
+    half, hollow = c.KEY_CAP / 2, c.KEY_HOLLOW / 2
+    outer = half + c.BRIDGE_GAP + c.BRIDGE_W  # the far edge of a bridge
     face = -c.KEY_PROUD
     back = face + c.KEY_LENGTH
     ceiling = face + c.KEY_FACE_T
-    chamfer = back - c.KEY_LIP_FLAT - c.KEY_LIP  # where the lip's chamfer starts
-    right = [(face, half), (chamfer, half), (back - c.KEY_LIP_FLAT, lip), (back, lip), (back, hollow), (ceiling, hollow)]
+    tab = back - c.BRIDGE_T
+    right = [(face, half), (tab, half), (tab, outer), (back, outer), (back, hollow), (ceiling, hollow)]
     return right + [(d, -u) for d, u in reversed(right)]
 
 
@@ -400,10 +406,12 @@ def key_closeup():
 
     def spacer(o):
         for sgn in (-1, 1):
-            R(sgn * c.KEY_ROOM / 2, c.FRONT_T + o, sgn * W, c.BOARD_Y + o, "#dcdcd6", DIM, 0.2)
+            R(sgn * c.KEY_WIN_Z, c.FRONT_T + c.CARRIER_T + o, sgn * W, c.BOARD_Y + o, "#dcdcd6", DIM, 0.2)
 
-    def cap(o):
+    def cap(o):  # the key carrier: the cap on its bridges, and the frame beyond them
         s.poly([(u, -(d + o)) for d, u in cap_profile()], "#2b2f31")
+        for sgn in (-1, 1):
+            R(sgn * c.KEY_WIN_Z, c.FRONT_T + o, sgn * W, c.FRONT_T + c.CARRIER_T + o, "#2b2f31", "none")
 
     def board(o):
         R(-W, c.BOARD_Y + o, W, c.BOARD_Y + c.BOARD_T + o, "#1d5a35", DIM, 0.15)
@@ -432,7 +440,8 @@ def key_closeup():
 
     # ---- pulled apart ----
     CAP, SP, BD = 8.0, 14.0, 20.0  # how far behind its place each part is drawn
-    back = c.FRONT_T + c.KEY_LIP_T
+    back = c.FRONT_T + c.CARRIER_T
+    bridge = c.KEY_CAP / 2 + c.BRIDGE_GAP + c.BRIDGE_W / 2
     s.place(108, 22, 0, K)
     s.text(8, 8, "Pulled apart, in the order it goes together", 4.6, "start", INK, 650)
     panel()
@@ -445,7 +454,8 @@ def key_closeup():
     arrow(W + 7.5, c.BOARD_Y - c.TACT_H + BD, c.BOARD_Y - c.TACT_H + 0.6, "3")
     callouts([
         (-c.KEY_CAP / 2, CAP + 1.5, "Key cap, printed"),
-        (-(c.KEY_CAP / 2 + c.KEY_LIP), back + CAP - 0.2, "Its lip"),
+        (-bridge, back + CAP - c.BRIDGE_T / 2, "Bridge and tab"),
+        (-W, c.FRONT_T + c.CARRIER_T / 2 + CAP, "Carrier's frame"),
         (-W, c.BRASS_T / 2, "Brass face"),
         (-W, c.FRONT_T - 1, "Front panel"),
         (-W, (c.FRONT_T + c.BOARD_Y) / 2 + SP, "Spacer, printed"),
@@ -454,8 +464,8 @@ def key_closeup():
         (-2.25, c.BOARD_Y + c.BOARD_T + 0.5 + BD, "Soldered from behind"),
     ], s.X(-W - 4), -1)
     steps = [
-        "1  With the panel face down, drop each cap into its hole from behind. The lip stops it.",
-        "2  Lay the spacer over the lips, on the back of the panel.",
+        "1  With the panel face down, lay the key carrier on it, caps into their holes and pegs into theirs.",
+        "2  Lay the spacer on the carrier.",
         "3  Fit the board, switches towards the panel, with three M2 × 6 screws.",
     ]
     for i, t in enumerate(steps):
@@ -471,17 +481,18 @@ def key_closeup():
     cap(0)
     callouts([
         (c.KEY_CAP / 2 - 0.5, 0.1, "Face flush with the brass"),
-        (c.KEY_CAP / 2 + c.KEY_LIP - 0.3, back - 0.2, "Lip against the panel"),
+        (bridge, back - c.BRIDGE_T / 2, f"Bridge, {n(c.BRIDGE_T)} thick: bends when pressed"),
+        (W, c.FRONT_T + c.CARRIER_T / 2, f"Carrier's frame, {n(c.CARRIER_T)} mm, on the panel"),
         (1.75, c.BOARD_Y - c.TACT_H, f"{n(c.KEY_FREE)} mm to the button"),
         (c.TACT / 2, body + 1.5, "Switch inside the cap's hollow"),
-        (W, (c.FRONT_T + c.BOARD_Y) / 2, f"Spacer, {n(c.SPACER_T)} mm"),
+        (W, (back + c.BOARD_Y) / 2, f"Spacer, {n(c.SPACER_T)} mm"),
         (W, c.BOARD_Y + c.BOARD_T / 2, "Board, held by three M2 screws"),
     ], s.X(W + 4), 1)
     hold = [
         "What holds what:",
-        "• The panel guides the cap and stops it at the front.",
-        "• The switch's button pushes it back out.",
-        "• The spacer sets the gap; the board holds the switches.",
+        "• The bridges hold the cap centred in the panel's hole.",
+        "• The switch clicks and pushes it back out.",
+        "• The board's screws clamp the carrier and spacer to the panel.",
     ]
     for i, t in enumerate(hold):
         s.text(ax - K * W, s.Y(-(c.BOARD_Y + c.BOARD_T + 1.0)) + 16 + 5.2 * i, t, 3.5, "start", INK, 650 if i == 0 else 400)

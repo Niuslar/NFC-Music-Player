@@ -1,18 +1,21 @@
-"""The four key caps, with their symbols cut into the face. Millimetres.
+"""The key carrier: the four key caps, with their symbols cut into their faces, on one thin frame. Millimetres.
 
     /Applications/Blender.app/Contents/MacOS/Blender -b -P keycaps.py
 
-Writes STL/keycap-previous.stl, keycap-play.stl, keycap-next.stl and keycap-back.stl.
+Writes STL/key-carrier.stl (build.py writes it too, and checks it against the rest of the case).
 
 Each cap slides in a square hole through the brass and the front panel, its face flush with the
-brass, and presses a 6 x 6 mm tactile switch on the front board behind it. A lip round its back,
-chamfered at 45 degrees, seats against the inside of the panel and stops it coming out of the front.
-The back is hollow: the switch's body stands inside it, and the button presses the back of the face.
-All the sizes come from case.py (KEY_*, TACT_*), which also makes the holes and the spacer.
+brass, and presses a 6 x 6 mm tactile switch on the front board behind it. It hangs from two thin
+bridges, one above and one below, each joined to the middle of its edge by a short tab. The bridges
+run between the frame's webs either side of the key. They bend a little when the key is pressed,
+and they keep the cap centred in its hole, so it does not rattle, and stop it falling out. The cap's
+back is hollow: the switch's body stands inside it, and the button presses the back of the face.
+Two pegs on the frame's front locate it in the panel. All the sizes come from case.py (KEY_*,
+TACT_*, CARRIER_T, BRIDGE_*, PEGS), which also makes the holes, the windows and the spacer.
 
-Each cap is laid face down, ready to print: no support, and the face comes out as smooth as the
-bed. The symbols read the right way round from the front of the case. Try one cap in the fit gauge's
-square hole first: it should slide freely without rattling.
+The carrier prints as it is drawn here, back on the bed and faces up, with no support: the bridges
+are the first two layers, the strongest way for them to bend. The symbols read the right way round
+from above. Try a cap in the fit gauge's square hole: it should slide freely without rattling.
 """
 
 import sys
@@ -20,21 +23,17 @@ from pathlib import Path
 
 HERE = Path(__file__).resolve().parent
 sys.path.insert(0, str(HERE))
-import build  # noqa: E402  (Blender mesh helpers)
 import case  # noqa: E402
-from case import diff, hull, prism, xf  # noqa: E402
+from case import box, cylz, diff, hull, move, prism, union  # noqa: E402
 
 SYMBOL_DEPTH = 0.6  # how deep the symbols are cut; fill them with paint if you like
 FACE_CHAMFER = 0.3  # a small 45 degree edge round the face
 
-# Lengths along the cap, from its back (z = 0) to its face.
+# Lengths along the cap, from its back (z = 0, on the bed, flush with the carrier's back) to its face.
 LENGTH = case.KEY_LENGTH  # back of the cap to its face
-LIP_FLAT, HOLLOW = case.KEY_LIP_FLAT, case.KEY_HOLLOW
+HOLLOW = case.KEY_HOLLOW
 CEILING = LENGTH - case.KEY_FACE_T  # the back of the face, where the switch's button presses
 
-# The lip's chamfer meets the panel's hole where the chamfer is as wide as the hole, so that
-# is where the cap stops: KEY_LIP_T from its back.
-assert abs(LIP_FLAT + (case.KEY_CAP + 2 * case.KEY_LIP - case.KEY_HOLE) / 2 - case.KEY_LIP_T) < 1e-6, "the lip must seat at KEY_LIP_T"
 assert case.KEY_FACE_T - SYMBOL_DEPTH >= 0.9, "the face would be too thin under the symbols"
 
 
@@ -86,40 +85,58 @@ SYMBOLS = {
 }
 
 
-# ---- the cap, built face up (z = 0 its back), then turned over to print --------------------------
+# ---- the carrier, built as it prints: x across, y up, z from its back (on the bed) to the faces ------
 def square(size, r=None):
     return case.key_square(0, 0, size, r)
 
 
 def keycap(name):
-    c, lip = FACE_CHAMFER, case.KEY_CAP + 2 * case.KEY_LIP
+    """One cap on its own, centred on x = y = 0, back at z = 0 and face up."""
+    c = FACE_CHAMFER
     body = hull(prism(square(case.KEY_CAP), 0, LENGTH - c), prism(square(case.KEY_CAP - 2 * c), LENGTH - 0.01, LENGTH))
-    rim = hull(prism(square(lip), 0, LIP_FLAT), prism(square(case.KEY_CAP), 0, LIP_FLAT + case.KEY_LIP))
-    hollow = prism(square(HOLLOW, 0.8), -1, CEILING)
+    h = HOLLOW / 2
+    hollow = box(-h, h, -h, h, -1, CEILING)  # square corners: rounded ones left a hole in the mesh once the cap was joined to the frame
     cuts = [prism(s, LENGTH - SYMBOL_DEPTH, LENGTH + 1) for s in SYMBOLS[name]]
-    return diff(case.union(body, rim), hollow, *cuts)
+    return diff(body, hollow, *cuts)
 
 
-TO_PRINT = [(-1, 0, 0, 0), (0, 1, 0, 0), (0, 0, -1, LENGTH)]  # turned over about y: face on the bed, still reads right from the front
-# From the printed STL to the case, round a key's centre at rest: x across, y back from the brass, z up.
-TO_CASE = [(-1, 0, 0, 0), (0, 0, 1, -case.KEY_PROUD), (0, 1, 0, 0)]
+LIFT = 0.002  # keeps faces that meet on the bed from coinciding exactly, which Blender's boolean cannot join
+
+
+def hung_cap(name):
+    """A cap with its two tabs, which reach out to the middle of its bridges. Centred as keycap()."""
+    half, gap, w, t = case.KEY_CAP / 2, case.BRIDGE_GAP, case.BRIDGE_W, case.BRIDGE_T
+    tabs = [box(-case.TAB_W / 2, case.TAB_W / 2, *sorted((s * (half - 0.5), s * (half + gap + w / 2))), 2 * LIFT, t + LIFT) for s in (-1, 1)]
+    return union(keycap(name), *tabs)
+
+
+def bridges(x):
+    """A key's two bridges, in the carrier's coordinates. Each runs into the frame at both ends,
+    past the edges of the key's window."""
+    half, z, gap, w = case.KEY_CAP / 2, case.CTRL_Z, case.BRIDGE_GAP, case.BRIDGE_W
+    return [box(x - case.KEY_WIN_X - 0.5, x + case.KEY_WIN_X + 0.5, *sorted((z + s * (half + gap), z + s * (half + gap + w))), LIFT, case.BRIDGE_T) for s in (-1, 1)]
+
+
+def carrier():
+    frame_cuts = [prism(case.key_window(k), -1, case.CARRIER_T + 1) for k in case.KEYS_X]
+    frame_cuts += [box(x0, x1, z0, z1, -1, case.CARRIER_T + 1) for x0, z0, x1, z1 in case.BOARD_POCKETS]
+    frame_cuts += [cylz(x, z, -1, case.CARRIER_T + 1, case.PILOT_M2) for x, z in case.BOARD_SCREWS]
+    frame = diff(prism(case.BOARD_OUTLINE, 0, case.CARRIER_T), *frame_cuts)
+    pegs = [cylz(x, z, case.CARRIER_T - 0.01, case.CARRIER_T + case.PEG_L, case.PEG_D) for x, z in case.PEGS]
+    caps = [move(k, case.CTRL_Z, 0, hung_cap(n)) for k, n in zip(case.KEYS_X, SYMBOLS)]
+    return union(frame, *pegs, *[b for k in case.KEYS_X for b in bridges(k)], *caps)
 
 
 def main():
+    import build  # Blender's mesh helpers; only inside Blender
+
     for ob in list(build.bpy.data.objects):
         build.bpy.data.objects.remove(ob)
-    out = HERE / "STL"
-    problems = []
-    for n in SYMBOLS:
-        name = f"keycap-{n}"
-        ob = build.make(xf(TO_PRINT, keycap(n)))
-        closed, volume, bounds = build.describe(ob)
-        print(f"{name:16s} closed={closed}  {volume * 1000:6.0f} mm3  " + " x ".join(f"{hi - lo:g}" for lo, hi in bounds) + " mm")
-        if not closed or volume <= 0:
-            problems.append(f"{name} is not a closed solid")
-        build.write_stl(ob, out / f"{name}.stl")
-        build._drop(ob)
-    print("\n".join("PROBLEM: " + p for p in problems) or "No problems found.")
+    ob = build.make(carrier())
+    closed, volume, bounds = build.describe(ob)
+    print(f"key-carrier closed={closed}  {volume * 1000:6.0f} mm3  " + " x ".join(f"{hi - lo:g}" for lo, hi in bounds) + " mm")
+    build.write_stl(ob, HERE / "STL" / "key-carrier.stl")
+    print("No problems found." if closed and volume > 0 else "PROBLEM: key-carrier is not a closed solid")
 
 
 if __name__ == "__main__":
