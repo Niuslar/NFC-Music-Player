@@ -204,6 +204,20 @@ for name, d, y in (("Jack surround", 9.0, c.D + 0.5), ("Jack aperture", 3.5, c.D
     D.objects[name].scale = (d / D.objects[name].dimensions.x * D.objects[name].scale.x,) * 2 + (1.0,)
     D.objects[name].hide_render = not c.REAR_JACK  # otherwise the DAC's own socket is used
 
+# FRONT=black tries a plain black printed front with no brass: the knob in aluminium, the key
+# caps in silver PLA and steel screw heads, to go with the stainless power key.
+if os.environ.get("FRONT") == "black":
+    D.objects.remove(D.objects["brass"])
+    front = D.objects["front"]
+    old, front.data = front.data, stl_mesh(HERE / "STL" / "front.stl", c.FRONT_M)  # without the grain
+    D.meshes.remove(old)
+    front.data.materials.append(material("Printed black", (0.012, 0.012, 0.013), 0.55))
+    D.objects["key-carrier"].data.materials[0] = metal("Silver PLA", (0.62, 0.62, 0.64), 0.4)
+    D.materials["Silver PLA"].node_tree.nodes["Principled BSDF"].inputs["Metallic"].default_value = 0.7
+    knob.data.materials[0] = metal("Brushed aluminium", (0.86, 0.86, 0.87), 0.28)
+    for ob in numbered("Front M3 head"):
+        ob.data.materials[0] = steel
+
 screen = D.objects["Display"]  # the screen and its lettering move with the window
 for name in ("Now playing", "Alpine Echoes", "Progress"):
     ob = D.objects[name]
