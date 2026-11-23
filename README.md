@@ -81,7 +81,12 @@ Run the tests with:
 - `player/wifi.py` reads the Wi-Fi signal and runs the setup network for joining a new one, through NetworkManager and a small root helper (`system/nfc-player-wifi`).
 - `player/playback.py` talks to [MPD](https://www.musicpd.org/), which does the decoding and audio output.
 - `system/` has the Raspberry Pi setup script and service files.
-- `NFC-Player-Case/` is the 3D-printed case. Every dimension is in `case.py`; Blender scripts build the STLs and pictures from it, and `guide.py` writes the 3D printing and assembly guides. `front-board/board.py` draws the circuit board behind the keys in KiCad from the same numbers, and `front-board/fab/` holds the files to order it.
+- `NFC-Player-Case/` is the 3D-printed case. Every dimension is in `case.py`; Blender scripts build the STLs and pictures from it, and `guide.py` writes the 3D printing and assembly guides. `front-board/board.py` draws the circuit board behind the keys in KiCad from the same numbers, and `front-board/fab/` holds the files to order it. Its [README](NFC-Player-Case/README.md) lists what each file is and how to rebuild them after a change.
+- `docs/` and the root `index.html` are the project site. GitHub Pages serves it from the root of this repository, so the empty `.nojekyll` file has to stay, and the case guides are linked straight from `NFC-Player-Case/`.
+
+## Contributing
+
+Fixes and ideas are welcome. [CONTRIBUTING.md](CONTRIBUTING.md) covers running the simulator and the tests, and how to change the case.
 
 ## A note on the web remote
 
