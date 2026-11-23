@@ -90,6 +90,6 @@ Fixes and ideas are welcome. [CONTRIBUTING.md](CONTRIBUTING.md) covers running t
 
 ## A note on the web remote
 
-The web remote has no password. Anyone on the same network can control playback and add or delete music. Use it on a home network you trust, or turn it off with `--web-port 0`.
+The web remote has no password. Anyone on the same network as the player can control playback and add or delete music, and that includes an open network you join it to, such as a café's. Use it on a home network you trust, or turn it off with `--web-port 0`. The player runs as its own system user, which can run only the player's own helpers with `sudo`, so a bug in it cannot take over the Pi.
 
 Joining a new Wi-Fi network is guarded separately: the page that takes a network's password only works while the player's own setup network is open, only for phones on that network, and that network's WPA2 password is made up fresh each time and shown only on the player's screen.

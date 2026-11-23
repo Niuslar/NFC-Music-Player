@@ -1,14 +1,18 @@
 """Web remote: path cleaning, the read-only/writable switch, and the HTTP API end to end."""
 
+import io
 import json
 import queue
+import socket
 import time
 import urllib.error
 import urllib.request
 
 import pytest
+from PIL import Image
 
 from player import events as ev
+from player import images
 from player.app import App, Mode
 from player.cards import Store
 from player.demo_library import build
@@ -99,6 +103,7 @@ def site(tmp_path):
         except urllib.error.HTTPError as e:
             return e.code, e.read(), e.headers
 
+    call.address = server.server_address
     yield call, events, shared, library, music
     server.shutdown()
     server.server_close()
@@ -170,6 +175,58 @@ def test_upload_refusals(site):
     assert call("PUT", "/api/upload?path=A/B/x.flac", b"x", OK)[0] == 409
     assert not (music / "A").exists() and not (music.parent / "escape.flac").exists()
     assert events.empty()
+
+
+# ---- hostile requests and files ---------------------------------------------
+
+
+@pytest.mark.parametrize(
+    "method, path",
+    [("POST", "/api/command"), ("POST", "/api/delete"), ("PUT", "/api/upload?path=A/B/x.flac")],
+)
+def test_a_negative_length_is_refused_without_reading_on(site, method, path):
+    """Content-Length: -1 once made the server read until the client hung up, filling the Pi's memory."""
+    call, events, shared, library, music = site
+    with socket.create_connection(call.address, timeout=3) as s:
+        s.sendall(
+            f"{method} {path} HTTP/1.1\r\nHost: 127.0.0.1\r\nX-Requested-With: nfc-player\r\n"
+            "Content-Length: -1\r\n\r\n{\"action\": \"toggle\"}".encode()
+        )  # and the connection stays open, as an attacker's would
+        reply = s.recv(4096)  # times out, failing the test, if the server waits for more
+    assert reply.startswith(b"HTTP/1.1 400")
+    assert events.empty() and not (music / "A").exists()
+
+
+def _png(size, mode="1") -> bytes:
+    buf = io.BytesIO()
+    Image.new(mode, size).save(buf, "PNG")
+    return buf.getvalue()
+
+
+def test_covers_open_only_as_sensible_jpeg_or_png():
+    jpeg = io.BytesIO()
+    Image.new("RGB", (3000, 2000), (200, 40, 40)).save(jpeg, "JPEG")
+    img = images.open_cover(jpeg.getvalue())
+    assert img.mode == "RGB" and min(img.size) >= 400 and img.size[0] < 3000  # decoded at a reduced scale
+    assert images.open_cover(_png((500, 500), "RGB")).size == (500, 500)
+    bomb = _png((6000, 6000))  # a small file that claims 36 million pixels
+    assert len(bomb) < 100_000
+    with pytest.raises(ValueError):
+        images.open_cover(bomb)
+    gif = io.BytesIO()
+    Image.new("RGB", (10, 10)).save(gif, "GIF")
+    with pytest.raises(Exception):
+        images.open_cover(gif.getvalue())  # other formats' parsers never see uploaded data
+
+
+def test_a_huge_cover_is_not_decoded(site):
+    call, events, shared, library, music = site
+    (music / "Ada Hollis" / "Paper Lanterns" / "cover.jpg").write_bytes(_png((6000, 6000)))
+    assert call("GET", "/api/cover?album=Ada%20Hollis/Paper%20Lanterns")[0] == 404
+    from player.ui import render
+
+    lanterns = library.get("Ada Hollis/Paper Lanterns")
+    assert render._cover(library.art(lanterns.tracks[0]), "Paper Lanterns").size == (render.COVER, render.COVER)  # the placeholder
 
 
 # ---- app behaviour ---------------------------------------------------------

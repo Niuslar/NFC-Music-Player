@@ -196,7 +196,7 @@
 <p>If it reports that <code>rsync</code> is missing on the Pi, install it with <code>ssh nfcplayer.local 'sudo apt-get install -y rsync'</code> and run it again.</p>
 <p>Then on the Pi (over SSH), run the setup script:</p>
 <pre><code>cd ~/nfc-player && sudo system/setup.sh</code></pre>
-<p>It installs the software, turns on SPI and USB device mode, creates the music drive using all free space except 3 GB, installs three services, and sets up the helper the player uses to join new Wi-Fi networks. To choose the drive size yourself, use <code>sudo MUSIC_GB=100 system/setup.sh</code> the first time.</p>
+<p>It installs the software, turns on SPI and USB device mode, creates the music drive using all free space except 3 GB, installs three services, and sets up the helper the player uses to join new Wi-Fi networks. The player runs as its own user, <code>nfc-player</code>, which can only run the player's helpers with <code>sudo</code>, not anything else, so a bug in the player cannot take over the Pi. To choose the drive size yourself, use <code>sudo MUSIC_GB=100 system/setup.sh</code> the first time.</p>
 <p>It will ask for a reboot:</p>
 <pre><code>sudo reboot</code></pre>
 <p>After the reboot the player starts by itself and the <a href="#web">web remote</a> is available. If the DAC was not attached, setup says so and configures silent playback, so everything except sound can be tried straight away.</p>
@@ -679,8 +679,8 @@
   <li>Back up as above and check <code>~/nfc-player-backup</code> has your albums.</li>
   <li>Flash the card again (<a href="#flash">step 1</a>), boot it (<a href="#boot">step 2</a>), fit the DAC if it is not already on, and install (<a href="#install">step 4</a>). Setup creates a new, empty music drive.</li>
   <li>Put the card links back, from your computer:
-    <pre><code>scp ~/nfc-player-backup/state.json nfcplayer@nfcplayer.local:/tmp/state.json &amp;&amp; ssh -t nfcplayer@nfcplayer.local 'sudo systemctl stop nfc-player &amp;&amp; sudo cp /tmp/state.json /var/lib/nfc-player/state.json &amp;&amp; sudo chown nfcplayer /var/lib/nfc-player/state.json &amp;&amp; sudo systemctl start nfc-player'</code></pre>
-    Use your own Pi username in place of <code>nfcplayer</code> in the <code>chown</code> if you chose a different one.
+    <pre><code>scp ~/nfc-player-backup/state.json nfcplayer@nfcplayer.local:/tmp/state.json &amp;&amp; ssh -t nfcplayer@nfcplayer.local 'sudo systemctl stop nfc-player &amp;&amp; sudo cp /tmp/state.json /var/lib/nfc-player/state.json &amp;&amp; sudo chown nfc-player: /var/lib/nfc-player/state.json &amp;&amp; sudo systemctl start nfc-player'</code></pre>
+    <code>nfc-player</code> in the <code>chown</code> is the user the player runs as, made by setup, not your own username.
   </li>
   <li>Copy the music back by USB (<a href="#music">step 6</a>), dragging the contents of <code>~/nfc-player-backup/music</code> onto <code>MUSIC</code>. The web page can also do it but is slow for more than an album or two.</li>
   <li>Open the web page and check the albums are listed and a card plays.</li>

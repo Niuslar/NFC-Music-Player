@@ -28,6 +28,7 @@ from urllib.parse import parse_qs, urlsplit
 
 from .. import events as ev
 from .. import hwconfig
+from ..images import open_cover
 from ..library import AUDIO_EXT, IMAGE_EXT, Library
 from ..playlists import ListError, Playlists, key_of
 
@@ -435,12 +436,10 @@ def start(event_queue, shared: Shared, library: Library, writer: MusicWriter, po
                 source = library.art_source(track)
                 key = f"{source}:{source.stat().st_mtime_ns}"
                 if key not in covers:
-                    from PIL import Image
-
                     data = library.art(track)
                     thumb = b""
                     if data:
-                        img = Image.open(io.BytesIO(data)).convert("RGB")
+                        img = open_cover(data)
                         img.thumbnail((400, 400))
                         buf = io.BytesIO()
                         img.save(buf, "JPEG", quality=82)
@@ -475,10 +474,7 @@ def start(event_queue, shared: Shared, library: Library, writer: MusicWriter, po
                 self._fail(404, "Not found")
                 return
             try:
-                length = int(self.headers.get("Content-Length", 0))
-                if length > 4096:
-                    raise ValueError
-                msg = json.loads(self.rfile.read(length))
+                msg = json.loads(self.rfile.read(self._length(4096)))
                 action, value = msg["action"], msg.get("value")
                 if action not in COMMANDS:
                     raise ValueError
@@ -498,11 +494,18 @@ def start(event_queue, shared: Shared, library: Library, writer: MusicWriter, po
             event_queue.put(ev.WebCommand(action, value))
             self._json(200, {"ok": True})
 
-        def _body(self, limit: int = 4096) -> dict:
+        def _length(self, limit: int) -> int:
+            """The request body's size from Content-Length; raises ValueError if missing, bad or over limit.
+
+            A negative size must be refused: rfile.read(-1) would read until the client hangs up.
+            """
             length = int(self.headers.get("Content-Length", 0))
-            if length > limit:
+            if not 0 <= length <= limit:
                 raise ValueError
-            msg = json.loads(self.rfile.read(length) or b"{}")
+            return length
+
+        def _body(self, limit: int = 4096) -> dict:
+            msg = json.loads(self.rfile.read(self._length(limit)) or b"{}")
             if not isinstance(msg, dict):
                 raise ValueError
             return msg
@@ -568,10 +571,7 @@ def start(event_queue, shared: Shared, library: Library, writer: MusicWriter, po
 
         def _delete(self) -> None:
             try:
-                length = int(self.headers.get("Content-Length", 0))
-                if length > 4096:
-                    raise ValueError
-                msg = json.loads(self.rfile.read(length))
+                msg = json.loads(self.rfile.read(self._length(4096)))
                 album_path, name = str(msg["album"]), msg.get("file")
             except (ValueError, KeyError, TypeError):
                 self._fail(400, "Bad request")
@@ -603,6 +603,8 @@ def start(event_queue, shared: Shared, library: Library, writer: MusicWriter, po
                     length = int(self.headers["Content-Length"])
                 except (KeyError, TypeError, ValueError):
                     raise UploadError(411, "Upload size missing")
+                if length < 0:
+                    raise UploadError(400, "Upload size is negative")
                 self._receive(rel, length)
             except UploadError as e:
                 self._fail(e.status, str(e))

@@ -1,9 +1,10 @@
 """Draws each screen as a 320x240 Pillow image. No hardware knowledge in here."""
 
-import io
 from functools import lru_cache
 
 from PIL import Image, ImageDraw, ImageFont
+
+from ..images import open_cover
 
 W, H = 320, 240
 BG = (14, 14, 16)
@@ -63,7 +64,7 @@ def _clock(seconds: float) -> str:
 def _cover(art: bytes | None, title: str) -> Image.Image:
     if art:
         try:
-            img = Image.open(io.BytesIO(art)).convert("RGB")
+            img = open_cover(art)
             side = min(img.size)
             left, top = (img.width - side) // 2, (img.height - side) // 2
             return img.crop((left, top, left + side, top + side)).resize((COVER, COVER), Image.LANCZOS)

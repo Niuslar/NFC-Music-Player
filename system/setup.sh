@@ -11,6 +11,7 @@ RUN_USER="${SUDO_USER:-}"
 APP_DIR="$(cd "$(dirname "$0")/.." && pwd)"
 CONFIG=/boot/firmware/config.txt
 IMG=/srv/nfc-player/music.img
+SVC_USER=nfc-player   # the system user the player runs as
 REBOOT=0
 
 echo "== Packages"
@@ -42,11 +43,30 @@ if ! grep -q "^gpio=22=" "$CONFIG"; then
 fi
 echo i2c-dev > /etc/modules-load.d/nfc-player-i2c.conf
 modprobe i2c-dev 2>/dev/null || true
-usermod -aG spi,gpio,audio,i2c "$RUN_USER"
+usermod -aG spi,gpio,audio,i2c "$RUN_USER"   # for the hardware checks (python3 -m player.hw.check)
+
+echo "== Service user ($SVC_USER)"
+# The player runs as its own system user, not as $RUN_USER. On Raspberry Pi OS the login user
+# may usually run anything with sudo and no password, so a bug in the player (in reading an
+# uploaded file, say) would hand over the whole Pi. This user can log in nowhere, and can run
+# only the helpers listed in /etc/sudoers.d/nfc-player.
+if ! id -u "$SVC_USER" >/dev/null 2>&1; then
+  useradd --system --home-dir /var/lib/nfc-player --no-create-home --shell /usr/sbin/nologin "$SVC_USER"
+fi
+usermod -aG spi,gpio,audio,i2c "$SVC_USER"
+# It runs the program from $APP_DIR, inside $RUN_USER's home. Joining $RUN_USER's group and
+# g+x on the home folder lets it pass through to that folder without listing or reading the rest.
+RUN_GROUP=$(id -gn "$RUN_USER")
+RUN_HOME=$(getent passwd "$RUN_USER" | cut -d: -f6)
+usermod -aG "$RUN_GROUP" "$SVC_USER"
+case "$APP_DIR" in "$RUN_HOME"/*) chmod g+x "$RUN_HOME" ;; esac
+chmod -R g+rX "$APP_DIR"
+runuser -u "$SVC_USER" -- test -r "$APP_DIR/player/main.py" ||
+  { echo "The user $SVC_USER cannot read $APP_DIR. Move the player to a folder it can read and run this again." >&2; exit 1; }
 
 echo "== Music drive ($IMG)"
 mkdir -p /srv/nfc-player /mnt/music /var/lib/nfc-player
-chown "$RUN_USER" /var/lib/nfc-player
+chown -R "$SVC_USER": /var/lib/nfc-player   # card links, lists and settings; older installs made them as $RUN_USER
 if [ ! -e "$IMG" ]; then
   FREE_GB=$(df --output=avail -BG /srv/nfc-player | tail -n 1 | tr -dc 0-9)
   SIZE_GB="${MUSIC_GB:-$((FREE_GB - 3))}"
@@ -61,19 +81,19 @@ fi
 
 echo "== USB helper and services"
 install -m 755 "$APP_DIR/system/nfc-player-usb" /usr/local/sbin/nfc-player-usb
-echo "OWNER=$RUN_USER" > /etc/nfc-player.conf
+echo "OWNER=$SVC_USER" > /etc/nfc-player.conf   # the music drive's files belong to the player, for uploads
 H=/usr/local/sbin/nfc-player-usb
 # The power key shuts the Pi down with systemctl poweroff.
 # The Wi-Fi helper joins new networks, and switches Wi-Fi on and off, from the settings menu.
 install -m 755 "$APP_DIR/system/nfc-player-wifi" /usr/local/sbin/nfc-player-wifi
 W=/usr/local/sbin/nfc-player-wifi
-echo "$RUN_USER ALL=(root) NOPASSWD: $H release, $H reclaim, $H rw, $H ro, /usr/bin/systemctl poweroff, $W scan, $W hotspot-up, $W hotspot-down, $W join, $W radio-on, $W radio-off" > /etc/sudoers.d/nfc-player
+echo "$SVC_USER ALL=(root) NOPASSWD: $H release, $H reclaim, $H rw, $H ro, /usr/bin/systemctl poweroff, $W scan, $W hotspot-up, $W hotspot-down, $W join, $W radio-on, $W radio-off" > /etc/sudoers.d/nfc-player
 chmod 440 /etc/sudoers.d/nfc-player
 visudo -cf /etc/sudoers.d/nfc-player >/dev/null
 install -m 644 "$APP_DIR/system/nfc-player-usb.service" /etc/systemd/system/
 # Turns the screen off at the very end of a shutdown, after the player has stopped.
 install -D -m 755 "$APP_DIR/system/nfc-player-screen-off" /usr/lib/systemd/system-shutdown/nfc-player-screen-off
-sed -e "s|@USER@|$RUN_USER|g" -e "s|@APP_DIR@|$APP_DIR|g" "$APP_DIR/system/nfc-player.service" > /etc/systemd/system/nfc-player.service
+sed -e "s|@USER@|$SVC_USER|g" -e "s|@APP_DIR@|$APP_DIR|g" "$APP_DIR/system/nfc-player.service" > /etc/systemd/system/nfc-player.service
 
 echo "== Wi-Fi setup network"
 if ! command -v nmcli >/dev/null 2>&1; then
@@ -140,6 +160,11 @@ echo
 if [ "$REBOOT" = 1 ]; then
   echo "Done for now. Reboot with: sudo reboot"
 else
+  # A drive mounted for an older install's user is mounted again, so its files belong to $SVC_USER.
+  systemctl stop nfc-player.service mpd.service
+  if mountpoint -q /mnt/music && [ "$(stat -c %U /mnt/music)" != "$SVC_USER" ]; then
+    umount /mnt/music || echo "Could not unmount the music drive; reboot so uploads work."
+  fi
   systemctl restart nfc-player-usb.service mpd.service nfc-player.service
   echo "All set. The player is running; follow it with: journalctl -u nfc-player -f"
 fi
