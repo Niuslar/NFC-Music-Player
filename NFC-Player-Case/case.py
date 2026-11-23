@@ -39,11 +39,12 @@ LCD_X = 136.0  # centre of the screen window: right of the keys, clear of the fr
 LCD_WINDOW = (42.2, 32.0)  # the Waveshare 2 inch panel shows 40.8 x 30.6
 LCD_PCB = (58.0, 35.0, 1.6)
 LCD_GLASS = 3.0  # MEASURE: how far the glass stands in front of the board
-LCD_OFF_X = 2.0  # From Waveshare's drawing, with the pin pads on the left. Centre of the lit area minus centre of the board, seen from the
+LCD_OFF_X = -2.0  # From Waveshare's drawing, fitted with the pin pads on the right. Centre of the lit area minus centre of the board, seen from the
 LCD_OFF_Z = 0.0  #          front; x to the right, z up. Room for -4 to +4 in x, -2 to +2 in z.
 # The screen screws onto an upright bracket through the four brass standoffs it comes with.
-# Its 8-pin PH2.0 socket lies along the right edge of its back (seen from the front) and opens
-# sideways, so the bracket is open on that side for the plug and its wires.
+# Its 8-pin PH2.0 socket lies along one short edge of its back and opens sideways. The board is
+# fitted with that edge on the left (seen from the front), so the plug faces the front board its
+# lead runs to, and the bracket is open on that side for the plug and its wires.
 LCD_HOLES = (52.0, 30.0)  # MEASURE: centres of the board's four corner holes, across and up
 LCD_STANDOFF = 6.0  # MEASURE: how far the standoffs stand out behind the board
 CLEAR_M25 = 2.9
@@ -175,16 +176,17 @@ USB_SCREW_PITCH = 17.0  # MEASURE: its two fixing screws
 CRADLE_BOSS_DX = 20.0  # the bracket's two floor screws, either side of LCD_X
 CRADLE_PLATE_Y = FRONT_T + LCD_GLASS + LCD_PCB[2] + LCD_STANDOFF  # front of the bracket's upright, with the glass on the panel
 CRADLE_PLATE_T = 3.0
-CRADLE_BASE_Y = FRONT_T + 0.2 + CRADLE_TRAVEL[0]  # front edge of its base
-CRADLE_Y = 14.0  # the floor screws; their heads pass under the upright through an arch
-CRADLE_ARCH_Z = 11.5  # top of those arches: base, washer and screw head
+CRADLE_Y = 25.5  # the floor screws, behind the upright, so a screwdriver reaches them from above
+CRADLE_TAB = 10.0  # width of the two tabs that reach back from the upright to those screws
+WASHER_M3 = 7.0
 
 assert FRONT_T + CARRIER_T + TACT_TRAVEL + 0.3 <= BOARD_Y, "a pressed cap's back must clear the board"
 assert SPACER_T >= 0.8, "the spacer would be too thin to print"
 assert BOARD_Y - TACT_BODY_H >= -KEY_PROUD + KEY_FACE_T, "the switch body must fit in the hollow behind the cap's face"
 assert KEYS_X[1] - KEYS_X[0] - 2 * KEY_WIN_X >= 2.0, "the frame between two keys would be too thin"
 assert all(z1 <= CTRL_Z - KEY_WIN_Z + BRIDGE_GAP + 0.01 for x0, z0, x1, z1 in BOARD_POCKETS[1:]), "a pocket would cut into the bridges under the keys"
-assert CRADLE_Y - CRADLE_TRAVEL[1] - CLEAR_M3 / 2 - 1 >= CRADLE_BASE_Y, "the bracket's slots must stay inside its base"
+assert CRADLE_Y - CRADLE_TRAVEL[1] - WASHER_M3 / 2 >= CRADLE_PLATE_Y + CRADLE_PLATE_T, "with the bracket slid right back, the washers must clear its upright"
+assert CRADLE_Y + CRADLE_TRAVEL[0] + CLEAR_M3 / 2 + 1.5 + CRADLE_TRAVEL[1] + 0.5 <= GUIDE_Y - 8, "with the bracket slid right back, its tabs must clear the card guide's foot"
 assert PI_SLOT_Y[0] <= PI_Y + 3.5 and PI_Y + 26.5 <= PI_SLOT_Y[1], "the standoffs must reach their place in the floor slots"
 
 
@@ -304,7 +306,7 @@ def chassis():
     cuts += [cylz(x, GUIDE_Y, 1, 6, PILOT_M3) for x in GUIDE_X]
     cuts += [cylz(x, CRADLE_Y, 1, 6, PILOT_M3) for x in boss_x]
     cuts += [prism(slot_y(PI_X + dx, *PI_SLOT_Y, 2.9), -1, FLOOR + 1) for dx in (3.5, 61.5)]
-    cuts += [box(x, x + 7, 24, 27, -1, FLOOR + 1) for x in range(20, 177, 12)]  # air intake; keep the feet clear of it
+    cuts += [box(x, x + 7, 24, 27, -1, FLOOR + 1) for x in range(20, 177, 12) if all(x - 4.5 > bx or x + 7 + 4.5 < bx for bx in boss_x)]  # air intake; keep the feet and the bracket's bosses clear of it
     return inter(diff(solid, *cuts), envelope())
 
 
@@ -402,7 +404,7 @@ def card_guide():
     board_low = PN532_CENTRE_Z - PN532_PCB[1] / 2 - 5  # the board's lower edge rests here
     half = GUIDE_X[1] - GUIDE_X[0]
     solid = [
-        box(-4, half + 2.5, -11, 7, 0, 3),
+        box(-4, half + 2.5, -8, 7, 0, 3),  # its front edge stays behind the screen bracket's tabs
         xf(lean, box(gx - outer / 2, gx + outer / 2, gy - CHANNEL_T / 2 - wall, back, 2.9, top)),
         box(gx - edge - 3.3, gx + edge + 3.3, 6.9, p1 - TAN * (H - 5) + 0.5, 0, 3),  # foot under the posts
     ]
@@ -424,19 +426,25 @@ def card_guide():
 
 def display_cradle():
     """An upright the screen screws onto, on a base that slides back and forth over two floor
-    bosses. Case coordinates, drawn where the glass meets the panel; prints standing as drawn."""
+    bosses. The floor screws sit behind the upright, in two tabs, so they stay in reach from
+    above. Case coordinates, drawn where the glass meets the panel; prints standing as drawn."""
     cx, cz = cradle_centre()
     hx, hz = LCD_HOLES[0] / 2, LCD_HOLES[1] / 2
     side = hx + 4.5  # past the holes' slots
     y0, y1 = CRADLE_PLATE_Y, CRADLE_PLATE_Y + CRADLE_PLATE_T
+    low = cz - hz + 3.5  # top of the lower bar
     solid = [
-        box(cx - side, cx + side, CRADLE_BASE_Y, max(y1, CRADLE_Y + CRADLE_TRAVEL[0] + CLEAR_M3 / 2 + 1.5), 5, 8),  # base
-        box(cx - side, cx + side, y0, y1, 5, cz - hz + 3.5),  # lower bar, below the socket
+        box(cx - side, cx + side, y0, y1 + 4, 5, 8),  # foot along the upright
+        box(cx - side, cx + side, y0, y1, 5, low),  # lower bar, below the socket
         box(cx - side, cx + side, y0, y1, cz + hz - 3.5, cz + hz + 3.5),  # upper bar
-        box(cx - side, cx - hx + 3.5, y0, y1, 5, cz + hz + 3.5),  # left side, behind the pin pads; the right stays open for the plug
+        box(cx + hx - 3.5, cx + side, y0, y1, 5, cz + hz + 3.5),  # right side, behind the pin pads; the left stays open for the plug
     ]
+    for s in (-1, 1):
+        bx = LCD_X + s * CRADLE_BOSS_DX
+        solid.append(box(bx - CRADLE_TAB / 2, bx + CRADLE_TAB / 2, y0, CRADLE_Y + CRADLE_TRAVEL[0] + CLEAR_M3 / 2 + 1.5, 5, 8))  # tab back to a floor screw
+        ex = cx + s * (side - 1.25)  # a rib at each end of the upright, so it stays square to its base
+        solid.append(hull(box(ex - 1.25, ex + 1.25, y1 - 0.1, y1 + 4, 7.9, 8), box(ex - 1.25, ex + 1.25, y1 - 0.1, y1, low - 0.1, low)))
     cuts = [hull(cyly(x - 2, z, y0 - 1, y1 + 1, CLEAR_M25), cyly(x + 2, z, y0 - 1, y1 + 1, CLEAR_M25)) for x in (cx - hx, cx + hx) for z in (cz - hz, cz + hz)]  # 2 mm either way to centre the picture
-    cuts += [box(LCD_X + s * CRADLE_BOSS_DX - 4, LCD_X + s * CRADLE_BOSS_DX + 4, y0 - 1, y1 + 1, 8, CRADLE_ARCH_Z) for s in (-1, 1)]  # the screw heads pass under
     cuts += [prism(slot_y(LCD_X + s * CRADLE_BOSS_DX, CRADLE_Y - CRADLE_TRAVEL[1], CRADLE_Y + CRADLE_TRAVEL[0], CLEAR_M3), 4, 9) for s in (-1, 1)]
     return diff(union(*solid), *cuts)
 
