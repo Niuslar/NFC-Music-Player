@@ -1,3 +1,7 @@
+[build-system]
+requires = ["setuptools>=64"]
+build-backend = "setuptools.build_meta"
+
 [project]
 name = "nfc-player"
 version = "0.1.0"
@@ -7,6 +11,13 @@ dependencies = ["pillow>=10.1", "numpy", "python-mpd2>=3.1"]
 
 [project.optional-dependencies]
 dev = ["pytest", "mutagen", "qrcode"]  # mutagen: tags and covers in the simulator without MPD; qrcode: the Wi-Fi join code (optional)
+
+[tool.setuptools.packages.find]
+include = ["player*"]  # only the player; the case, docs, system files and tests are not packaged
+
+[tool.setuptools.package-data]
+"player.hw.sim" = ["*.html"]
+"player.web" = ["*.html"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

@@ -20,3 +20,9 @@ NFC-Player-Case/front-board/fab/gerbers/
 NFC-Player-Case/STL/*-wood.stl
 NFC-Player-Case/wood-grain.png
 NFC-Player-Case/wood-grain-*.png
+
+# Assembly animation: kept local, out of the repo
+NFC-Player-Case/animation.py
+NFC-Player-Case/animation/
+NFC-Player-Case/*.mp4
+NFC-Player-Case/NFC-Player-Assembly.mp4
