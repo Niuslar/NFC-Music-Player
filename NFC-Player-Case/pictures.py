@@ -498,4 +498,5 @@ def main():
             shoot(scene, cam, name, shot)
 
 
-main()
+if __name__ == "__main__":  # animation.py imports this file for its scene
+    main()
