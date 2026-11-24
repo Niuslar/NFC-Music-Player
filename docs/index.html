@@ -448,9 +448,9 @@
   <tr><td>Power</td><td class="num">18 and 5</td><td>GPIO 24 and GPIO 3, each through a diode (below)</td></tr>
   <tr><td>Common side of all five</td><td class="num">14</td><td>Ground</td></tr>
 </table></div>
-<p>Run the same check as for the knob. Each press should print the button's name. Holding back for 2 seconds should print <code>back_long</code> once. Holding previous or next should print <code>prev_hold</code> or <code>next_hold</code> repeatedly until you let go; a short press of either prints its name when you let go. The power key prints <code>power</code>; during the check it does not shut anything down.</p>
+<p>Run the same check as for the knob. Each press should print the button's name. Holding back for 2 seconds should print <code>back_long</code> once. Holding previous or next should print <code>prev_hold</code> or <code>next_hold</code> repeatedly until you let go; a short press of either prints its name when you let go. The power key prints <code>power</code>, and holding it for 2 seconds prints <code>power_long</code>; during the check it does not shut anything down.</p>
 <h4>The power key</h4>
-<p>The power key turns the player off safely, so the SD card is never cut off mid-write, and turns it on again. It needs two pins: the player watches GPIO 24 to know when to shut down, and GPIO 3 is the only pin that wakes a Pi that has shut down. GPIO 3 also carries the DAC's control signals, so each pin reaches the key through its own diode. The diodes stop the DAC's signals from looking like key presses.</p>
+<p>A press of the power key puts the player on standby: the screen goes dark and playback stops, but Linux keeps running, so a card or a key wakes it at once. Holding it for 2 seconds turns the player off safely, so the SD card is never cut off mid-write, and pressing it again turns it on. It needs two pins: the player watches GPIO 24 for presses, and GPIO 3 is the only pin that wakes a Pi that has shut down. GPIO 3 also carries the DAC's control signals, so each pin reaches the key through its own diode. The diodes stop the DAC's signals from looking like key presses.</p>
 <ol>
   <li>One side of the key goes to ground (pin 14), like the other buttons.</li>
   <li>The other side of the key goes to the striped end of both diodes.</li>
@@ -497,10 +497,10 @@
 </svg>
 <figcaption>The power key seen from the wiring side. Each diode's stripe (its bar on a circuit diagram) points at the key; the plain ends go to the Pi. With the pin 18 diode the wrong way round, the key never turns the player off. With the pin 5 diode the wrong way round, the key never turns it on, and the player may also turn itself off at random, because the DAC's signals on GPIO 3 then reach GPIO 24.</figcaption>
 </figure>
-<div class="note"><p>Check the diodes' direction before powering up: stripes towards the key. Put the key somewhere it will not be pressed by accident, because one press turns the player off. The case does not have a hole for it yet.</p></div>
+<div class="note"><p>Check the diodes' direction before powering up: stripes towards the key. Put the key somewhere it will not be pressed by accident: one press puts the player on standby, and holding it turns the player off. The case does not have a hole for it yet.</p></div>
 
 <h3 id="w-light">Power light</h3>
-<p>The screen takes a while to show anything after the Pi is switched on, so a small LED shows that it has started. The Pi's firmware switches it on within a couple of seconds of power, before Linux starts, and it goes off at the very end of a shutdown, together with the screen. Off means the Pi is off and can be unplugged.</p>
+<p>The screen takes a while to show anything after the Pi is switched on, so a small LED shows that it has started. The Pi's firmware switches it on within a couple of seconds of power, before Linux starts, and it goes off at the very end of a shutdown, together with the screen. It stays on during standby. Off means the Pi is off and can be unplugged.</p>
 <div class="table-wrap"><table>
   <tr><th>Part</th><th>Pi pin</th><th>Note</th></tr>
   <tr><td>LED long leg (+), through a 330 Ω resistor</td><td class="num">15</td><td>GPIO 22</td></tr>
@@ -549,7 +549,8 @@
   <tr><td>Hold back for 2 seconds, while playing</td><td>Goes back to the start of the album, artist or list and plays it from the first track.</td></tr>
   <tr><td>Hold the knob for 1 second</td><td>With a card in: link the card to something else, unlink it, or close. With no card: settings (Wi-Fi, volume limit, deleting music, the web address, restart).</td></tr>
   <tr><td>Back</td><td>Leaves a menu or list.</td></tr>
-  <tr><td>Press power</td><td>Remembers where the card stopped, stops playing and shows <strong>Turning off</strong> while the Pi shuts down. When the screen goes dark, the player is off and can be unplugged. If the drive is connected to a computer, or the web page is uploading, it says so and stays on: eject or wait, then press power again.</td></tr>
+  <tr><td>Press power</td><td>Standby: remembers where the card stopped, stops playing and switches the screen off. Linux keeps running, so a card, any key or the knob wakes it at once; a card carries on where it stopped. The power light stays on. If the drive is connected to a computer, or the web page is uploading, it says so and stays on: eject or wait, then press power again.</td></tr>
+  <tr><td>Hold power for 2 seconds</td><td>Does the same, then shows <strong>Turning off</strong> while the Pi shuts down. When the screen and the power light go dark, the player is off and can be unplugged. Works from standby too.</td></tr>
   <tr><td>Press power while it is off</td><td>Turns it on. The power light comes on within a couple of seconds, then the screen shows the logo until the player is ready, in about half a minute.</td></tr>
 </table></div>
 

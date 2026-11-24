@@ -18,7 +18,7 @@ A tabletop music player where each album is a card. Put a card in the slot and i
 
 - **Cards are albums.** Blank NFC cards are linked to albums on the device itself. A card remembers where it stopped. A card can also play a whole artist, or a list: a folder of songs from different albums.
 - **Hi-Fi output.** A Raspberry Pi DAC Pro provides 3.5 mm and RCA (white and red) outputs.
-- **Screen and controls.** A 2-inch display shows the cover, track and time. A clicky knob sets the volume and scrolls lists; four buttons do previous, play/pause, next and back. A power key turns the player off safely and on again: the screen shows **Turning off** and goes dark once the Pi is off.
+- **Screen and controls.** A 2-inch display shows the cover, track and time. A clicky knob sets the volume and scrolls lists; four buttons do previous, play/pause, next and back. A press of the power key puts the player on standby: the screen goes dark, but Linux keeps running, so a card or any key wakes it at once and the card carries on where it stopped. Holding the key for 2 seconds turns the player off safely: the screen shows **Turning off** and goes dark once the Pi is off, and a press turns it on again.
 - **Music over USB.** Plug the player into a computer and its music appears as a drive called `MUSIC`.
 - **Wi-Fi and settings.** An icon in the corner of the screen shows the Wi-Fi signal, struck through when there is none. Hold the knob for a second with no card in for settings: join a new Wi-Fi network, set a volume limit, delete albums, artists, lists or songs, see the web remote's address, or restart the player. To join a network, the player starts its own setup network with a one-time password shown on its screen; a phone joins it and sends the new network's name and password from a page the player serves there.
 - **Updates over Wi-Fi.** **Firmware update** in the settings installs the newest release from GitHub. Releases are signed, and the player checks the signature before installing. It keeps the previous version and goes back to it if the new one does not start.
@@ -34,7 +34,7 @@ A tabletop music player where each album is a card. Put a card in the slot and i
 | NFC reader | PN532 over SPI, with NTAG215 cards |
 | Knob | 24-click rotary encoder with push switch |
 | Buttons | Five momentary push buttons: four for playback, one for power |
-| Power light | An LED on GPIO 22, lit from early in boot until the Pi has shut down. In the case it is the power key's own light, switched through the front board |
+| Power light | An LED on GPIO 22, lit from early in boot until the Pi has shut down, standby included. In the case it is the power key's own light, switched through the front board |
 
 A 0.91-inch 128×32 SSD1306 I2C OLED also works as a stand-in screen, with a compact layout and no cover art. Wire it to 3.3 V, GND, SDA (GPIO 2) and SCL (GPIO 3); it shares that bus with the DAC. Choose the screen and knob on the web remote's **Setup** page (`/setup`), which also tests the screen, DAC, buttons, knob and NFC reader. The settings are saved in `/var/lib/nfc-player/hardware.json` and used after a restart.
 

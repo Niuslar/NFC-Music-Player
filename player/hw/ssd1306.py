@@ -126,3 +126,15 @@ class SSD1306:
     def off(self) -> None:
         self._command(DISPLAY_OFF)
         self._lit = False
+
+    def sleep(self) -> bool:
+        """Standby: the screen off. False when it did not get through (the power key shares its clock line), to try again."""
+        try:
+            self.off()
+        except OSError:
+            self.failures += 1
+            return False
+        return True
+
+    def wake(self) -> None:
+        self._last = None  # the next picture is sent whole, and switches the screen on

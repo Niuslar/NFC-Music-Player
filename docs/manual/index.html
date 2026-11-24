@@ -113,7 +113,7 @@
   <tr><td><strong>⏯ Play / pause</strong></td><td>Pause and resume.</td></tr>
   <tr><td><strong>⏭ Next</strong></td><td>Forward a track. Hold to fast-forward.</td></tr>
   <tr><td><strong>↩ Back</strong></td><td>Show the track list, or leave a list or menu. Hold for 2 seconds to start from the first track.</td></tr>
-  <tr><td><strong>⏻ Power</strong></td><td>Turn the player off safely, and on again.</td></tr>
+  <tr><td><strong>⏻ Power</strong></td><td>Standby, and back again at once. Hold for 2 seconds to turn the player right off.</td></tr>
 </table>
 </div>
 
@@ -121,11 +121,13 @@
 <div class="screens">
   <figure><div class="lcd"><img src="logo.png" width="320" height="240" alt="Screen: a card with radio waves, NFC Player, Starting…"></div><figcaption>Starting. The power light comes on within a couple of seconds and the logo stays up until the player is ready, in about half a minute.</figcaption></figure>
   <figure><div class="lcd"><img src="idle.png" width="320" height="240" alt="Screen: Place a card, to start playing"></div><figcaption>Ready. Put a card in.</figcaption></figure>
-  <figure><div class="lcd"><img src="turning-off.png" width="320" height="240" alt="Screen: Turning off"></div><figcaption>After pressing power. When the screen goes dark the player is off and can be unplugged.</figcaption></figure>
+  <figure><div class="lcd"><img src="turning-off.png" width="320" height="240" alt="Screen: Turning off"></div><figcaption>After holding power for 2 seconds. When the screen and the power light go dark the player is off and can be unplugged.</figcaption></figure>
 </div>
 <ul>
-  <li><strong>To turn it on,</strong> press power. If it is plugged in for the first time, it starts on its own.</li>
-  <li><strong>To turn it off,</strong> press power. The player remembers where the card stopped, stops playing and shuts down. Wait for the screen to go dark before unplugging.</li>
+  <li><strong>Standby:</strong> press power. The player remembers where the card stopped, stops playing and the screen goes dark. The power light stays on.</li>
+  <li><strong>To wake it,</strong> put a card in, or press power or any other key, or turn the knob. It is back at once, with no waiting for it to start. A card carries on where it stopped. A key or the knob only wakes it, so nothing changes while the screen is dark. Playing something from the web page wakes it too.</li>
+  <li><strong>To turn it right off,</strong> hold power for 2 seconds, in standby or not. The screen shows <strong>Turning off</strong> while the Pi shuts down. Wait for the screen and the power light to go dark before unplugging.</li>
+  <li><strong>To turn it on</strong> after that, press power. It shows the logo until it is ready, in about half a minute. If it is plugged in for the first time, it starts on its own.</li>
   <li>If the music drive is connected to a computer, or the web page is uploading music, the player says so and stays on. Eject the drive or wait for the upload, then press power again.</li>
 </ul>
 
@@ -420,7 +422,8 @@
   <tr><td>Hold previous / next</td><td>Rewind / fast-forward.</td></tr>
   <tr><td>Back</td><td>Track list while playing; otherwise leaves a list or menu.</td></tr>
   <tr><td>Hold back 2 seconds</td><td>Start from the first track.</td></tr>
-  <tr><td>Power</td><td>Turns off safely; press again to turn on.</td></tr>
+  <tr><td>Power</td><td>Standby; press again, or put a card in, to wake it at once.</td></tr>
+  <tr><td>Hold power 2 seconds</td><td>Turns off safely, ready to unplug; press power to turn on.</td></tr>
 </table>
 </div>
 

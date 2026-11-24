@@ -79,16 +79,17 @@ class Encoder:
 
 
 # Buttons that do something different when held: a short press is sent on release instead.
-HOLD_NAMES = {"knob": "knob_long", "back": "back_long", "prev": "prev_hold", "next": "next_hold"}
-HOLD_SECONDS = {"back": 2.0, "knob": 1.0}  # restarting the album is drastic: it needs a deliberate hold
+HOLD_NAMES = {"knob": "knob_long", "back": "back_long", "prev": "prev_hold", "next": "next_hold", "power": "power_long"}
+# Restarting the album and turning the Pi right off are drastic: they need a deliberate hold.
+HOLD_SECONDS = {"back": 2.0, "power": 2.0, "knob": 1.0}
 REPEATS = {"prev", "next"}  # these keep sending their hold event while held, to scan through a track
 
 
 class Buttons:
     """buttons maps a name (prev, play, next, back, power) to its GPIO; knob is the encoder's push switch.
 
-    The knob sends knob_long once after 1 second; back sends back_long once after 2 seconds. Previous and next send prev_hold / next_hold
-    every scan_seconds while held, and nothing on release; a short press sends the plain name.
+    The knob sends knob_long once after 1 second; back and power send back_long / power_long once after 2 seconds. Previous and next
+    send prev_hold / next_hold every scan_seconds while held, and nothing on release; a short press sends the plain name.
     """
 
     def __init__(self, event_queue, knob_pin: int, buttons: dict[str, int], hold_seconds: float = 0.6, scan_seconds: float = 0.4):

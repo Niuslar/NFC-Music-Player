@@ -7,7 +7,7 @@ are objects with on()/off(), e.g. gpiozero.DigitalOutputDevice.
 import time
 
 WIDTH, HEIGHT = 320, 240
-SWRESET, SLPOUT, NORON, INVON, DISPON = 0x01, 0x11, 0x13, 0x21, 0x29
+SWRESET, SLPIN, SLPOUT, NORON, INVON, DISPON = 0x01, 0x10, 0x11, 0x13, 0x21, 0x29
 CASET, RASET, RAMWR, MADCTL, COLMOD = 0x2A, 0x2B, 0x2C, 0x36, 0x3A
 
 
@@ -23,6 +23,7 @@ def to_rgb565(image) -> bytes:
 class ST7789:
     def __init__(self, spi, dc, rst, bl, rotate180: bool = False, sleep=time.sleep):
         self.spi, self.dc, self.rst, self.bl = spi, dc, rst, bl
+        self._sleep = sleep
         self._last = None
         self._lit = False
         rst.off()
@@ -59,3 +60,16 @@ class ST7789:
         if not self._lit:  # light up only once there is a picture
             self.bl.on()
             self._lit = True
+
+    def sleep(self) -> bool:
+        """Standby: backlight off and the panel in its sleep mode, where it draws next to nothing."""
+        self.bl.off()
+        self._lit = False
+        self._command(SLPIN)
+        return True
+
+    def wake(self) -> None:
+        """Out of standby. The backlight comes on with the next picture, so the old one never flashes up."""
+        self._command(SLPOUT)
+        self._sleep(0.12)  # the panel needs this long before it takes a picture
+        self._last = None

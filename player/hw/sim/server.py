@@ -22,7 +22,7 @@ def _to_event(msg: dict):
     kind = msg.get("type")
     if kind == "rotate":
         return ev.Rotate(int(msg["counts"]))
-    if kind == "press" and msg.get("button") in ("knob", "knob_long", "prev", "play", "next", "back", "back_long", "prev_hold", "next_hold", "power"):
+    if kind == "press" and msg.get("button") in ("knob", "knob_long", "prev", "play", "next", "back", "back_long", "prev_hold", "next_hold", "power", "power_long"):
         return ev.Press(msg["button"])
     if kind == "card":
         return ev.CardInserted(str(msg["uid"])) if msg.get("uid") else ev.CardRemoved()
@@ -47,6 +47,16 @@ class SimDisplay:
         with self._lock:
             self._png, self._last, self.size = buf.getvalue(), raw, image.size
 
+    def sleep(self) -> bool:
+        """Standby: a dark screen, as on the Pi."""
+        from PIL import Image
+
+        self.show(Image.new("RGB", self.size))
+        return True
+
+    def wake(self) -> None:
+        self._last = None
+
     def png(self) -> bytes:
         with self._lock:
             return self._png
@@ -61,7 +71,7 @@ def power_cycle(display: SimDisplay, event_queue: queue.Queue, shutdown_seconds:
         time.sleep(shutdown_seconds)  # "Turning off" stays up while the Pi shuts down
         display.show(Image.new("RGB", display.size))
         print("Simulator: off. Press the power key to turn it on.", flush=True)
-        while event_queue.get() != ev.Press("power"):
+        while event_queue.get() not in (ev.Press("power"), ev.Press("power_long")):
             pass  # a Pi that is off ignores everything else
         print("Simulator: starting again", flush=True)
         os.execv(sys.executable, [sys.executable, "-m", "player.main", *sys.argv[1:]])

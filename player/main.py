@@ -49,7 +49,7 @@ OFF_SCREEN_WAIT_SECONDS = 5.0
 
 
 def power_off() -> None:
-    """Shuts the Pi down. setup.sh lets the player's user run this one command through sudo.
+    """Shuts the Pi down, after the power key was held. setup.sh lets the player's user run this one command through sudo.
 
     "Turning off" stays on the screen while the Pi shuts down; system/nfc-player-screen-off
     switches the backlight off at the very end. The power key is also wired to GPIO 3,
@@ -66,6 +66,7 @@ def restart() -> None:
 def run(app: App, event_queue: queue.Queue, display, shared=None, clock=time.monotonic, power_off=power_off, inputs=None, restart=restart) -> None:
     turning_off = False
     off_since = None
+    asleep = False  # the screen is switched off for standby
     while True:
         try:
             pending = [event_queue.get(timeout=0.1)]
@@ -90,6 +91,13 @@ def run(app: App, event_queue: queue.Queue, display, shared=None, clock=time.mon
         if shared is not None:
             shared.snapshot = app.snapshot()
             shared.enabled = app.store.web_remote
+        if app.mode is Mode.STANDBY:
+            if not asleep:  # the OLED may miss it while the power key is still down: try again next time
+                asleep = getattr(display, "sleep", lambda: True)() is not False
+            continue
+        if asleep:
+            getattr(display, "wake", lambda: None)()
+            asleep = False
         shown = display.show(app.render(now)) is not False  # only the OLED says False, when a frame did not get through
         if app.restart_requested:
             restart()  # "Restarting" is on the screen; normally this does not return
