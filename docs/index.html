@@ -651,7 +651,7 @@
 <div class="table-wrap"><table>
   <tr><th>What you do</th><th>Music safe?</th></tr>
   <tr><td>Update the software with <code>apt</code></td><td>Yes</td></tr>
-  <tr><td>Update the player with <code>deploy.sh</code></td><td>Yes</td></tr>
+  <tr><td>Update the player with <code>deploy.sh</code>, or from <strong>Firmware update</strong> in its settings</td><td>Yes</td></tr>
   <tr><td>Run <code>setup.sh</code> again</td><td>Yes. It only creates the music drive if there is none.</td></tr>
   <tr><td>Reflash the SD card</td><td><strong>No.</strong> Everything on the card is erased.</td></tr>
   <tr><td>Lose power during an update, or the card fails</td><td><strong>Not guaranteed.</strong> The card's filesystem can be damaged.</td></tr>
@@ -729,12 +729,17 @@
 </table></div>
 
 <h3>Updating the code</h3>
-<pre><code>cd ~/Projects/nfc-player && ./deploy.sh && ssh nfcplayer.local 'sudo systemctl restart nfc-player'</code></pre>
+<p>A finished player updates itself over Wi-Fi: hold the knob with no card in, and choose <strong>Firmware update</strong>. It installs only releases signed by the project, keeps the version it had, and goes back to it if the new one does not start.</p>
+<p>While working on the code, copy your own version over instead. The player runs from <code>/opt/nfc-player</code>, so install the copy there and restart:</p>
+<pre><code>./deploy.sh</code></pre>
+<pre><code>ssh nfcplayer.local 'sudo /usr/local/sbin/nfc-player-update install-dir nfc-player && sudo systemctl restart nfc-player'</code></pre>
+<p>To go back to the version before, run <code>sudo /usr/local/sbin/nfc-player-update rollback</code> on the Pi; <code>status</code> in place of <code>rollback</code> shows both versions.</p>
 
 <h3>Where things are</h3>
 <div class="table-wrap"><table>
   <tr><th>On the Pi</th><th>What</th></tr>
-  <tr><td><code>~/nfc-player</code></td><td>The program.</td></tr>
+  <tr><td><code>/opt/nfc-player/current</code></td><td>The program. It links to <code>/opt/nfc-player/a</code> or <code>b</code>; an update goes into the other one.</td></tr>
+  <tr><td><code>~/nfc-player</code></td><td>The copy <code>deploy.sh</code> sends, which setup installs into <code>/opt/nfc-player</code>.</td></tr>
   <tr><td><code>/srv/nfc-player/music.img</code></td><td>The music drive (one big file).</td></tr>
   <tr><td><code>/mnt/music</code></td><td>The same music as the player sees it, read-only.</td></tr>
   <tr><td><code>/var/lib/nfc-player/state.json</code></td><td>Card links, resume positions, volume and its limit.</td></tr>
