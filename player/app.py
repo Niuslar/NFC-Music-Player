@@ -8,6 +8,7 @@ import shutil
 from enum import Enum, auto
 
 from . import events as ev
+from . import update as update_mod
 from . import wifi as wifi_mod
 from .cards import VOLUME_LIMITS, Store
 from .knob import list_scaler, volume_scaler
@@ -30,7 +31,7 @@ START_CHOICES = (  # the question after choosing what a card plays: index 1 mean
     ("Carry on where it left off", "Picks up at the same song and place"),
     ("Always start over", "Plays from the first song every time"),
 )
-SETTINGS_ITEMS = ("Wi-Fi", "Volume limit", "Manage music", "About this player", "Restart the player", "Close")
+SETTINGS_ITEMS = ("Wi-Fi", "Volume limit", "Manage music", "About this player", "Firmware update", "Restart the player", "Close")
 MANAGE_KINDS = (("album", "Albums"), ("artist", "Artists"), ("list", "Lists"), ("song", "All songs"))
 WIFI_ITEMS = ("Wi-Fi", "Connect to a new network", "Show web player", "Back")  # only Wi-Fi and Back while it is off
 SIGNAL_WORDS = {1: "weak signal", 2: "fair signal", 3: "good signal", 4: "strong signal"}
@@ -57,6 +58,7 @@ class Mode(Enum):
     WIFI_SETUP = auto()  # the setup network is up (or starting, or joining): instructions for the phone
     VOLUME_LIMIT = auto()
     ABOUT = auto()
+    UPDATE = auto()  # Firmware update: checking, downloading, installing, or what came of it
     # Manage music, for deleting without a computer or the web remote:
     MANAGE = auto()  # Albums, Artists, Lists, All songs
     MANAGE_LIST = auto()  # the albums, artists or lists, or every song
@@ -65,7 +67,7 @@ class Mode(Enum):
 
 
 MANAGE_MODES = (Mode.MANAGE, Mode.MANAGE_LIST, Mode.MANAGE_ITEM, Mode.MANAGE_CONFIRM)
-SETTINGS_MODES = (Mode.SETTINGS, Mode.WIFI, Mode.WIFI_SETUP, Mode.VOLUME_LIMIT, Mode.ABOUT) + MANAGE_MODES
+SETTINGS_MODES = (Mode.SETTINGS, Mode.WIFI, Mode.WIFI_SETUP, Mode.VOLUME_LIMIT, Mode.ABOUT, Mode.UPDATE) + MANAGE_MODES
 LIST_MODES = (Mode.LINKING, Mode.LINK_START, Mode.MENU, Mode.TRACKS, Mode.SETTINGS, Mode.WIFI, Mode.VOLUME_LIMIT) + MANAGE_MODES
 
 
@@ -80,7 +82,7 @@ class NullStorage:
 
 
 class App:
-    def __init__(self, library: Library, store: Store, playback, storage=None, volume_steps_per_rev: int = 60, ui=render, wifi=None):
+    def __init__(self, library: Library, store: Store, playback, storage=None, volume_steps_per_rev: int = 60, ui=render, wifi=None, updater=None):
         self.ui = ui  # render (the 320x240 colour screen) or ui.tiny (the 128x32 OLED)
         self.library = library
         self.store = store
@@ -88,6 +90,7 @@ class App:
         self.storage = storage or NullStorage()
         self.wifi = wifi or wifi_mod.NoWifi()
         self.wifi.enabled = store.wifi  # main also switches the radio to match, at start-up
+        self.updater = updater or update_mod.NoUpdater()
         self.web_address = ""  # where the web remote is, for the About screen; main fills it in
         self._about: list[str] = []
         self.mode = Mode.IDLE
@@ -128,6 +131,11 @@ class App:
         self._now = now
         if self.mode is Mode.OFF:
             return  # nothing more happens once the player is turning off
+        if self._installing() and not (isinstance(event, ev.Press) and event.button == "power"):
+            # An update is going in and the player restarts in a moment; a card in the slot plays then.
+            if isinstance(event, (ev.CardInserted, ev.CardRemoved)):
+                self.card = event.uid if isinstance(event, ev.CardInserted) else None
+            return
         if isinstance(event, ev.Press) and event.button == "power":
             self._power_off()
         elif isinstance(event, ev.WebCommand) and event.action == "test_screen":
@@ -142,6 +150,7 @@ class App:
             self._refresh_library(rescan=False)
         elif isinstance(event, ev.CardInserted):
             self._end_wifi_setup()  # a card always wins over the settings
+            self._end_update()
             if self.card is not None and self.mode is not Mode.TRANSFER:
                 self._leave_card()
             self.card = event.uid
@@ -166,6 +175,14 @@ class App:
     def tick(self, now: float) -> None:
         """Called several times a second to follow what the player is doing."""
         self.wifi.tick()
+        self.updater.tick(now)
+        if self.mode is Mode.UPDATE and self.updater.state == "ready" and not self.is_uploading():
+            # Downloaded and checked: save everything, as for a restart, and hand over to the installer.
+            self._leave_card()
+            self.mode = Mode.UPDATE
+            self.playback.stop()
+            self.store.save()
+            self.updater.install()
         if self.mode is Mode.WIFI_SETUP and self.wifi.state in ("off", "closing"):
             self.mode = Mode.IDLE  # the setup network closed itself after nobody used it
         if self.album is None or self.mode in (Mode.TRANSFER, Mode.OFF):
@@ -176,7 +193,7 @@ class App:
             self.store.clear_resume(self.card)  # album played to the end
 
     def _rotate(self, counts: int, now: float) -> None:
-        if self.mode in (Mode.TRANSFER, Mode.ABOUT, Mode.WIFI_SETUP) or self.usb_offer:
+        if self.mode in (Mode.TRANSFER, Mode.ABOUT, Mode.WIFI_SETUP, Mode.UPDATE) or self.usb_offer:
             return  # nowhere to show the volume on these screens, so do not change it unseen
         if self.mode in LIST_MODES:
             count = {
@@ -382,6 +399,13 @@ class App:
         elif self.mode is Mode.ABOUT:
             if button == "knob" or back:
                 self._open_list(Mode.SETTINGS, SETTINGS_ITEMS.index("About this player"))
+        elif self.mode is Mode.UPDATE:
+            state = self.updater.state
+            if state in ("installing", "restarting"):
+                return  # nothing to cancel: the player restarts by itself
+            if back or (button == "knob" and state not in update_mod.BUSY):
+                self.updater.cancel()  # stops a check or download that is still going
+                self._open_list(Mode.SETTINGS, SETTINGS_ITEMS.index("Firmware update"))
         elif self.mode is Mode.WIFI_SETUP:
             state = self.wifi.state
             if state in ("joined", "error") and (button == "knob" or back):
@@ -403,6 +427,8 @@ class App:
         elif choice == "About this player":
             self._about = self._about_lines()
             self.mode = Mode.ABOUT
+        elif choice == "Firmware update":
+            self._start_update()
         elif choice == "Restart the player":
             self._restart()
         else:
@@ -519,6 +545,45 @@ class App:
         if self.mode is Mode.WIFI_SETUP:
             self.wifi.close_portal()
 
+    def _start_update(self) -> None:
+        self.mode = Mode.UPDATE
+        if not self.store.wifi:
+            self.updater.fail("Wi-Fi is off. Switch it on in the Wi-Fi settings first.")
+        elif self.wifi.bars() is None:
+            self.updater.fail("The player is not connected to Wi-Fi.")
+        else:
+            self.updater.start()
+
+    def _end_update(self) -> None:
+        if self.mode is Mode.UPDATE:
+            self.updater.cancel()
+
+    def _installing(self) -> bool:
+        return self.mode is Mode.UPDATE and self.updater.state in ("ready", "installing", "restarting")
+
+    def _update_screen(self):
+        u = self.updater
+        state, version = u.state, u.version
+        if state == "checking":
+            return self.ui.message("Checking for updates…", f"This player has version {u.current}.")
+        if state == "downloading":
+            return self.ui.message("Downloading", f"Version {version}: {u.progress}%")
+        if state == "verifying":
+            return self.ui.message("Checking the download", f"Version {version}")
+        if state == "ready" and self.is_uploading():
+            return self.ui.message(f"Version {version} is ready", "Waiting for an upload from the web page to finish.")
+        if state in ("ready", "installing"):
+            return self.ui.message("Installing", f"Version {version}. This takes a minute or two; keep the player plugged in.")
+        if state == "restarting":
+            return self.ui.message("Restarting", f"to start version {version}")
+        if state == "latest":
+            return self.ui.message("No update available", f"This player has the newest version, {u.current}.\nPush the knob to go back.")
+        if state == "verified":
+            return self.ui.message(f"Version {version} checked", "Its signature and download are good. The simulator does not install it.")
+        if state == "failed":
+            return self.ui.message("Update not installed", f"{u.message}\nPush the knob to go back.")
+        return self.ui.message("Update did not work", f"{u.message}\nPush the knob to go back.")
+
     def _wifi_line(self) -> str:
         if not self.store.wifi:
             return "Off"
@@ -552,6 +617,7 @@ class App:
         except OSError:
             free = ""
         lines.append(f"{_count(len(self.library.albums), 'album')}{free}")
+        lines.insert(-1, f"Version {self.updater.current}")
         return lines
 
     def _settings_screen(self):
@@ -562,6 +628,7 @@ class App:
                 "No limit" if limit == 100 else f"Up to {limit}",
                 "Delete albums, artists, lists or songs",
                 "Web address, music and storage",
+                f"Version {self.updater.current} · check for a newer one",
                 "",
                 "",
             )
@@ -574,6 +641,8 @@ class App:
             return self.ui.list_screen("Volume limit: the loudest it can go", rows, self.selected)
         if self.mode is Mode.ABOUT:
             return self.ui.message("About this player", "\n".join(self._about))
+        if self.mode is Mode.UPDATE:
+            return self._update_screen()
         if self.mode in MANAGE_MODES:
             return self._manage_screen()
         w = self.wifi
@@ -800,6 +869,7 @@ class App:
             self.show_error("An upload from the web page is still running. Try again when it finishes.", self._now)
             return
         self._end_wifi_setup()
+        self._end_update()
         self._leave_card()  # remembers where the card stopped and saves the volume
         self.playback.stop()
         self.store.save()

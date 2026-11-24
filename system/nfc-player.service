@@ -3,10 +3,16 @@ Description=NFC album player
 # Not After=mpd.service: the player starts alongside MPD so the boot logo shows sooner, and waits for MPD itself.
 After=nfc-player-usb.service
 Wants=mpd.service nfc-player-usb.service
+# Keep trying for ever: it is an appliance, and a new version that keeps failing is rolled back by the hook below.
+StartLimitIntervalSec=0
 
 [Service]
 User=@USER@
-WorkingDirectory=@APP_DIR@
+# The program is in /opt/nfc-player/a or /opt/nfc-player/b; current links to the one in use (system/nfc-player-update).
+WorkingDirectory=/opt/nfc-player/current
+# Runs as root before every start: counts the starts of a newly installed version and goes back to
+# the previous one if it keeps failing. "-" so a problem in the hook never keeps the player from starting.
+ExecStartPre=-+/usr/local/sbin/nfc-player-update boot
 Environment=PYTHONUNBUFFERED=1
 # Screen, knob and orientation are set on the web remote's Setup page (/setup).
 # Options here (--display, --encoder, --encoder-reverse, --rotate) win over that page.

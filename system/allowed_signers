@@ -1,0 +1,9 @@
+# Release keys: the public halves of the keys that sign updates.
+# An update is installed only if its manifest is signed by one of the keys listed here.
+# One line per key, in OpenSSH's allowed_signers format, all with the name nfc-player-release:
+#
+#   nfc-player-release namespaces="nfc-player-release" ssh-ed25519 AAAA... comment
+#
+# setup.sh copies this file to /etc/nfc-player/allowed_signers. After that a release can
+# change it, but only once that release has started and been kept.
+nfc-player-release namespaces="nfc-player-release" ecdsa-sha2-nistp256 AAAAE2VjZHNhLXNoYTItbmlzdHAyNTYAAAAIbmlzdHAyNTYAAABBBNG2z/+2mxTZ/x4zmyfVjZgFa+9KMFRH0Z7DfmxEzkWDxFyXM+AXKKXkTZ2dmMEVd2C32r4rEvr9HIM9+Vl88ME= nfc-player release

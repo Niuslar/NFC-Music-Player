@@ -23,6 +23,7 @@ from .events import LibraryChanged
 from .library import FileTags, Library
 from .playback import FakePlayback, MpdPlayback
 from .playlists import Playlists
+from .update import HELPER as UPDATE_HELPER, HelperInstaller, NoUpdater, Updater
 from .wifi import NetworkManagerBackend, NoWifi, SimBackend, Wifi
 
 # GPIO numbers (BCM). The DAC HAT owns 2, 3, 18, 19, 20 and 21.
@@ -266,7 +267,13 @@ def main() -> None:
     from .hw.selftest import InputLog, dac_test
 
     steps = 60 if args.sim else VOLUME_STEPS_PER_REV[config["encoder"]]
-    app = App(library, Store(args.state), playback, storage, volume_steps_per_rev=steps, ui=ui, wifi=wifi)
+    if args.sim:  # checks and downloads real releases, with the keys in this folder, but installs nothing
+        updater = Updater(allowed_signers=Path(__file__).resolve().parent.parent / "system" / "allowed_signers", workdir=args.state.parent / "update")
+    elif Path(UPDATE_HELPER).exists():
+        updater = Updater(HelperInstaller())  # the Pi
+    else:
+        updater = NoUpdater()
+    app = App(library, Store(args.state), playback, storage, volume_steps_per_rev=steps, ui=ui, wifi=wifi, updater=updater)
     if isinstance(wifi, Wifi):
         wifi.start(enabled=app.store.wifi)  # switched off in the settings: it stays off after a restart
     inputs = InputLog()

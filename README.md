@@ -21,6 +21,7 @@ A tabletop music player where each album is a card. Put a card in the slot and i
 - **Screen and controls.** A 2-inch display shows the cover, track and time. A clicky knob sets the volume and scrolls lists; four buttons do previous, play/pause, next and back. A power key turns the player off safely and on again: the screen shows **Turning off** and goes dark once the Pi is off.
 - **Music over USB.** Plug the player into a computer and its music appears as a drive called `MUSIC`.
 - **Wi-Fi and settings.** An icon in the corner of the screen shows the Wi-Fi signal, struck through when there is none. Hold the knob for a second with no card in for settings: join a new Wi-Fi network, set a volume limit, delete albums, artists, lists or songs, see the web remote's address, or restart the player. To join a network, the player starts its own setup network with a one-time password shown on its screen; a phone joins it and sends the new network's name and password from a page the player serves there.
+- **Updates over Wi-Fi.** **Firmware update** in the settings installs the newest release from GitHub. Releases are signed, and the player checks the signature before installing. It keeps the previous version and goes back to it if the new one does not start.
 - **Web remote.** A page served by the player, from any phone or computer on the same Wi-Fi: browse albums, artists and songs, play from any track, seek, link cards, upload or delete music, and make lists of songs from anywhere in the library. Lists are kept beside the card links (`lists.json`), not on the music drive, and a card can play one like an album.
 
 ## Hardware
@@ -80,6 +81,7 @@ Run the tests with:
 - `player/web/` is the web remote, and the page a phone uses to give the player a new Wi-Fi network.
 - `player/wifi.py` reads the Wi-Fi signal and runs the setup network for joining a new one, through NetworkManager and a small root helper (`system/nfc-player-wifi`).
 - `player/playback.py` talks to [MPD](https://www.musicpd.org/), which does the decoding and audio output.
+- `player/update.py` and `system/nfc-player-update` do updates over Wi-Fi. The player keeps two copies of itself, in `/opt/nfc-player/a` and `b`. An update goes into the copy that is not running, and the player goes back to the other copy if the new version does not start.
 - `system/` has the Raspberry Pi setup script and service files.
 - `NFC-Player-Case/` is the 3D-printed case. Every dimension is in `case.py`; Blender scripts build the STLs and pictures from it, and `guide.py` writes the 3D printing and assembly guides. `front-board/board.py` draws the circuit board behind the keys in KiCad from the same numbers, and `front-board/fab/` holds the files to order it. Its [README](NFC-Player-Case/README.md) lists what each file is and how to rebuild them after a change.
 - `docs/` and the root `index.html` are the project site. GitHub Pages serves it from the root of this repository, so the empty `.nojekyll` file has to stay, and the case guides are linked straight from `NFC-Player-Case/`.

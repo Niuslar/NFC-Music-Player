@@ -3,6 +3,10 @@
 #
 #   cd ~/nfc-player && sudo system/setup.sh            # music drive uses all free space but 3 GB
 #   cd ~/nfc-player && sudo MUSIC_GB=100 system/setup.sh
+#   sudo /opt/nfc-player/current/system/setup.sh       # again later, from the installed copy
+#
+# The player itself is copied to /opt/nfc-player (see system/nfc-player-update), where updates
+# over Wi-Fi replace it. The folder this runs from is only the source of that copy.
 set -eu
 
 [ "$(id -u)" = 0 ] || { echo "Run with sudo." >&2; exit 1; }
@@ -16,7 +20,7 @@ REBOOT=0
 
 echo "== Packages"
 apt-get update -q
-apt-get install -y -q mpd python3-pil python3-numpy python3-spidev python3-gpiozero python3-lgpio python3-mpd exfatprogs fdisk alsa-utils i2c-tools dnsmasq-base python3-qrcode
+apt-get install -y -q mpd python3-pil python3-numpy python3-spidev python3-gpiozero python3-lgpio python3-mpd exfatprogs fdisk alsa-utils i2c-tools dnsmasq-base python3-qrcode openssh-client
 
 echo "== Boot configuration ($CONFIG)"
 if ! grep -q "^# nfc-player" "$CONFIG"; then
@@ -54,15 +58,26 @@ if ! id -u "$SVC_USER" >/dev/null 2>&1; then
   useradd --system --home-dir /var/lib/nfc-player --no-create-home --shell /usr/sbin/nologin "$SVC_USER"
 fi
 usermod -aG spi,gpio,audio,i2c "$SVC_USER"
-# It runs the program from $APP_DIR, inside $RUN_USER's home. Joining $RUN_USER's group and
-# g+x on the home folder lets it pass through to that folder without listing or reading the rest.
-RUN_GROUP=$(id -gn "$RUN_USER")
-RUN_HOME=$(getent passwd "$RUN_USER" | cut -d: -f6)
-usermod -aG "$RUN_GROUP" "$SVC_USER"
-case "$APP_DIR" in "$RUN_HOME"/*) chmod g+x "$RUN_HOME" ;; esac
-chmod -R g+rX "$APP_DIR"
-runuser -u "$SVC_USER" -- test -r "$APP_DIR/player/main.py" ||
-  { echo "The user $SVC_USER cannot read $APP_DIR. Move the player to a folder it can read and run this again." >&2; exit 1; }
+
+echo "== Program (/opt/nfc-player)"
+# Two copies, a and b, and a link, current, to the one in use. The service runs from current.
+# Both belong to root, so the player cannot change its own program; only signed updates can.
+U=/usr/local/sbin/nfc-player-update
+install -m 755 "$APP_DIR/system/nfc-player-update" "$U"
+case "$(cd "$APP_DIR" && pwd -P)" in
+  /opt/nfc-player/*) echo "Running from the installed copy: leaving it as it is" ;;
+  *) "$U" install-dir "$APP_DIR" ;;
+esac
+# The keys that sign updates. A release can replace them once it has proved it starts, so an
+# empty file here never overwrites keys the player already has.
+mkdir -p /etc/nfc-player
+if grep -qv '^\s*\(#\|$\)' "$APP_DIR/system/allowed_signers" 2>/dev/null; then
+  install -m 644 "$APP_DIR/system/allowed_signers" /etc/nfc-player/allowed_signers
+elif [ ! -s /etc/nfc-player/allowed_signers ]; then
+  echo "No release keys in system/allowed_signers yet, so updates over Wi-Fi will be refused."
+fi
+runuser -u "$SVC_USER" -- test -r /opt/nfc-player/current/player/main.py ||
+  { echo "The user $SVC_USER cannot read /opt/nfc-player/current." >&2; exit 1; }
 
 echo "== Music drive ($IMG)"
 mkdir -p /srv/nfc-player /mnt/music /var/lib/nfc-player
@@ -87,13 +102,14 @@ H=/usr/local/sbin/nfc-player-usb
 # The Wi-Fi helper joins new networks, and switches Wi-Fi on and off, from the settings menu.
 install -m 755 "$APP_DIR/system/nfc-player-wifi" /usr/local/sbin/nfc-player-wifi
 W=/usr/local/sbin/nfc-player-wifi
-echo "$SVC_USER ALL=(root) NOPASSWD: $H release, $H reclaim, $H rw, $H ro, /usr/bin/systemctl poweroff, $W scan, $W hotspot-up, $W hotspot-down, $W join, $W radio-on, $W radio-off" > /etc/sudoers.d/nfc-player
+# The update helper installs only what it has checked against the release keys itself.
+echo "$SVC_USER ALL=(root) NOPASSWD: $H release, $H reclaim, $H rw, $H ro, /usr/bin/systemctl poweroff, $W scan, $W hotspot-up, $W hotspot-down, $W join, $W radio-on, $W radio-off, $U install, $U confirm" > /etc/sudoers.d/nfc-player
 chmod 440 /etc/sudoers.d/nfc-player
 visudo -cf /etc/sudoers.d/nfc-player >/dev/null
 install -m 644 "$APP_DIR/system/nfc-player-usb.service" /etc/systemd/system/
 # Turns the screen off at the very end of a shutdown, after the player has stopped.
 install -D -m 755 "$APP_DIR/system/nfc-player-screen-off" /usr/lib/systemd/system-shutdown/nfc-player-screen-off
-sed -e "s|@USER@|$SVC_USER|g" -e "s|@APP_DIR@|$APP_DIR|g" "$APP_DIR/system/nfc-player.service" > /etc/systemd/system/nfc-player.service
+sed -e "s|@USER@|$SVC_USER|g" "$APP_DIR/system/nfc-player.service" > /etc/systemd/system/nfc-player.service
 
 echo "== Wi-Fi setup network"
 if ! command -v nmcli >/dev/null 2>&1; then

@@ -1,0 +1,468 @@
+#!/usr/bin/python3 -I
+"""Root helper for updates, with two copies of the player (A/B). Installed to /usr/local/sbin by setup.sh.
+
+    install           install the update the player downloaded to /var/lib/nfc-player/update
+    confirm           the running version works: keep it (the player says so once it has been up a while)
+    boot              run by systemd as root before each start of the player: counts the starts
+                      of a new version, and goes back to the old one if it keeps failing
+    watchdog          run by a timer that boot sets: goes back if the new version never confirmed
+    rollback          go back to the other copy now (by hand, over SSH)
+    status            print the versions in both copies and what is going on
+    install-dir DIR   install the program from a folder (setup.sh, and deploy.sh during development)
+
+The player runs from /opt/nfc-player/current, a link to /opt/nfc-player/a or /opt/nfc-player/b.
+An update is written into the copy that is not running, and only then is the link switched,
+in one step, so a power cut at any moment leaves one complete version to start. The new version
+is "pending" until the player confirms it; if it fails to start MAX_STARTS times, or has not
+confirmed after WATCHDOG_SECONDS, the link goes back to the old version and the new one is
+remembered as failed, so it is not offered again.
+
+The player's user may run only `install` and `confirm` through sudo. It also writes the files
+`install` reads, so they are copied somewhere only root can write before being checked, and the
+signature and checksum are checked here again rather than trusted from the player.
+
+This file and the release keys (/etc/nfc-player/allowed_signers) are what decide which updates are
+trusted. A release cannot replace this file; it can replace the keys, but only once it has started and
+confirmed, so a lost signing key can be retired with an update signed by the backup key.
+"""
+
+import fcntl
+import hashlib
+import json
+import os
+import re
+import shutil
+import stat
+import subprocess
+import sys
+import tarfile
+import tempfile
+import time
+from pathlib import Path, PurePosixPath
+
+ROOT = Path("/opt/nfc-player")
+SLOTS = ("a", "b")
+DOWNLOAD_DIR = Path("/var/lib/nfc-player/update")
+KEYS = Path("/etc/nfc-player/allowed_signers")
+SERVICE = "nfc-player.service"
+WATCHDOG_UNIT = "nfc-player-update-watchdog"
+SIGNER = NAMESPACE = "nfc-player-release"
+MAX_STARTS = 3
+WATCHDOG_SECONDS = 300
+MAX_TARBALL = 50 * 1024 * 1024
+MAX_UNPACKED = 200 * 1024 * 1024
+MAX_MEMBERS = 5000
+TOP_LEVEL = {"player", "system", "pyproject.toml"}  # what a release may contain, and what install-dir copies
+VERSION = re.compile(r"^v?(\d{1,4})\.(\d{1,4})\.(\d{1,4})$")
+TARBALL = re.compile(r"^nfc-player-\d{1,4}\.\d{1,4}\.\d{1,4}\.tar\.gz$")
+SOURCE_VERSION = re.compile(r'^__version__\s*=\s*"([^"]+)"', re.M)
+
+
+class Refused(Exception):
+    pass
+
+
+# ---- small pieces ------------------------------------------------------------------
+
+
+def current() -> Path:
+    return ROOT / "current"
+
+
+def state_path() -> Path:
+    return ROOT / "state.json"
+
+
+def incoming() -> Path:
+    return ROOT / "incoming"
+
+
+def parse_version(text) -> tuple:
+    match = VERSION.match(text) if isinstance(text, str) else None
+    if not match:
+        raise Refused(f"{text!r} is not a version number")
+    return tuple(int(n) for n in match.groups())
+
+
+def load_state() -> dict:
+    try:
+        data = json.loads(state_path().read_text())
+        return data if isinstance(data, dict) else {}
+    except (OSError, ValueError):
+        return {}
+
+
+def write_atomic(path: Path, data: bytes, mode: int = 0o644) -> None:
+    tmp = path.with_name(path.name + ".tmp")
+    with open(tmp, "wb") as f:
+        f.write(data)
+        f.flush()
+        os.fsync(f.fileno())
+    os.chmod(tmp, mode)
+    os.replace(tmp, path)
+    _sync_dir(path.parent)
+
+
+def save_state(state: dict) -> None:
+    write_atomic(state_path(), json.dumps(state, indent=2).encode() + b"\n")
+
+
+def _sync_dir(path: Path) -> None:
+    fd = os.open(path, os.O_RDONLY)
+    try:
+        os.fsync(fd)
+    finally:
+        os.close(fd)
+
+
+def active_slot() -> str | None:
+    try:
+        name = os.readlink(current())
+    except OSError:
+        return None
+    return name if name in SLOTS else None
+
+
+def other(slot: str | None) -> str:
+    return "b" if slot == "a" else "a"
+
+
+def slot_version(slot: str | None) -> str | None:
+    if slot is None:
+        return None
+    try:
+        match = SOURCE_VERSION.search((ROOT / slot / "player" / "__init__.py").read_text())
+    except OSError:
+        return None
+    return match.group(1) if match else None
+
+
+def switch_to(slot: str) -> None:
+    """Points current at slot, in one rename: there is never a moment with no link."""
+    tmp = ROOT / "current.new"
+    if tmp.is_symlink() or tmp.exists():
+        tmp.unlink()
+    os.symlink(slot, tmp)
+    os.replace(tmp, current())
+    _sync_dir(ROOT)
+
+
+def systemctl(*args: str) -> None:
+    subprocess.run(["systemctl", *args], capture_output=True, timeout=60)
+
+
+def restart_player() -> None:
+    systemctl("--no-block", "restart", SERVICE)  # queued: this helper is part of the player's own service
+
+
+def stop_watchdog() -> None:
+    systemctl("stop", f"{WATCHDOG_UNIT}.timer")
+    systemctl("reset-failed", f"{WATCHDOG_UNIT}.service")
+
+
+def start_watchdog() -> None:
+    stop_watchdog()
+    subprocess.run(
+        ["systemd-run", f"--unit={WATCHDOG_UNIT}", f"--on-active={WATCHDOG_SECONDS}", "--timer-property=AccuracySec=5s",
+         str(Path(sys.argv[0]).resolve()), "watchdog"],
+        capture_output=True, timeout=60,
+    )
+
+
+def read_plain(path: Path, limit: int) -> bytes:
+    """A regular file's bytes, never through a link: the player's user owns the folder it is in."""
+    try:
+        fd = os.open(path, os.O_RDONLY | os.O_NOFOLLOW | os.O_NONBLOCK)  # NONBLOCK: a pipe planted there cannot hang this
+    except OSError:
+        raise Refused(f"{path.name} is missing or is not a plain file.") from None
+    with os.fdopen(fd, "rb") as f:
+        if not stat.S_ISREG(os.fstat(fd).st_mode):
+            raise Refused(f"{path.name} is not a plain file.")
+        data = f.read(limit + 1)
+    if len(data) > limit:
+        raise Refused(f"{path.name} is too large.")
+    return data
+
+
+def verify(manifest: bytes, signature: bytes, keys: Path) -> dict:
+    """Checks the signature with the release keys, then the manifest's fields."""
+    if not keys.is_file():
+        raise Refused("This player has no release keys, so it cannot check updates.")
+    with tempfile.NamedTemporaryFile(dir=incoming(), suffix=".sig") as sig:
+        sig.write(signature)
+        sig.flush()
+        done = subprocess.run(
+            ["ssh-keygen", "-Y", "verify", "-f", str(keys), "-I", SIGNER, "-n", NAMESPACE, "-s", sig.name],
+            input=manifest, capture_output=True, timeout=30,
+        )
+    if done.returncode:
+        raise Refused("The update's signature is not valid.")
+    try:
+        m = json.loads(manifest)
+    except ValueError:
+        raise Refused("The update's manifest could not be read.") from None
+    if not isinstance(m, dict) or m.get("name") != "nfc-player":
+        raise Refused("The update is not for this player.")
+    parse_version(m.get("version"))
+    if not isinstance(m.get("file"), str) or not TARBALL.match(m["file"]):
+        raise Refused("The update's manifest names an unexpected file.")
+    if not isinstance(m.get("sha256"), str) or not re.fullmatch(r"[0-9a-f]{64}", m["sha256"]):
+        raise Refused("The update's manifest has no valid checksum.")
+    if not isinstance(m.get("size"), int) or not 0 < m["size"] <= MAX_TARBALL:
+        raise Refused("The update's manifest gives an unexpected size.")
+    return m
+
+
+def unpack(tarball: Path, dest: Path) -> None:
+    """Writes the tarball's files under dest. Only plain files and folders, only inside dest,
+    only the top-level names a release has; no links, devices, owners or odd permissions."""
+    with tarfile.open(tarball, "r:gz") as tar:
+        members = tar.getmembers()
+        if len(members) > MAX_MEMBERS:
+            raise Refused("The update has too many files.")
+        total = 0
+        for m in members:
+            parts = PurePosixPath(m.name).parts
+            if parts[:1] == (".",):
+                parts = parts[1:]
+            if not parts:
+                continue
+            if PurePosixPath(m.name).is_absolute() or ".." in parts or parts[0] not in TOP_LEVEL:
+                raise Refused(f"The update has a file in an unexpected place: {m.name}")
+            if not (m.isfile() or m.isdir()):
+                raise Refused(f"The update has something that is not a plain file: {m.name}")
+            total += m.size
+            if total > MAX_UNPACKED:
+                raise Refused("The update is too large once unpacked.")
+        for m in members:
+            parts = PurePosixPath(m.name).parts
+            parts = parts[1:] if parts[:1] == (".",) else parts
+            if not parts:
+                continue
+            target = dest.joinpath(*parts)
+            if m.isdir():
+                target.mkdir(mode=0o755, parents=True, exist_ok=True)
+                continue
+            target.parent.mkdir(mode=0o755, parents=True, exist_ok=True)
+            source = tar.extractfile(m)
+            with open(target, "xb") as out:
+                shutil.copyfileobj(source, out)
+            os.chmod(target, 0o755 if m.mode & 0o111 else 0o644)
+
+
+def prepare(slot: str) -> Path:
+    """Empties a slot (never the running one) for a new version."""
+    if slot == active_slot():
+        raise Refused("Cannot write over the version that is running.")
+    path = ROOT / slot
+    if path.is_symlink():
+        path.unlink()
+    elif path.exists():
+        shutil.rmtree(path)
+    path.mkdir(mode=0o755)
+    return path
+
+
+def finish(slot_dir: Path) -> None:
+    """Compiles the program once now: the player's user cannot write its cache in a root-owned slot."""
+    subprocess.run([sys.executable, "-m", "compileall", "-q", str(slot_dir / "player")], capture_output=True, timeout=600)
+    for path in [slot_dir, *slot_dir.rglob("*")]:
+        if not path.is_symlink():
+            os.chmod(path, 0o755 if path.is_dir() or path.stat().st_mode & 0o111 else 0o644)
+
+
+def rollback(state: dict, reason: str) -> str | None:
+    """Back to the other slot after a pending version failed. Returns the version now running."""
+    pending = state.get("pending") or {}
+    back = pending.get("from_slot") or other(active_slot())
+    if slot_version(back) is None:
+        print("There is no earlier version to go back to.", file=sys.stderr)
+        return None
+    switch_to(back)
+    failed = [v for v in state.get("failed", []) if isinstance(v, str)]
+    if pending.get("version") and pending["version"] not in failed:
+        failed.append(pending["version"])
+    state.update(pending=None, failed=failed[-10:],
+                 last=f"{time.strftime('%Y-%m-%d %H:%M')}: version {pending.get('version', '?')} {reason}; went back to {slot_version(back)}")
+    save_state(state)
+    stop_watchdog()
+    print(state["last"])
+    return slot_version(back)
+
+
+# ---- commands ----------------------------------------------------------------------
+
+
+def cmd_install() -> None:
+    state = load_state()
+    if state.get("pending"):
+        raise Refused("The last update has not finished starting yet. Try again in a few minutes.")
+    running = active_slot()
+    if running is None:
+        raise Refused("The player is not set up for updates. Run system/setup.sh again.")
+    work = incoming()
+    if work.exists():
+        shutil.rmtree(work)
+    work.mkdir(mode=0o700)
+    try:
+        manifest = read_plain(DOWNLOAD_DIR / "manifest.json", 64 * 1024)
+        signature = read_plain(DOWNLOAD_DIR / "manifest.json.sig", 64 * 1024)
+        m = verify(manifest, signature, KEYS)
+        version = m["version"].lstrip("v")
+        now_running = slot_version(running)
+        if now_running and VERSION.match(now_running) and parse_version(version) <= parse_version(now_running):
+            raise Refused(f"Version {version} is not newer than {now_running}, which is running.")
+        if version in state.get("failed", []):
+            raise Refused(f"Version {version} already failed to start on this player.")
+        # Copy the tarball in, hashing as it goes: what is unpacked is exactly what was checked.
+        tarball = work / m["file"]
+        data = read_plain(DOWNLOAD_DIR / m["file"], MAX_TARBALL)
+        if len(data) != m["size"] or hashlib.sha256(data).hexdigest() != m["sha256"]:
+            raise Refused("The download does not match the signed manifest.")
+        tarball.write_bytes(data)
+        del data
+        target = other(running)
+        slot_dir = prepare(target)
+        unpack(tarball, slot_dir)
+        if slot_version(target) != version:
+            raise Refused("The update's program does not have the version its manifest gives.")
+        write_atomic(slot_dir / "release.json", manifest)
+        finish(slot_dir)
+    finally:
+        shutil.rmtree(work, ignore_errors=True)
+    state.update(pending={"slot": target, "version": version, "from_slot": running, "from": now_running, "starts": 0})
+    save_state(state)  # pending first: if the power goes now, boot finds it and counts the start
+    switch_to(target)
+    print(f"Installed version {version}; restarting the player")
+    restart_player()
+
+
+def cmd_confirm() -> None:
+    state = load_state()
+    pending = state.get("pending")
+    if not pending or pending.get("slot") != active_slot():
+        return
+    stop_watchdog()
+    # Release keys move forward only, from a version that has proved it starts.
+    new_keys = ROOT / pending["slot"] / "system" / "allowed_signers"
+    if new_keys.is_file() and any(line.strip() and not line.startswith("#") for line in new_keys.read_text().splitlines()):
+        KEYS.parent.mkdir(mode=0o755, parents=True, exist_ok=True)
+        write_atomic(KEYS, new_keys.read_bytes())
+    state.update(pending=None, last=f"{time.strftime('%Y-%m-%d %H:%M')}: version {pending['version']} started and was kept")
+    save_state(state)
+    print(state["last"])
+
+
+def cmd_boot() -> None:
+    if active_slot() is None:  # the link went missing: point it at whatever copy there is
+        for slot in SLOTS:
+            if slot_version(slot):
+                switch_to(slot)
+                break
+    state = load_state()
+    pending = state.get("pending")
+    if not pending:
+        return
+    if pending.get("slot") != active_slot():  # someone switched by hand
+        state["pending"] = None
+        save_state(state)
+        return
+    pending["starts"] = int(pending.get("starts", 0)) + 1
+    if pending["starts"] > MAX_STARTS:
+        rollback(state, f"failed to start {MAX_STARTS} times")
+        return  # systemd goes on to start the old version
+    save_state(state)
+    start_watchdog()
+
+
+def cmd_watchdog() -> None:
+    state = load_state()
+    if state.get("pending") and state["pending"].get("slot") == active_slot():
+        if rollback(state, f"did not confirm within {WATCHDOG_SECONDS} seconds"):
+            restart_player()
+
+
+def cmd_rollback() -> None:
+    state = load_state()
+    if state.get("pending"):
+        rollback(state, "was rolled back by hand")
+    else:
+        back = other(active_slot())
+        if slot_version(back) is None:
+            raise Refused("There is no earlier version to go back to.")
+        switch_to(back)
+        state["last"] = f"{time.strftime('%Y-%m-%d %H:%M')}: switched by hand to version {slot_version(back)}"
+        save_state(state)
+        print(state["last"])
+    restart_player()
+
+
+def cmd_status() -> None:
+    running = active_slot()
+    for slot in SLOTS:
+        print(f"{slot}: {slot_version(slot) or '(empty)'}{'  <- running' if slot == running else ''}")
+    print(json.dumps(load_state(), indent=2))
+
+
+def cmd_install_dir(source: Path) -> None:
+    """Copies the program from a folder into the slot that is not running and switches to it.
+    Trusted because only root can run it; the old version stays in the other slot for `rollback`."""
+    source = source.resolve()
+    if not (source / "player" / "__init__.py").is_file():
+        raise Refused(f"{source} does not have the player in it.")
+    ROOT.mkdir(mode=0o755, parents=True, exist_ok=True)
+    match = SOURCE_VERSION.search((source / "player" / "__init__.py").read_text())
+    theirs, running = (match.group(1) if match else None), slot_version(active_slot())
+    if theirs and running and VERSION.match(theirs) and VERSION.match(running) and parse_version(theirs) < parse_version(running):
+        # An old checkout must not quietly undo an update that came over Wi-Fi; `rollback` goes back on purpose.
+        print(f"Kept version {running}: it is newer than {theirs} in {source}")
+        return
+    state = load_state()
+    target = other(active_slot())
+    slot_dir = prepare(target)
+    ignore = shutil.ignore_patterns("__pycache__", "*.pyc", ".DS_Store")
+    for name in sorted(TOP_LEVEL):
+        path = source / name
+        if path.is_dir():
+            shutil.copytree(path, slot_dir / name, ignore=ignore, symlinks=False)
+        elif path.is_file():
+            shutil.copy2(path, slot_dir / name)
+    finish(slot_dir)
+    state.update(pending=None, last=f"{time.strftime('%Y-%m-%d %H:%M')}: version {slot_version(target)} installed from {source}")
+    save_state(state)
+    switch_to(target)
+    stop_watchdog()
+    if not KEYS.is_file() and (slot_dir / "system" / "allowed_signers").is_file():
+        KEYS.parent.mkdir(mode=0o755, parents=True, exist_ok=True)
+        write_atomic(KEYS, (slot_dir / "system" / "allowed_signers").read_bytes())
+    print(f"Installed version {slot_version(target)} into {slot_dir}")
+
+
+def main(argv: list[str]) -> int:
+    if os.geteuid() != 0:
+        print("Run as root.", file=sys.stderr)
+        return 1
+    command = argv[0] if argv else ""
+    commands = {"install": cmd_install, "confirm": cmd_confirm, "boot": cmd_boot, "watchdog": cmd_watchdog,
+                "rollback": cmd_rollback, "status": cmd_status}
+    if command == "install-dir" and len(argv) == 2:
+        run = lambda: cmd_install_dir(Path(argv[1]))  # noqa: E731
+    elif command in commands and len(argv) == 1:
+        run = commands[command]
+    else:
+        print(__doc__.split("\n\n")[1], file=sys.stderr)
+        return 2
+    ROOT.mkdir(mode=0o755, parents=True, exist_ok=True)
+    with open(ROOT / ".lock", "w") as lock:
+        fcntl.flock(lock, fcntl.LOCK_EX)  # one change at a time: the watchdog and a confirm can meet
+        try:
+            run()
+        except Refused as e:
+            print(e, file=sys.stderr)
+            return 1
+    return 0
+
+
+if __name__ == "__main__":
+    os.umask(0o022)
+    sys.exit(main(sys.argv[1:]))
