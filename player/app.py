@@ -26,6 +26,7 @@ SCAN_GAP = 1.0
 SCAN_LABEL_SECONDS = 0.8
 MISSING = "The music linked to this card is missing."
 TEST_SCREEN_SECONDS = 5.0
+SLEEP_MESSAGE_SECONDS = 1.0  # "Going to sleep" stays up this long before the screen goes dark
 MENU_ITEMS = ("Link to something else", "Always start over", "Unlink this card", "Close")
 START_CHOICES = (  # the question after choosing what a card plays: index 1 means always from the beginning
     ("Carry on where it left off", "Picks up at the same song and place"),
@@ -117,6 +118,7 @@ class App:
         self._error = ""
         self._error_until = 0.0
         self._test_until = 0.0
+        self._sleep_at = 0.0  # when the screen goes dark, after a press of power
         self.restart_requested = False  # main restarts the player once this is set
         self._art_from = None  # which file the cover on screen came from
         self._art: bytes | None = None
@@ -883,9 +885,14 @@ class App:
         return True
 
     def _standby(self) -> None:
-        """A press of power: like turning off, but Linux keeps running, so waking up is instant. main darkens the screen."""
+        """A press of power: like turning off, but Linux keeps running, so waking up is instant. main then darkens the screen."""
         if self._settle():
             self.mode = Mode.STANDBY
+            self._sleep_at = self._now + SLEEP_MESSAGE_SECONDS
+
+    def screen_off(self, now: float) -> bool:
+        """True once the player is on standby and "Going to sleep" has been up long enough: main darkens the screen."""
+        return self.mode is Mode.STANDBY and now >= self._sleep_at
 
     def _power_off(self) -> None:
         """Holding power: main then shuts the Pi down."""
@@ -1017,7 +1024,7 @@ class App:
         if self.mode is Mode.OFF:
             return self.ui.message("Turning off")  # stays up until the Pi is off; then the screen goes dark
         if self.mode is Mode.STANDBY:
-            return self.ui.message("Standby")  # main switches the screen off instead of showing this
+            return self.ui.message("Going to sleep")  # for a moment; then main switches the screen off
         if self.restart_requested:
             return self.ui.message("Restarting")
         if now < self._test_until:

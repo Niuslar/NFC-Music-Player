@@ -91,7 +91,7 @@ def run(app: App, event_queue: queue.Queue, display, shared=None, clock=time.mon
         if shared is not None:
             shared.snapshot = app.snapshot()
             shared.enabled = app.store.web_remote
-        if app.mode is Mode.STANDBY:
+        if app.screen_off(now):
             if not asleep:  # the OLED may miss it while the power key is still down: try again next time
                 asleep = getattr(display, "sleep", lambda: True)() is not False
             continue

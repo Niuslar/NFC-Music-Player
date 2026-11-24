@@ -648,6 +648,18 @@ def test_power_key_saves_the_place_and_goes_to_standby(rig):
     assert app.snapshot()["mode"] == "standby"
 
 
+def test_standby_says_going_to_sleep_for_a_moment(rig, monkeypatch):
+    from player.app import SLEEP_MESSAGE_SECONDS
+
+    app, send, clock, *_ = rig
+    send(ev.Press("power"))
+    shown = []
+    monkeypatch.setattr("player.app.render.message", lambda title, body="": shown.append(title))
+    app.render(clock.t)
+    assert shown == ["Going to sleep"] and not app.screen_off(clock.t)
+    assert app.screen_off(clock.t + SLEEP_MESSAGE_SECONDS)
+
+
 def test_power_key_wakes_it_and_the_card_carries_on(rig):
     app, send, clock, store, playback, *_ = rig
     linked(rig)
@@ -748,20 +760,21 @@ def test_run_loop_switches_the_screen_off_in_standby_and_on_again(rig):
     class Stop(BaseException):
         pass
 
-    ticks = iter(range(6))
+    ticks = iter(range(7))
 
     def clock():
         try:
             t = next(ticks)
         except StopIteration:
             raise Stop
-        if t == 4:
+        if t == 5:
             events.put(ev.Press("power"))
         return 100.0 + t
 
     with pytest.raises(Stop):
         run(app, events, Display(), clock=clock, power_off=lambda: log.append("power_off"))
-    assert log == [("sleep", False), ("sleep", True), "wake", "show"]  # nothing drawn while asleep
+    # "Going to sleep" for a second, then dark, and nothing drawn while asleep
+    assert log == ["show", ("sleep", False), ("sleep", True), "wake", "show"]
 
 
 def test_holding_power_saves_the_place_stops_and_shows_turning_off(rig, monkeypatch):
