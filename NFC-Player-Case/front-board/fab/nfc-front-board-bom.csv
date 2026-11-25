@@ -1,5 +1,5 @@
 "Refs","Value","Footprint","Description","Qty"
-"D1,D2","B5819W","Diode_SMD:D_SOD-123","Schottky diode, 40 V 1 A, SOD-123. Cathode towards the key","2"
+"D1,D2","BAT43W","Diode_SMD:D_SOD-123","Small-signal Schottky diode, 30 V 200 mA, SOD-123. Cathode towards the key","2"
 "D3","Orange","LED_SMD:LED_0603_1608Metric","Orange LED, 0603 (Lite-On LTST-C191KFKT): lit while the board has 3.3 V","1"
 "D4","Red","LED_SMD:LED_0603_1608Metric","Red LED, 0603: lit while the board has 5 V","1"
 "J1","Pi GPIO, ribbon from the DAC","Connector_IDC:IDC-Header_2x20_P2.54mm_Vertical","Shrouded 2x20 box header, 2.54 mm","1"

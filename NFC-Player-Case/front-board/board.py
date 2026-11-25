@@ -125,17 +125,21 @@ for i, (k, name, net) in enumerate(zip(c.KEYS_X, KEY_NAMES, KEY_NETS)):
 for ref, (title, names, nets, x1, z, value) in HEADERS.items():
     part(ref, value, ("Connector_Generic", f"Conn_01x{len(nets):02d}"), ("Connector_PinHeader_2.54mm", f"PinHeader_1x{len(nets):02d}_P2.54mm_Vertical"),
          {str(i + 1): n for i, n in enumerate(nets)}, (x1, Y(z)), desc="Straight pin header, 2.54 mm")
-# Surface-mount parts on the back, placed by the board maker. All but the orange LED are JLCPCB
-# "basic" parts when this was written (the orange one is "extended", a small one-off fee); check
-# the numbers on jlcpcb.com/parts before ordering, since stock changes.
+# Surface-mount parts on the back, placed by the board maker. All but the orange LED and the two
+# diodes are JLCPCB "basic" parts when this was written (those are "extended", a small one-off fee
+# for each kind); check the numbers on jlcpcb.com/parts before ordering, since stock changes.
+# D1 and D2 are small-signal Schottkys on purpose. With the key up, D2 couples the I2C clock on
+# GPIO 3 into the floating KEY node and D1 passes it on to GPIO 24, which only the Pi's ~50k pull-up
+# holds high. A power diode's ~120 pF would kick GPIO 24 down by about 2 V on every clock edge; a
+# BAT43W's few pF keeps it to a few hundred mV, and it still drops only ~0.3 V when the key is down.
 # The two LEDs run at about 1 mA: bright enough to see with the lid off, dim enough not to glow
 # through the card slot. Orange for 3.3 V and red for 5 V: both need about 2 V, where a green or
 # blue LED needs about 3 V and would barely light on 3.3 V.
 R0603, SOD123, LED0603 = ("Resistor_SMD", "R_0603_1608Metric"), ("Diode_SMD", "D_SOD-123"), ("LED_SMD", "LED_0603_1608Metric")
-part("D1", "B5819W", ("Device", "D_Schottky"), SOD123, {"1": "KEY", "2": "POWER"}, (80.0, 40.6), lcsc="C8598", label=(86.6, 40.6), box=(3.7, 1.6, 1.1),
-     desc="Schottky diode, 40 V 1 A, SOD-123. Cathode towards the key")
-part("D2", "B5819W", ("Device", "D_Schottky"), SOD123, {"1": "KEY", "2": "SCL"}, (80.0, 44.2), lcsc="C8598", label=(86.6, 44.2), box=(3.7, 1.6, 1.1),
-     desc="Schottky diode, 40 V 1 A, SOD-123. Cathode towards the key")
+part("D1", "BAT43W", ("Device", "D_Schottky"), SOD123, {"1": "KEY", "2": "POWER"}, (80.0, 40.6), lcsc="C19167", label=(86.6, 40.6), box=(3.7, 1.6, 1.1),
+     desc="Small-signal Schottky diode, 30 V 200 mA, SOD-123. Cathode towards the key")
+part("D2", "BAT43W", ("Device", "D_Schottky"), SOD123, {"1": "KEY", "2": "SCL"}, (80.0, 44.2), lcsc="C19167", label=(86.6, 44.2), box=(3.7, 1.6, 1.1),
+     desc="Small-signal Schottky diode, 30 V 200 mA, SOD-123. Cathode towards the key")
 part("R1", "1k", ("Device", "R"), R0603, {"1": "LIGHT", "2": "LED_BASE"}, (80.0, 47.8), lcsc="C21190", label=(84.6, 47.8), box=(1.6, 0.8, 0.5),
      desc="Base resistor, 1 kΩ 1% 0603")
 part("R2", "220", ("Device", "R"), R0603, {"1": "5V", "2": "LED_A"}, (80.0, 51.4), lcsc="C22962", label=(84.6, 51.4), box=(1.6, 0.8, 0.5),
@@ -251,7 +255,8 @@ def project():
     base = json.loads((SHARE / "template/RaspberryPi-HAT/RaspberryPi-HAT.kicad_pro").read_text())
     rules = base["board"]["design_settings"]["rules"]
     rules.update({"min_clearance": 0.2, "min_copper_edge_clearance": 0.3, "min_track_width": 0.25, "min_via_diameter": 0.6,
-                  "min_through_hole_diameter": 0.3, "min_hole_to_hole": 0.25, "min_hole_clearance": 0.25, "min_via_annular_width": 0.13, "min_resolved_spokes": 1})
+                  "min_through_hole_diameter": 0.3, "min_hole_to_hole": 0.25, "min_hole_clearance": 0.25, "min_via_annular_width": 0.13, "min_resolved_spokes": 1,
+                  "min_text_height": SILK_TEXT, "min_text_thickness": SILK_LINE, "min_silk_clearance": 0.1})
     classes = base["net_settings"]["classes"]
     for cl in classes:
         if cl["name"] == "Default":
@@ -273,6 +278,8 @@ CLEAR = 0.2  # copper to copper, as in the rules
 MARGIN = 0.07  # extra the router keeps, for the grid
 EDGE = 0.3
 VIA, VIA_DRILL = 0.6, 0.3
+# JLCPCB prints silkscreen text from 1.0 mm tall with 0.15 mm lines; smaller comes out smudged.
+SILK_TEXT, SILK_LINE = 1.0, 0.15
 
 
 def width(net):
@@ -598,35 +605,42 @@ def build_board(used_nets):
         edge.SetWidth(mm(0.1))
         board.Add(edge)
 
-    def text(s, x, y, size=1.0, layer=pcbnew.B_SilkS, angle=0, just=0, bold=False):
+    def text(s, x, y, size=SILK_TEXT, layer=pcbnew.B_SilkS, angle=0, just=0, bold=False, width=None):
+        """width: narrower letters than size, for a label that must fit a tight space. The height stays size."""
+        assert size >= SILK_TEXT, f"silkscreen text {s!r} is under {SILK_TEXT} mm tall"
         t = pcbnew.PCB_TEXT(board)
         t.SetText(s)
         t.SetPosition(pcbnew.VECTOR2I(mm(x), mm(y)))
         t.SetLayer(layer)
-        t.SetTextSize(pcbnew.VECTOR2I(mm(size), mm(size)))
-        t.SetTextThickness(mm(0.15 if size >= 1 else 0.12))
+        t.SetTextSize(pcbnew.VECTOR2I(mm(width or size), mm(size)))
+        t.SetTextThickness(mm(SILK_LINE))
         t.SetBold(bold)
         if layer in (pcbnew.B_SilkS, pcbnew.B_Fab):
             t.SetMirrored(True)
         t.SetTextAngleDegrees(angle)
         t.SetHorizJustify(just)
         board.Add(t)
+        return t
 
     # labels on the back, for the person plugging things in: header names, pin names, keys
     for ref, (title, names, netl, x1p, z, value) in HEADERS.items():
         y = Y(z)
-        text(title, x1p + 1.6, y, 1.0, just=pcbnew.GR_TEXT_H_ALIGN_RIGHT, bold=True)
+        text(title, x1p + 1.6, y, just=pcbnew.GR_TEXT_H_ALIGN_RIGHT, bold=True)
         for k, name in enumerate(names):
-            text(name, x1p - 2.54 * k, y + 1.4 + 0.35 * len(name) + 0.2, 0.8, angle=90)
+            # narrow letters, so the longest names still end clear of the header below; each starts just past its pin's outline
+            t = text(name, x1p - 2.54 * k, y + 3.0, angle=90, width=0.8)
+            t.Move(pcbnew.VECTOR2I(0, mm(y + 1.65) - t.GetBoundingBox().GetTop()))
     for k, name in zip(c.KEYS_X, KEY_NAMES):
-        text(name, k, Y(c.CTRL_Z) - 6.0, 1.0, bold=True)
+        text(name, k, Y(c.CTRL_Z) - 6.0, bold=True)
     for p in PARTS:
         if p["label"]:
-            text(LABELS.get(p["ref"], p["ref"]), *p["label"], 0.8, bold=p["ref"] in LABELS)
-    text(f"NFC PLAYER FRONT BOARD  REV {REVISION}", (c.BOARD_X[0] + 6 + c.BOARD_X[1]) / 2, 21.4, 1.0)
-    text("HEADERS ON THIS SIDE. TRIM LEADS ON THE OTHER SIDE TO 1.5 MM. KEY SWITCHES GO ON THE OTHER SIDE", (c.BOARD_X[0] + 6 + c.BOARD_X[1]) / 2, 38.4, 0.8)
-    text("THIS SIDE TOWARDS THE PANEL", (c.BOARD_X[0] + 6 + c.BOARD_X[1]) / 2, 21.4, 1.0, layer=pcbnew.F_SilkS)
-    text("ONLY THE FOUR KEY SWITCHES ON THIS SIDE", (c.BOARD_X[0] + 6 + c.BOARD_X[1]) / 2, 41.0, 0.8, layer=pcbnew.F_SilkS)
+            text(LABELS.get(p["ref"], p["ref"]), *p["label"], bold=p["ref"] in LABELS)
+    mid = (c.BOARD_X[0] + 6 + c.BOARD_X[1]) / 2
+    text(f"NFC PLAYER FRONT BOARD  REV {REVISION}", mid, 21.4)
+    text("HEADERS ON THIS SIDE. KEY SWITCHES GO ON THE OTHER SIDE", mid, 35.8)
+    text("TRIM LEADS ON THE OTHER SIDE TO 1.5 MM", mid, 37.6)
+    text("THIS SIDE TOWARDS THE PANEL", mid, 21.4, layer=pcbnew.F_SilkS)
+    text("ONLY THE FOUR KEY SWITCHES ON THIS SIDE", mid, 41.0, layer=pcbnew.F_SilkS)
 
     j1 = {pad.GetNumber(): pad.GetPosition() for pad in board.FindFootprintByReference("J1").Pads()}
     centre = (pcbnew.ToMM(j1["1"].x) + pcbnew.ToMM(j1["40"].x)) / 2
