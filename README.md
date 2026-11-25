@@ -48,6 +48,43 @@ The electronics and software are done. The only step left is the case.
 - The player logic, screens and web remote are also tested without the hardware, using a browser simulator. Joining a new Wi-Fi network from the settings is new and has so far been tried only in the simulator.
 - The case is designed but not yet printed and assembled. Its printable parts, drawings and source files are in [NFC-Player-Case](NFC-Player-Case), and the [3D printing guide](https://niuslar.github.io/NFC-Music-Player/NFC-Player-Case/NFC-Player-Printing.html) and [assembly guide](https://niuslar.github.io/NFC-Music-Player/NFC-Player-Case/NFC-Player-Assembly.html) are on the project site.
 
+## Installing a release over SSH
+
+**Firmware update** in the settings is the usual way to update. You can also install a release from your computer over SSH: on a player with no internet connection, to go to a version yourself, or to set up a new Pi.
+
+1. On the project's [Releases page](https://github.com/Niuslar/NFC-Music-Player/releases), download the three files of the release into one folder: `nfc-player-X.Y.Z.tar.gz`, `manifest.json` and `manifest.json.sig`.
+2. Copy them to the player. In the commands below, replace `X.Y.Z` with the version and `nfcplayer.local` with your player's address (`user@address` if your user name on the Pi is different). Run them from the folder with the three files. They work the same in a terminal on Windows, macOS or Linux.
+
+   ```sh
+   scp nfc-player-X.Y.Z.tar.gz manifest.json manifest.json.sig nfcplayer.local:/tmp/
+   ```
+
+3. Install it. **On a player that is already set up:**
+
+   ```sh
+   ssh -t nfcplayer.local 'sudo install -d -o nfc-player /var/lib/nfc-player/update && sudo install -o nfc-player -m 644 /tmp/nfc-player-*.tar.gz /tmp/manifest.json /tmp/manifest.json.sig /var/lib/nfc-player/update/ && sudo /usr/local/sbin/nfc-player-update install'
+   ```
+
+   This goes through the same steps as **Firmware update**. The player checks the signature, keeps the version it is running, and goes back to that version if the new one does not start. It installs only a version newer than the one running, and not while an update is still starting, which takes up to five minutes.
+
+   **On a new Pi** with Raspberry Pi OS and SSH set up, as in the [electronics guide](https://niuslar.github.io/NFC-Music-Player/docs/):
+
+   ```sh
+   ssh -t nfcplayer.local 'mkdir ~/nfc-player-X.Y.Z && tar -xzf /tmp/nfc-player-X.Y.Z.tar.gz -C ~/nfc-player-X.Y.Z && cd ~/nfc-player-X.Y.Z && sudo system/setup.sh'
+   ```
+
+   Setup installs the player into `/opt/nfc-player`. From then on it updates from the settings or with the command above, and the `~/nfc-player-X.Y.Z` folder can be deleted.
+
+If you have a copy of this repository on macOS or Linux, `deploy.sh` does steps 2 and 3 in one go. First it checks the release's signature against `system/allowed_signers` on your computer. Then it finds out whether the Pi is already set up:
+
+```sh
+./deploy.sh --release path/to/folder-with-the-three-files
+```
+
+```sh
+./deploy.sh --release path/to/folder-with-the-three-files user@nfcplayer.local
+```
+
 ## Try it without any hardware
 
 The simulator shows the display and stands in for the knob, buttons, cards, USB port and Wi-Fi.
