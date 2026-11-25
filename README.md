@@ -6,23 +6,42 @@
 
 > **Disclaimer:** the software in this repository was written with an AI coding assistant (Claude Code). The project's idea, hardware choices and design decisions are mine, but I did not hand-write the code, so review it before relying on it.
 
-A tabletop music player where each album is a card. Put a card in the slot and its album plays; take it out and it pauses. It is built for a Hi-Fi shelf: a proper DAC, a screen, a knob, and local storage for a whole collection.
+A tabletop music player where each album is a card. Put a card in the slot and its album plays; take it out and it pauses. It runs on a Raspberry Pi Zero 2 W with a proper DAC, a small screen, a knob and four keys, and keeps a whole music collection on its own SD card. Everything you need to build one is here: the software, the wiring, a 3D-printed case and the circuit board behind its keys.
 
 ![Render of the case design: a wood-grain box with a black front and a black back, a stainless power key lit green, four silver keys marked previous, play/pause, next and back, a screen and an aluminium knob, five cards in a tray on the lid and one card standing in a slot](NFC-Player-Case/NFC-Player-Render.png)
 
-*Render of the case design, made from the same model as its printable parts. The case has not been printed yet; the real build is currently parts on a bench.*
+*Render of the case design, made from the same model as its printable parts. The case has not been printed yet.*
 
-**Guides:** the [user manual](https://niuslar.github.io/NFC-Music-Player/docs/manual/), [electronics guide](https://niuslar.github.io/NFC-Music-Player/docs/), [3D printing guide](https://niuslar.github.io/NFC-Music-Player/NFC-Player-Case/NFC-Player-Printing.html) and [assembly guide](https://niuslar.github.io/NFC-Music-Player/NFC-Player-Case/NFC-Player-Assembly.html) are on the [project site](https://niuslar.github.io/NFC-Music-Player/).
+## Where to start
+
+The **[project site](https://niuslar.github.io/NFC-Music-Player/)** has the full guides:
+
+| Guide | What is in it |
+|---|---|
+| [User manual](https://niuslar.github.io/NFC-Music-Player/docs/manual/) | Using the player: [controls](https://niuslar.github.io/NFC-Music-Player/docs/manual/#controls), [linking your first card](https://niuslar.github.io/NFC-Music-Player/docs/manual/#first-card), [settings](https://niuslar.github.io/NFC-Music-Player/docs/manual/#settings), [adding music](https://niuslar.github.io/NFC-Music-Player/docs/manual/#music), the [web remote](https://niuslar.github.io/NFC-Music-Player/docs/manual/#remote) and [lists](https://niuslar.github.io/NFC-Music-Player/docs/manual/#lists) |
+| [Electronics guide](https://niuslar.github.io/NFC-Music-Player/docs/) | Building it: [parts](https://niuslar.github.io/NFC-Music-Player/docs/#parts), [preparing the Pi](https://niuslar.github.io/NFC-Music-Player/docs/#flash), [wiring](https://niuslar.github.io/NFC-Music-Player/docs/#wiring), [the front board](https://niuslar.github.io/NFC-Music-Player/docs/#board), [backups and updates](https://niuslar.github.io/NFC-Music-Player/docs/#backup) and [troubleshooting](https://niuslar.github.io/NFC-Music-Player/docs/#trouble) |
+| [3D printing guide](https://niuslar.github.io/NFC-Music-Player/NFC-Player-Case/NFC-Player-Printing.html) | Printing the case parts |
+| [Assembly guide](https://niuslar.github.io/NFC-Music-Player/NFC-Player-Case/NFC-Player-Assembly.html) | Putting the electronics into the case |
+
+The software is on the [Releases page](https://github.com/Niuslar/NFC-Music-Player/releases). To try the player before buying anything, run the [simulator](#try-it-without-any-hardware).
 
 ## What it does
 
-- **Cards are albums.** Blank NFC cards are linked to albums on the device itself. A card remembers where it stopped. A card can also play a whole artist, or a list: a folder of songs from different albums.
-- **Hi-Fi output.** A Raspberry Pi DAC Pro provides 3.5 mm and RCA (white and red) outputs.
-- **Screen and controls.** A 2-inch display shows the cover, track and time. A clicky knob sets the volume and scrolls lists; four buttons do previous, play/pause, next and back. A press of the power key puts the player on standby: the screen goes dark, but Linux keeps running, so a card or any key wakes it at once and the card carries on where it stopped. Holding the key for 2 seconds turns the player off safely: the screen shows **Turning off** and goes dark once the Pi is off, and a press turns it on again.
+- **Cards are albums.** Blank NFC cards are linked to albums on the player itself, and each card remembers where it stopped. A card can also play a whole artist, or a list of songs from different albums.
+- **Hi-Fi sound.** A Raspberry Pi DAC Pro gives 3.5 mm and RCA outputs.
+- **Screen and controls.** A 2-inch screen shows the cover, track and time. The knob sets the volume and scrolls lists; four keys do previous, play/pause, next and back.
+- **Standby and power.** A press of the power key puts the player on standby, and a card or any key wakes it at once. Holding it for 2 seconds turns the player off safely.
 - **Music over USB.** Plug the player into a computer and its music appears as a drive called `MUSIC`.
-- **Wi-Fi and settings.** An icon in the corner of the screen shows the Wi-Fi signal, struck through when there is none. Hold the knob for a second with no card in for settings: join a new Wi-Fi network, set a volume limit, delete albums, artists, lists or songs, see the web remote's address, or restart the player. To join a network, the player starts its own setup network with a one-time password shown on its screen; a phone joins it and sends the new network's name and password from a page the player serves there.
-- **Updates over Wi-Fi.** **Firmware update** in the settings installs the newest release from GitHub. Releases are signed, and the player checks the signature before installing. It keeps the previous version and goes back to it if the new one does not start.
-- **Web remote.** A page served by the player, from any phone or computer on the same Wi-Fi: browse albums, artists and songs, play from any track, seek, link cards, upload or delete music, and make lists of songs from anywhere in the library. Lists are kept beside the card links (`lists.json`), not on the music drive, and a card can play one like an album.
+- **Web remote.** From any phone or computer on the same Wi-Fi: browse the library, play from any track, link cards, upload or delete music and make lists.
+- **Settings on the device.** Join a new Wi-Fi network from a phone, set a volume limit, delete music, or restart.
+- **Signed updates over Wi-Fi.** **Firmware update** in the settings installs the newest release. The player checks its signature first, and goes back to the previous version if the new one does not start.
+
+## Status
+
+The electronics and software are done and tested on a real Pi. The case is designed but not yet printed.
+
+- Tested on the Pi: the DAC, NFC reader, knob, keys, power key and light, USB drive mode, setup and the web remote, with the 0.91-inch OLED as the screen. The 2-inch ST7789 screen and joining a new Wi-Fi network from the settings have so far been tried only in the simulator.
+- The case's printable parts, drawings and source files are in [NFC-Player-Case](NFC-Player-Case).
 
 ## Hardware
 
@@ -30,64 +49,121 @@ A tabletop music player where each album is a card. Put a card in the slot and i
 |---|---|
 | Computer | Raspberry Pi Zero 2 W |
 | DAC | Raspberry Pi DAC Pro |
-| Display | 2-inch ST7789 SPI LCD, 320×240 |
+| Display | 2-inch ST7789 SPI LCD, 320×240 (a 0.91-inch SSD1306 I2C OLED also works) |
 | NFC reader | PN532 over SPI, with NTAG215 cards |
 | Knob | 24-click rotary encoder with push switch |
-| Buttons | Five momentary push buttons: four for playback, one for power |
-| Power light | An LED on GPIO 22, lit from early in boot until the Pi has shut down, standby included. In the case it is the power key's own light, switched through the front board |
+| Keys | Five momentary push buttons: four for playback, one for power |
+| Power light | An LED on GPIO 22 |
 
-A 0.91-inch 128×32 SSD1306 I2C OLED also works as a stand-in screen, with a compact layout and no cover art. Wire it to 3.3 V, GND, SDA (GPIO 2) and SCL (GPIO 3); it shares that bus with the DAC. Choose the screen and knob on the web remote's **Setup** page (`/setup`), which also tests the screen, DAC, buttons, knob and NFC reader. The settings are saved in `/var/lib/nfc-player/hardware.json` and used after a restart.
+The full parts list and wiring are in the [electronics guide](https://niuslar.github.io/NFC-Music-Player/docs/).
 
-The full parts list, wiring diagrams and step-by-step instructions are in the [electronics guide](https://niuslar.github.io/NFC-Music-Player/docs/).
+## Installing the software
 
-## Status
+### 1. Download a release
 
-The electronics and software are done. The only step left is the case.
+From the [Releases page](https://github.com/Niuslar/NFC-Music-Player/releases), download the three files of the newest release into one folder:
 
-- The hardware has been built and tested on a real Pi: the DAC, NFC reader, knob, buttons, power key and light, and USB drive mode, along with setup and the web remote. The screen tested so far is the 0.91-inch SSD1306 OLED; the 2-inch ST7789 SPI display has not yet been tried on the real Pi, only in the simulator.
-- The player logic, screens and web remote are also tested without the hardware, using a browser simulator. Joining a new Wi-Fi network from the settings is new and has so far been tried only in the simulator.
-- The case is designed but not yet printed and assembled. Its printable parts, drawings and source files are in [NFC-Player-Case](NFC-Player-Case), and the [3D printing guide](https://niuslar.github.io/NFC-Music-Player/NFC-Player-Case/NFC-Player-Printing.html) and [assembly guide](https://niuslar.github.io/NFC-Music-Player/NFC-Player-Case/NFC-Player-Assembly.html) are on the project site.
+- `nfc-player-X.Y.Z.tar.gz`: the player itself
+- `manifest.json`: its version, size and SHA-256 checksum
+- `manifest.json.sig`: the signature of the manifest
 
-## Installing a release over SSH
+Only the manifest is signed. Its checksum covers the tarball, so a good signature and a matching checksum together mean the tarball is the one that was released.
 
-**Firmware update** in the settings is the usual way to update. You can also install a release from your computer over SSH: on a player with no internet connection, to go to a version yourself, or to set up a new Pi.
+### 2. Check it
 
-1. On the project's [Releases page](https://github.com/Niuslar/NFC-Music-Player/releases), download the three files of the release into one folder: `nfc-player-X.Y.Z.tar.gz`, `manifest.json` and `manifest.json.sig`.
-2. Copy them to the player. In the commands below, replace `X.Y.Z` with the version and `nfcplayer.local` with your player's address (`user@address` if your user name on the Pi is different). Run them from the folder with the three files. They work the same in a terminal on Windows, macOS or Linux.
+Do this at least before the first install. A player trusts the release key that comes with the first release you install on it, and from then on installs only updates signed by that key, so checking that first release by hand is what makes every later update safe. Updates from the settings, or with `deploy.sh`, are checked for you.
+
+You need `ssh-keygen` from OpenSSH 8.1 or newer. It comes with macOS, Linux and Windows 10 and 11. If it says `unknown option -- Y`, update OpenSSH.
+
+**The release key.** Save this line as a file called `allowed_signers` in the folder with the three files. It is the same as [`system/allowed_signers`](system/allowed_signers) in this repository.
+
+```text
+nfc-player-release namespaces="nfc-player-release" ecdsa-sha2-nistp256 AAAAE2VjZHNhLXNoYTItbmlzdHAyNTYAAAAIbmlzdHAyNTYAAABBBNG2z/+2mxTZ/x4zmyfVjZgFa+9KMFRH0Z7DfmxEzkWDxFyXM+AXKKXkTZ2dmMEVd2C32r4rEvr9HIM9+Vl88ME= nfc-player release
+```
+
+Its fingerprint is `SHA256:7mMUd2P1uHX7o64klaQmtPYpVBFrPNvpwkcIh9UWavA`.
+
+**Check the signature.** From that folder, on macOS or Linux, or in the Windows Command Prompt:
+
+```sh
+ssh-keygen -Y verify -f allowed_signers -I nfc-player-release -n nfc-player-release -s manifest.json.sig < manifest.json
+```
+
+In Windows PowerShell, which has no `<`, run it through the Command Prompt:
+
+```powershell
+cmd /c "ssh-keygen -Y verify -f allowed_signers -I nfc-player-release -n nfc-player-release -s manifest.json.sig < manifest.json"
+```
+
+A good release prints `Good "nfc-player-release" signature for nfc-player-release with ECDSA key SHA256:7mMUd2P1uHX7o64klaQmtPYpVBFrPNvpwkcIh9UWavA`. Anything else means: do not install it, and download it again.
+
+**Check the checksum.** Print the tarball's SHA-256 and compare it with `"sha256"` in `manifest.json`:
+
+| System | Command |
+|---|---|
+| macOS | `shasum -a 256 nfc-player-X.Y.Z.tar.gz` |
+| Linux | `sha256sum nfc-player-X.Y.Z.tar.gz` |
+| Windows | `certutil -hashfile nfc-player-X.Y.Z.tar.gz SHA256` |
+
+They must be the same.
+
+### 3. Install it on a new Pi
+
+1. Prepare the Pi as in the electronics guide: [flash the SD card](https://niuslar.github.io/NFC-Music-Player/docs/#flash) with Raspberry Pi OS Lite (64-bit), hostname `nfcplayer` and SSH turned on, [boot it](https://niuslar.github.io/NFC-Music-Player/docs/#boot) and [fit the DAC](https://niuslar.github.io/NFC-Music-Player/docs/#dac).
+2. From the folder with the release, copy it to the Pi and run setup. Replace `X.Y.Z` with the version, and use `yourname@nfcplayer.local` if your user name on the Pi is not the same as on your computer. The commands are the same on Windows, macOS and Linux.
 
    ```sh
-   scp nfc-player-X.Y.Z.tar.gz manifest.json manifest.json.sig nfcplayer.local:/tmp/
+   scp nfc-player-X.Y.Z.tar.gz nfcplayer.local:/tmp/
    ```
-
-3. Install it. **On a player that is already set up:**
-
-   ```sh
-   ssh -t nfcplayer.local 'sudo install -d -o nfc-player /var/lib/nfc-player/update && sudo install -o nfc-player -m 644 /tmp/nfc-player-*.tar.gz /tmp/manifest.json /tmp/manifest.json.sig /var/lib/nfc-player/update/ && sudo /usr/local/sbin/nfc-player-update install'
-   ```
-
-   This goes through the same steps as **Firmware update**. The player checks the signature, keeps the version it is running, and goes back to that version if the new one does not start. It installs only a version newer than the one running, and not while an update is still starting, which takes up to five minutes.
-
-   **On a new Pi** with Raspberry Pi OS and SSH set up, as in the [electronics guide](https://niuslar.github.io/NFC-Music-Player/docs/):
 
    ```sh
    ssh -t nfcplayer.local 'mkdir ~/nfc-player-X.Y.Z && tar -xzf /tmp/nfc-player-X.Y.Z.tar.gz -C ~/nfc-player-X.Y.Z && cd ~/nfc-player-X.Y.Z && sudo system/setup.sh'
    ```
 
-   Setup installs the player into `/opt/nfc-player`. From then on it updates from the settings or with the command above, and the `~/nfc-player-X.Y.Z` folder can be deleted.
+   Setup installs the packages it needs, turns on SPI, I2C and USB drive mode, creates the music drive, and installs the player into `/opt/nfc-player`. It also installs the release key, which is why the release must be checked first.
+3. Reboot when setup asks to:
 
-If you have a copy of this repository on macOS or Linux, `deploy.sh` does steps 2 and 3 in one go. First it checks the release's signature against `system/allowed_signers` on your computer. Then it finds out whether the Pi is already set up:
+   ```sh
+   ssh nfcplayer.local 'sudo reboot'
+   ```
+
+4. Carry on with [wiring and testing](https://niuslar.github.io/NFC-Music-Player/docs/#wiring) in the electronics guide. The web remote's **Setup** page, at `http://nfcplayer.local/setup`, chooses the screen and knob and tests each part.
+
+The `~/nfc-player-X.Y.Z` folder on the Pi is not needed after setup and can be deleted.
+
+### Updating
+
+**Firmware update** in the player's settings installs the newest release over Wi-Fi. That is the usual way.
+
+To install a release from your computer instead, for a player with no internet connection or to choose the version yourself, download the three files and copy them over:
+
+```sh
+scp nfc-player-X.Y.Z.tar.gz manifest.json manifest.json.sig nfcplayer.local:/tmp/
+```
+
+```sh
+ssh -t nfcplayer.local 'sudo install -d -o nfc-player /var/lib/nfc-player/update && sudo install -o nfc-player -m 644 /tmp/nfc-player-*.tar.gz /tmp/manifest.json /tmp/manifest.json.sig /var/lib/nfc-player/update/ && sudo /usr/local/sbin/nfc-player-update install'
+```
+
+This goes through the same steps as **Firmware update**: the player checks the signature, keeps the version it is running, and goes back to it if the new one does not start. It installs only a version newer than the one running. Card links, lists, settings and music are kept.
+
+### With `deploy.sh`
+
+If you have a copy of this repository on macOS or Linux, `deploy.sh` does the checks and the install in one step, on a new Pi or one that is already set up. It checks the signature and checksum against `system/allowed_signers` before sending anything:
 
 ```sh
 ./deploy.sh --release path/to/folder-with-the-three-files
 ```
 
 ```sh
-./deploy.sh --release path/to/folder-with-the-three-files user@nfcplayer.local
+./deploy.sh --release path/to/folder-with-the-three-files yourname@nfcplayer.local
 ```
+
+Without `--release`, `deploy.sh` copies the working copy of the code to the Pi, for development.
 
 ## Try it without any hardware
 
-The simulator shows the display and stands in for the knob, buttons, cards, USB port and Wi-Fi.
+The simulator shows the screen in a browser and stands in for the knob, keys, cards, USB port and Wi-Fi. You need Python 3.11 or newer.
 
 ```sh
 python3 -m venv .venv
@@ -96,13 +172,9 @@ python3 -m venv .venv
 .venv/bin/python -m player.main --sim
 ```
 
-On Windows, use `.venv\Scripts\` in place of `.venv/bin/`.
+On Windows, use `py` in place of `python3` and `.venv\Scripts\` in place of `.venv/bin/`.
 
-Add `--display ssd1306` to see the small OLED layout in the simulator.
-
-Add `mutagen` to the `pip install` line if you point the simulator at your own tagged music with `--music`; without it, albums come from folder names only. On the Pi the tags come from MPD and nothing extra is needed.
-
-Then open `http://localhost:8137` for the simulated device and `http://localhost:8080` for the web remote. The demo library is generated sine tones, and the simulator is silent unless you run it against MPD (`system/mpd-dev.sh`, then add `--playback mpd`).
+Open `http://localhost:8137` for the simulated player and `http://localhost:8080` for the web remote. The demo library is generated tones, and the simulator is silent unless you run it with MPD (`system/mpd-dev.sh`, then add `--playback mpd`). Add `--display ssd1306` for the small OLED layout, and `--music path/to/your/music` for your own albums (install `mutagen` too, to read their tags).
 
 Run the tests with:
 
@@ -114,21 +186,22 @@ Run the tests with:
 
 - `player/app.py` is the player's behaviour: a state machine fed with events from cards, controls, USB and the web.
 - `player/ui/render.py` draws the screens.
-- `player/hw/` holds the drivers (display, NFC reader, knob and buttons, USB drive mode), a simulator, and bring-up checks for each part.
-- `player/web/` is the web remote, and the page a phone uses to give the player a new Wi-Fi network.
-- `player/wifi.py` reads the Wi-Fi signal and runs the setup network for joining a new one, through NetworkManager and a small root helper (`system/nfc-player-wifi`).
-- `player/playback.py` talks to [MPD](https://www.musicpd.org/), which does the decoding and audio output.
-- `player/update.py` and `system/nfc-player-update` do updates over Wi-Fi. The player keeps two copies of itself, in `/opt/nfc-player/a` and `b`. An update goes into the copy that is not running, and the player goes back to the other copy if the new version does not start.
-- `system/` has the Raspberry Pi setup script and service files.
-- `NFC-Player-Case/` is the 3D-printed case. Every dimension is in `case.py`; Blender scripts build the STLs and pictures from it, and `guide.py` writes the 3D printing and assembly guides. `front-board/board.py` draws the circuit board behind the keys in KiCad from the same numbers, and `front-board/fab/` holds the files to order it. Its [README](NFC-Player-Case/README.md) lists what each file is and how to rebuild them after a change.
-- `docs/` and the root `index.html` are the project site. GitHub Pages serves it from the root of this repository, so the empty `.nojekyll` file has to stay, and the case guides are linked straight from `NFC-Player-Case/`.
+- `player/hw/` holds the drivers (screens, NFC reader, knob and keys, USB drive mode), the simulator, and checks for each part.
+- `player/web/` is the web remote, the Setup page, and the page a phone uses to give the player a new Wi-Fi network.
+- `player/playback.py` talks to [MPD](https://www.musicpd.org/), which decodes and plays the music.
+- `player/wifi.py` reads the Wi-Fi signal and runs the setup network for joining a new one.
+- `player/update.py` and `system/nfc-player-update` do updates. The player keeps two copies of itself, in `/opt/nfc-player/a` and `b`. An update goes into the one that is not running, and the player goes back to the other if the new version does not start.
+- `system/` has the Pi's setup script, services, root helpers and the release key.
+- `NFC-Player-Case/` is the 3D-printed case and the front board, all generated from the dimensions in `case.py`. Its [README](NFC-Player-Case/README.md) explains how to rebuild them.
+- `docs/` and the root `index.html` are the project site, served by GitHub Pages from the root of this repository (so the empty `.nojekyll` file has to stay).
 
 ## Contributing
 
-Fixes and ideas are welcome. [CONTRIBUTING.md](CONTRIBUTING.md) covers running the simulator and the tests, and how to change the case.
+Fixes and ideas are welcome. [CONTRIBUTING.md](CONTRIBUTING.md) covers the simulator, the tests and changing the case. For a bug or an idea, open an [issue](https://github.com/Niuslar/NFC-Music-Player/issues).
 
-## A note on the web remote
+## Security
 
-The web remote has no password. Anyone on the same network as the player can control playback and add or delete music, and that includes an open network you join it to, such as a café's. Use it on a home network you trust, or turn it off with `--web-port 0`. The player runs as its own system user, which can run only the player's own helpers with `sudo`, so a bug in it cannot take over the Pi.
-
-Joining a new Wi-Fi network is guarded separately: the page that takes a network's password only works while the player's own setup network is open, only for phones on that network, and that network's WPA2 password is made up fresh each time and shown only on the player's screen.
+- **Updates** are installed only if they are signed by a key in `/etc/nfc-player/allowed_signers` on the player, which setup copies from the first release installed. See [Check it](#2-check-it).
+- **The web remote has no password.** Anyone on the same network as the player can control it and add or delete music, and that includes an open network such as a café's. Use it on a home network you trust, or turn it off with `--web-port 0` in `system/nfc-player.service`.
+- **Joining a new Wi-Fi network** is guarded separately: the page that takes the password works only on the player's own setup network, whose password is made up fresh each time and shown only on the player's screen.
+- **The player runs as its own system user**, which can run only the player's own helpers with `sudo`, so a bug in it cannot take over the Pi.

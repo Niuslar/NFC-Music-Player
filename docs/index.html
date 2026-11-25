@@ -143,8 +143,8 @@
 <h3>On your computer</h3>
 <ul>
   <li><strong>Raspberry Pi Imager</strong>, free from <a href="https://www.raspberrypi.com/software/">raspberrypi.com/software</a>, to write the SD card.</li>
-  <li><strong>A terminal</strong> with <code>ssh</code> and <code>rsync</code>, for connecting to the Pi and copying the code. macOS and Linux have both built in; on Windows, use WSL.</li>
-  <li><strong>This project folder</strong>, <code>~/Projects/nfc-player</code>.</li>
+  <li><strong>A terminal</strong> with OpenSSH (<code>ssh</code>, <code>scp</code> and <code>ssh-keygen</code>, version 8.1 or newer), for checking the player's release, copying it to the Pi and connecting to it. macOS, Linux and Windows 10 and 11 have it built in.</li>
+  <li><strong>The newest release</strong> of the player, from the project's <a href="https://github.com/Niuslar/NFC-Music-Player/releases">Releases page</a> (<a href="#install">step 4</a>).</li>
 </ul>
 <h3>On the Pi (installed for you by the setup script)</h3>
 <ul>
@@ -191,20 +191,52 @@
 <div class="note"><p>The DAC uses GPIO 2, 3, 18, 19, 20 and 21 and the two ID pins (physical pins 27 and 28). Never connect anything else to those. The one exception is the power key, which reaches GPIO 3 through a diode (<a href="#w-buttons">step 5</a>).</p></div>
 
 <h2 id="install"><span class="step">Step 4</span>Install the player</h2>
-<p>On your computer, copy the project to the Pi:</p>
-<pre><code>cd ~/Projects/nfc-player && ./deploy.sh</code></pre>
-<p>If it reports that <code>rsync</code> is missing on the Pi, install it with <code>ssh nfcplayer.local 'sudo apt-get install -y rsync'</code> and run it again.</p>
-<p>Then on the Pi (over SSH), run the setup script:</p>
-<pre><code>cd ~/nfc-player && sudo system/setup.sh</code></pre>
-<p>It installs the software, turns on SPI and USB device mode, creates the music drive using all free space except 3 GB, installs three services, and sets up the helper the player uses to join new Wi-Fi networks. The player runs as its own user, <code>nfc-player</code>, which can only run the player's helpers with <code>sudo</code>, not anything else, so a bug in the player cannot take over the Pi. To choose the drive size yourself, use <code>sudo MUSIC_GB=100 system/setup.sh</code> the first time.</p>
+<p>The player is installed from a release: a signed copy of the software, published on the project's <a href="https://github.com/Niuslar/NFC-Music-Player/releases">Releases page</a>. Do these steps in a terminal on your computer. They are the same on Windows, macOS and Linux unless a step says otherwise.</p>
+
+<h3>Download it</h3>
+<p>Download the three files of the newest release into one folder:</p>
+<ul>
+  <li><code>nfc-player-X.Y.Z.tar.gz</code>: the player itself.</li>
+  <li><code>manifest.json</code>: its version, size and SHA-256 checksum.</li>
+  <li><code>manifest.json.sig</code>: the signature of the manifest.</li>
+</ul>
+<p>In the commands below, replace <code>X.Y.Z</code> with the release's version, and run them from that folder.</p>
+
+<h3>Check it</h3>
+<p>Setup installs the release key that comes with the release, and from then on the player accepts only updates signed with that key. So check this first release by hand; every later update is checked by the player itself.</p>
+<ol>
+  <li>Save the project's release key, <a href="https://github.com/Niuslar/NFC-Music-Player/blob/main/system/allowed_signers"><code>system/allowed_signers</code></a>, as a file called <code>allowed_signers</code> in the same folder. Its key's fingerprint is <code>SHA256:7mMUd2P1uHX7o64klaQmtPYpVBFrPNvpwkcIh9UWavA</code>.</li>
+  <li>Check the signature. On macOS, Linux or in the Windows Command Prompt:
+<pre><code>ssh-keygen -Y verify -f allowed_signers -I nfc-player-release -n nfc-player-release -s manifest.json.sig &lt; manifest.json</code></pre>
+    In Windows PowerShell, which has no <code>&lt;</code>, run it through the Command Prompt:
+<pre><code>cmd /c "ssh-keygen -Y verify -f allowed_signers -I nfc-player-release -n nfc-player-release -s manifest.json.sig &lt; manifest.json"</code></pre>
+    It should print <code>Good "nfc-player-release" signature</code> and the fingerprint above. If it prints anything else, do not install the release: download it again.</li>
+  <li>Check the checksum. Print the tarball's SHA-256 and compare it with <code>"sha256"</code> in <code>manifest.json</code>. They must be the same.
+    <div class="table-wrap"><table>
+      <tr><th>System</th><th>Command</th></tr>
+      <tr><td>macOS</td><td><code>shasum -a 256 nfc-player-X.Y.Z.tar.gz</code></td></tr>
+      <tr><td>Linux</td><td><code>sha256sum nfc-player-X.Y.Z.tar.gz</code></td></tr>
+      <tr><td>Windows</td><td><code>certutil -hashfile nfc-player-X.Y.Z.tar.gz SHA256</code></td></tr>
+    </table></div>
+  </li>
+</ol>
+<p>If <code>ssh-keygen</code> says <code>unknown option -- Y</code>, its OpenSSH is older than 8.1 and needs updating.</p>
+
+<h3>Install it</h3>
+<p>Copy the release to the Pi:</p>
+<pre><code>scp nfc-player-X.Y.Z.tar.gz nfcplayer.local:/tmp/</code></pre>
+<p>Then unpack it on the Pi and run the setup script:</p>
+<pre><code>ssh -t nfcplayer.local 'mkdir ~/nfc-player-X.Y.Z &amp;&amp; tar -xzf /tmp/nfc-player-X.Y.Z.tar.gz -C ~/nfc-player-X.Y.Z &amp;&amp; cd ~/nfc-player-X.Y.Z &amp;&amp; sudo system/setup.sh'</code></pre>
+<p>Setup installs the software into <code>/opt/nfc-player</code>, turns on SPI, I2C and USB device mode, creates the music drive using all free space except 3 GB, installs three services, and sets up the helper the player uses to join new Wi-Fi networks. It also installs the release key, which is why the release is checked first. The player runs as its own user, <code>nfc-player</code>, which can only run the player's helpers with <code>sudo</code>, not anything else, so a bug in the player cannot take over the Pi. To choose the drive size yourself, put <code>MUSIC_GB=100</code> after <code>sudo</code> the first time: <code>sudo MUSIC_GB=100 system/setup.sh</code>.</p>
 <p>It will ask for a reboot:</p>
-<pre><code>sudo reboot</code></pre>
-<p>After the reboot the player starts by itself and the <a href="#web">web remote</a> is available. If the DAC was not attached, setup says so and configures silent playback, so everything except sound can be tried straight away.</p>
-<p>Once the DAC is fitted, run setup again so it can find it:</p>
-<pre><code>cd ~/nfc-player && sudo system/setup.sh</code></pre>
+<pre><code>ssh nfcplayer.local 'sudo reboot'</code></pre>
+<p>After the reboot the player starts by itself and the <a href="#web">web remote</a> is available. If the DAC was not attached, setup says so and configures silent playback, so everything except sound can be tried straight away. The <code>~/nfc-player-X.Y.Z</code> folder is not needed any more and can be deleted.</p>
+<p>Once the DAC is fitted, run setup again so it can find it. From now on, run it from the installed copy:</p>
+<pre><code>ssh -t nfcplayer.local 'sudo /opt/nfc-player/current/system/setup.sh'</code></pre>
 <p>It should print <code>Sound card: …</code> and <code>All set</code>. If it still says no DAC was found, add the line <code>dtoverlay=rpi-dacpro</code> to the end of <code>/boot/firmware/config.txt</code>, reboot and run it again.</p>
 <p>Check the DAC is listed:</p>
-<pre><code>aplay -l</code></pre>
+<pre><code>ssh nfcplayer.local 'aplay -l'</code></pre>
+<div class="note"><p><strong>With a copy of the project.</strong> On macOS or Linux, <code>./deploy.sh --release path/to/folder</code>, run from the project folder, does the checks and the install in one go. To install code you are working on instead of a release, see <a href="#updating">Updating the code</a>.</p></div>
 
 <h2 id="wiring"><span class="step">Step 5</span>Wire and test</h2>
 <p>Add one part at a time, in this order, and run its check before moving on. Power off before each change. Stop the player while testing so the pins are free:</p>
@@ -388,7 +420,7 @@
   <tr><td>RST</td><td class="num">13</td><td>GPIO 27</td></tr>
   <tr><td>BL</td><td class="num">33</td><td>GPIO 13</td></tr>
 </table></div>
-<pre><code>cd ~/nfc-player && python3 -m player.hw.check display</code></pre>
+<pre><code>cd /opt/nfc-player/current && python3 -m player.hw.check display</code></pre>
 <p>You should see red, green, blue and white bars above two lines of text for ten seconds. If it is upside down, add <code>--rotate</code> to that command to confirm, then add <code>--rotate 180</code> to the service (see <a href="#reference">Reference</a>).</p>
 <p><strong>Using the 0.91-inch OLED instead?</strong> It has four pins and shares the I2C bus with the DAC:</p>
 <div class="table-wrap"><table>
@@ -398,7 +430,7 @@
   <tr><td>SDA</td><td class="num">3</td><td>GPIO 2 (SDA)</td></tr>
   <tr><td>SCL</td><td class="num">5</td><td>GPIO 3 (SCL)</td></tr>
 </table></div>
-<pre><code>cd ~/nfc-player && python3 -m player.hw.check display --ssd1306</code></pre>
+<pre><code>cd /opt/nfc-player/current && python3 -m player.hw.check display --ssd1306</code></pre>
 <p>Then choose the OLED on the web remote's <strong>Setup</strong> page (<code>/setup</code>) so the player uses it after a restart.</p>
 
 <h3 id="w-nfc">NFC reader</h3>
@@ -414,7 +446,7 @@
   <tr><td>IRQ, RSTO</td><td class="num">–</td><td>Not connected</td></tr>
 </table></div>
 <p>Pins 19 and 23 each take two wires (display and reader). Join them on a breadboard row.</p>
-<pre><code>cd ~/nfc-player && python3 -m player.hw.check nfc</code></pre>
+<pre><code>cd /opt/nfc-player/current && python3 -m player.hw.check nfc</code></pre>
 <p>It should print the reader's firmware version, then a card ID each time you hold a card to the antenna and <code>card removed</code> when you take it away.</p>
 
 <h3 id="w-knob">Knob</h3>
@@ -427,7 +459,7 @@
   <tr><td>Switch, one pin</td><td class="num">37</td><td>GPIO 26</td></tr>
   <tr><td>Switch, other pin</td><td class="num">34</td><td>Ground</td></tr>
 </table></div>
-<pre><code>cd ~/nfc-player && python3 -m player.hw.check inputs</code></pre>
+<pre><code>cd /opt/nfc-player/current && python3 -m player.hw.check inputs</code></pre>
 <p>Each click should print about <code>+11</code> clockwise or <code>-11</code> anticlockwise, and one full turn should add up to about 256. Pushing prints <code>knob</code>; holding for over half a second prints <code>knob_long</code>. If clockwise is negative, swap the A and B wires or add <code>--encoder-reverse</code> to the service.</p>
 <p>In use, each click changes the volume by 2 and moves one line in a list. Spinning quickly changes the volume faster.</p>
 <p>Fit the knob so it sits about 1 mm clear of the surface and tighten its set screw onto the flat of the shaft. A knob that rubs or wobbles is what makes a control feel cheap.</p>
@@ -532,7 +564,7 @@
 <p>You can also add music over Wi-Fi from the <a href="#web">web remote</a>. USB is much faster for a large collection; the web page suits an album or two.</p>
 <div class="note"><p>Always eject before unplugging. An unplug mid-copy is repaired on the next start, but the file being copied will be lost.</p></div>
 <p>To confirm sound reaches the DAC once there is music on the drive:</p>
-<pre><code>sudo systemctl stop nfc-player && cd ~/nfc-player && python3 -m player.hw.check audio; sudo systemctl start nfc-player</code></pre>
+<pre><code>sudo systemctl stop nfc-player && cd /opt/nfc-player/current && python3 -m player.hw.check audio; sudo systemctl start nfc-player</code></pre>
 
 <h2 id="use"><span class="step">Step 7</span>Use it</h2>
 <p>The <a href="manual/index.html">user manual</a> goes through every screen with pictures. In short:</p>
@@ -702,15 +734,15 @@
   <tr><td>"PN532 not responding"</td><td>Check the two switches (1 off, 2 on), and that MISO and MOSI are not swapped.</td></tr>
   <tr><td>Knob counts jump or go one way only</td><td>One of A or B is not reaching the Pi, or the common pin is not on ground. Recheck those three wires.</td></tr>
   <tr><td>The player never shows "Connected to a computer"</td><td>Use the <strong>USB</strong> port, not <strong>PWR IN</strong>, with a data cable. Run <code>python3 -m player.hw.check usb</code>: it should say <code>configured</code>.</td></tr>
-  <tr><td>Power key shows <strong>Turning off</strong> but the Pi keeps running</td><td>The player is not allowed to shut the Pi down. Run <code>cd ~/nfc-player && sudo system/setup.sh</code> again: it adds the permission. <code>journalctl -u nfc-player -n 50</code> shows the error.</td></tr>
-  <tr><td>Screen stays lit after <strong>Turning off</strong></td><td>Setup installs the step that switches the screen off at the end of a shutdown. Run <code>cd ~/nfc-player && sudo system/setup.sh</code> again.</td></tr>
+  <tr><td>Power key shows <strong>Turning off</strong> but the Pi keeps running</td><td>The player is not allowed to shut the Pi down. Run <code>sudo /opt/nfc-player/current/system/setup.sh</code> again: it adds the permission. <code>journalctl -u nfc-player -n 50</code> shows the error.</td></tr>
+  <tr><td>Screen stays lit after <strong>Turning off</strong></td><td>Setup installs the step that switches the screen off at the end of a shutdown. Run <code>sudo /opt/nfc-player/current/system/setup.sh</code> again.</td></tr>
   <tr><td>Power key turns the player off but not on</td><td>Check the diode to pin 5 (GPIO 3): stripe towards the key, and a Schottky type. The Pi must still have power; after a power cut it starts on its own when power returns.</td></tr>
-  <tr><td>Power light never comes on</td><td>Check the LED's direction (long leg towards pin 15) and that <code>gpio=22=op,dh</code> is in <code>/boot/firmware/config.txt</code>; run <code>cd ~/nfc-player && sudo system/setup.sh</code> and reboot if it is not. <code>pinctrl set 22 op dh</code> should light it.</td></tr>
+  <tr><td>Power light never comes on</td><td>Check the LED's direction (long leg towards pin 15) and that <code>gpio=22=op,dh</code> is in <code>/boot/firmware/config.txt</code>; run <code>sudo /opt/nfc-player/current/system/setup.sh</code> and reboot if it is not. <code>pinctrl set 22 op dh</code> should light it.</td></tr>
   <tr><td>"Something went wrong" on the display</td><td>The message below it is the cause. The full detail is in <code>journalctl -u nfc-player -n 50</code>.</td></tr>
   <tr><td><code>http://nfcplayer.local</code> does not open</td><td>Check the phone is on the same Wi-Fi as the Pi, and type <code>http://</code> in full. Some Android phones cannot find <code>.local</code> names: run <code>hostname -I</code> on the Pi and use that address instead, for example <code>http://192.168.1.42</code>. Check <code>journalctl -u nfc-player -n 50</code> for "Web remote on port 80".</td></tr>
   <tr><td>Upload fails with a message about the drive</td><td>The drive is in use over USB, or could not be made writable. Eject it on your computer first. If it persists, run <code>sudo /usr/local/sbin/nfc-player-usb rw</code> on the Pi and read the error.</td></tr>
   <tr><td>The Wi-Fi icon is struck through</td><td>The player is not on a network. Check the router is on and the network is 2.4 GHz, or join another from the player's settings (<a href="#wifi">Changing Wi-Fi</a>). <code>nmcli device status</code> on the Pi shows what <code>wlan0</code> is doing.</td></tr>
-  <tr><td>"Wi-Fi setup did not work"</td><td>The setup network could not start. Check NetworkManager is in charge of Wi-Fi (<code>nmcli device status</code> lists <code>wlan0</code>), run <code>cd ~/nfc-player && sudo system/setup.sh</code> again to install the helper and its permission, and try <code>sudo /usr/local/sbin/nfc-player-wifi scan</code> to see the error.</td></tr>
+  <tr><td>"Wi-Fi setup did not work"</td><td>The setup network could not start. Check NetworkManager is in charge of Wi-Fi (<code>nmcli device status</code> lists <code>wlan0</code>), run <code>sudo /opt/nfc-player/current/system/setup.sh</code> again to install the helper and its permission, and try <code>sudo /usr/local/sbin/nfc-player-wifi scan</code> to see the error.</td></tr>
   <tr><td>The phone joins the setup network but no page opens</td><td>Open <code>http://10.42.0.1</code> in the phone's browser, with <code>http://</code> in full. If the phone switches back to another network because this one has no internet, tell it to stay connected.</td></tr>
   <tr><td>Uploads are slow</td><td>The Zero 2 W's Wi-Fi manages a few megabytes per second at best. Use USB for big batches.</td></tr>
   <tr><td>Card does nothing</td><td>Run the NFC check to see whether the reader sees it. Some bank-style and hotel cards use other standards and will not read.</td></tr>
@@ -729,18 +761,20 @@
   <tr><td><code>--web-port 80</code></td><td>Port for the web remote. <code>0</code> turns it off.</td></tr>
 </table></div>
 
-<h3>Updating the code</h3>
+<h3 id="updating">Updating the code</h3>
 <p>A finished player updates itself over Wi-Fi: hold the knob with no card in, and choose <strong>Firmware update</strong>. It installs only releases signed by the project, keeps the version it had, and goes back to it if the new one does not start.</p>
-<p>While working on the code, copy your own version over instead. The player runs from <code>/opt/nfc-player</code>, so install the copy there and restart:</p>
+<p>While working on the code, copy your own version over instead. On macOS or Linux, from the project folder, <code>deploy.sh</code> copies it to <code>~/nfc-player</code> on the Pi. The player runs from <code>/opt/nfc-player</code>, so install the copy there and restart:</p>
 <pre><code>./deploy.sh</code></pre>
 <pre><code>ssh nfcplayer.local 'sudo /usr/local/sbin/nfc-player-update install-dir nfc-player && sudo systemctl restart nfc-player'</code></pre>
+<p>On a Pi that has not been set up yet, run <code>ssh -t nfcplayer.local 'cd nfc-player &amp;&amp; sudo system/setup.sh'</code> after <code>deploy.sh</code> instead. If <code>deploy.sh</code> reports that <code>rsync</code> is missing on the Pi, install it with <code>ssh nfcplayer.local 'sudo apt-get install -y rsync'</code> and run it again.</p>
 <p>To go back to the version before, run <code>sudo /usr/local/sbin/nfc-player-update rollback</code> on the Pi; <code>status</code> in place of <code>rollback</code> shows both versions.</p>
 
 <h3>Where things are</h3>
 <div class="table-wrap"><table>
   <tr><th>On the Pi</th><th>What</th></tr>
   <tr><td><code>/opt/nfc-player/current</code></td><td>The program. It links to <code>/opt/nfc-player/a</code> or <code>b</code>; an update goes into the other one.</td></tr>
-  <tr><td><code>~/nfc-player</code></td><td>The copy <code>deploy.sh</code> sends, which setup installs into <code>/opt/nfc-player</code>.</td></tr>
+  <tr><td><code>~/nfc-player-X.Y.Z</code></td><td>The release unpacked for setup (<a href="#install">step 4</a>). It can be deleted once setup is done.</td></tr>
+  <tr><td><code>~/nfc-player</code></td><td>Only while working on the code: the copy <code>deploy.sh</code> sends, which is then installed into <code>/opt/nfc-player</code>.</td></tr>
   <tr><td><code>/srv/nfc-player/music.img</code></td><td>The music drive (one big file).</td></tr>
   <tr><td><code>/mnt/music</code></td><td>The same music as the player sees it, read-only.</td></tr>
   <tr><td><code>/var/lib/nfc-player/state.json</code></td><td>Card links, resume positions, volume and its limit.</td></tr>
