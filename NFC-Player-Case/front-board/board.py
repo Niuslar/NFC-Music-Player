@@ -278,6 +278,11 @@ CLEAR = 0.2  # copper to copper, as in the rules
 MARGIN = 0.07  # extra the router keeps, for the grid
 EDGE = 0.3
 VIA, VIA_DRILL = 0.6, 0.3
+# The router's eight directions, in order round the compass, so two that are k apart in this list
+# are k x 45° apart. A bend costs BEND grid steps for each 45°, so tracks run straight wherever
+# they can and only turn when something is in the way.
+DIRS = ((1, 0), (1, 1), (0, 1), (-1, 1), (-1, 0), (-1, -1), (0, -1), (1, -1))
+BEND = 3.0
 # JLCPCB prints silkscreen text from 1.0 mm tall with 0.15 mm lines; smaller comes out smudged.
 SILK_TEXT, SILK_LINE = 1.0, 0.15
 
@@ -415,26 +420,35 @@ class Router:
                 x, y = self.xy(rest % nx, rest // nx)
                 return min(max(abs(x - gx), abs(y - gy)) + 0.414 * min(abs(x - gx), abs(y - gy)) for gx, gy in goals) / GRID
 
+            # The search runs over (cell, direction the track arrived in) so that it can charge for
+            # bends. Without that, a path with many little bends costs the same as one with a single
+            # bend, and ties come out as staircases.
+            D = len(DIRS) + 1
+            NONE = D - 1  # not heading anywhere yet: leaving a pad
             INF = float("inf")
-            g = array("d", [INF]) * (2 * N)
-            came = array("i", [-1]) * (2 * N)
+            g = array("d", [INF]) * (2 * N * D)
+            came = array("i", [-1]) * (2 * N * D)
             heap = []
             for n in tree:
-                g[n] = 0.0
-                heapq.heappush(heap, (h(n), n))
+                s = n * D + NONE
+                g[s] = 0.0
+                heapq.heappush(heap, (h(n), -0.0, s))
             found = None
-            steps = ((1, 0, 1.0), (-1, 0, 1.0), (0, 1, 1.0), (0, -1, 1.0), (1, 1, 1.414), (1, -1, 1.414), (-1, 1, 1.414), (-1, -1, 1.414))
             while heap:
-                f, n = heapq.heappop(heap)
-                gn = g[n]
-                if f - h(n) > gn + 1e-9:
+                f, neg, s = heapq.heappop(heap)  # equal f: the deeper state first
+                gn = -neg
+                if gn > g[s]:
                     continue
+                n, d = divmod(s, D)
                 if n in targets and n not in tree:
-                    found = n
+                    found = s
                     break
                 layer, rest = divmod(n, N)
                 j, i = divmod(rest, nx)
-                for di, dj, cost in steps:
+                for k, (di, dj) in enumerate(DIRS):
+                    turn = 0 if d == NONE else min((k - d) % 8, (d - k) % 8)  # in 45° steps
+                    if turn > 2:  # never sharper than a right angle
+                        continue
                     ii, jj = i + di, j + dj
                     if not (0 <= ii < nx and 0 <= jj < self.ny):
                         continue
@@ -443,28 +457,32 @@ class Router:
                         continue
                     if di and dj and (free[layer * N + j * nx + ii] or free[layer * N + jj * nx + i]):
                         continue
+                    cost = 1.414 if di and dj else 1.0
                     # each side has a preferred direction, so tracks fall into tidy lanes
                     if (layer == 0 and dj and not di) or (layer == 1 and di and not dj):
                         cost *= 1.25
-                    ng = gn + cost
-                    if ng < g[m]:
-                        g[m], came[m] = ng, n
-                        heapq.heappush(heap, (ng + h(m), m))
+                    ng = gn + cost + BEND * turn
+                    t = m * D + k
+                    if ng < g[t]:
+                        g[t], came[t] = ng, s
+                        heapq.heappush(heap, (ng + h(m), -ng, t))
                 if via_ok[rest]:
                     m = (1 - layer) * N + rest
                     if not free[m] or m in tree or m in targets:
                         ng = gn + 8.0
-                        if ng < g[m]:
-                            g[m], came[m] = ng, n
-                            heapq.heappush(heap, (ng + h(m), m))
+                        t = m * D + d  # still heading the same way, so a via is no shortcut round a bend
+                        if ng < g[t]:
+                            g[t], came[t] = ng, s
+                            heapq.heappush(heap, (ng + h(m), -ng, t))
             if found is None:
                 self.failed.append(net)
                 return False
             path = [found]
             while came[path[-1]] != -1:
                 path.append(came[path[-1]])
-            path.reverse()
+            path = [s // D for s in reversed(path)]
             self.lay(net, path)
+            found //= D
             k = targets[found]
             tree.update(path)
             tree.update(self.cells(pads[k][0]))
