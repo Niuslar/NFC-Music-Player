@@ -636,11 +636,152 @@ def test_track_list_works_for_a_list_and_survives_a_rescan(tagged):
     assert app.mode is Mode.IDLE
 
 
-def test_power_key_saves_the_place_stops_and_shows_turning_off(rig, monkeypatch):
+def test_power_key_saves_the_place_and_goes_to_standby(rig):
     app, send, clock, store, playback, storage, state_file = rig
     linked(rig)
     send(ev.Press("next"), advance=5.0)
     send(ev.Press("power"))
+    assert app.mode is Mode.STANDBY
+    assert playback.status().state == "stop"  # MPD lets go of the DAC
+    saved = json.loads(state_file.read_text())
+    assert saved["cards"][CARD]["resume"] == [1, pytest.approx(5.0, abs=0.1)]
+    assert app.snapshot()["mode"] == "standby"
+
+
+def test_standby_says_going_to_sleep_for_a_moment(rig, monkeypatch):
+    from player.app import SLEEP_MESSAGE_SECONDS
+
+    app, send, clock, *_ = rig
+    send(ev.Press("power"))
+    shown = []
+    monkeypatch.setattr("player.app.render.message", lambda title, body="": shown.append(title))
+    app.render(clock.t)
+    assert shown == ["Going to sleep"] and not app.screen_off(clock.t)
+    assert app.screen_off(clock.t + SLEEP_MESSAGE_SECONDS)
+
+
+def test_power_key_wakes_it_and_the_card_carries_on(rig):
+    app, send, clock, store, playback, *_ = rig
+    linked(rig)
+    send(ev.Press("next"), advance=5.0)
+    send(ev.Press("power"), advance=60.0)
+    send(ev.Press("power"))
+    assert app.mode is Mode.PLAYING and playback.status().state == "play"
+    assert app.status.track_index == 1 and app.status.elapsed == pytest.approx(5.0, abs=0.1)
+
+
+def test_a_card_wakes_it_and_plays(rig):
+    app, send, clock, store, playback, *_ = rig
+    linked(rig)
+    send(ev.CardRemoved(), ev.Press("power"))
+    assert app.mode is Mode.STANDBY
+    send(ev.CardInserted(CARD))
+    assert app.mode is Mode.PLAYING and playback.status().state == "play"
+
+
+def test_taking_the_card_out_in_standby_leaves_it_asleep(rig):
+    app, send, *_ = rig
+    linked(rig)
+    send(ev.Press("power"), ev.CardRemoved())
+    assert app.mode is Mode.STANDBY and app.card is None
+    send(ev.Press("power"))
+    assert app.mode is Mode.IDLE
+
+
+def test_other_keys_and_the_knob_only_wake_it(rig):
+    app, send, clock, store, playback, *_ = rig
+    send(ev.Press("power"))
+    volume = store.volume
+    send(ev.Rotate(PER_ITEM * 4))
+    assert app.mode is Mode.IDLE and store.volume == volume  # nothing changed on a dark screen
+    send(ev.Press("power"), ev.Press("knob_long"))
+    assert app.mode is Mode.IDLE  # not the settings
+    linked(rig)
+    send(ev.Press("power"), ev.Press("next"))
+    assert app.mode is Mode.PLAYING and app.status.track_index == 0  # woke up, did not skip
+
+
+def test_the_web_remote_wakes_it_and_does_what_it_asked(rig):
+    app, send, clock, store, playback, *_ = rig
+    send(ev.Press("power"))
+    album = app.library.albums[1]
+    send(ev.WebCommand("play_album", album.key))
+    assert app.mode is Mode.PLAYING and app.album.key == album.key and playback.status().state == "play"
+
+
+def test_library_changes_in_standby_do_not_wake_it(rig):
+    app, send, *_ = rig
+    send(ev.Press("power"), ev.LibraryChanged(), ev.ListsChanged(), ev.UsbHost(False))
+    assert app.mode is Mode.STANDBY
+    send(ev.UsbHost(True))  # plugged into a computer: wakes up to offer a transfer
+    assert app.mode is Mode.IDLE and app.usb_offer
+
+
+def test_holding_power_in_standby_turns_it_off(rig):
+    app, send, *_ = rig
+    send(ev.Press("power"), ev.Press("power_long"))
+    assert app.mode is Mode.OFF
+
+
+def test_standby_waits_for_the_computer_and_for_uploads(rig):
+    app, send, clock, *_ = rig
+    send(ev.UsbHost(True), ev.Press("knob"))
+    send(ev.Press("power"))
+    assert app.mode is Mode.TRANSFER and app._error_until > clock.t
+    send(ev.UsbEjected())
+    app.is_uploading = lambda: True
+    send(ev.Press("power"))
+    assert app.mode is Mode.IDLE
+
+
+def test_run_loop_switches_the_screen_off_in_standby_and_on_again(rig):
+    import queue
+
+    from player.main import run
+
+    app, *_ = rig
+    events = queue.Queue()
+    events.put(ev.Press("power"))
+    log = []
+    sleeps = iter([False, True])  # the OLED misses the first try while the key is still down
+
+    class Display:
+        def show(self, image):
+            log.append("show")
+
+        def sleep(self):
+            ok = next(sleeps)
+            log.append(("sleep", ok))
+            return ok
+
+        def wake(self):
+            log.append("wake")
+
+    class Stop(BaseException):
+        pass
+
+    ticks = iter(range(7))
+
+    def clock():
+        try:
+            t = next(ticks)
+        except StopIteration:
+            raise Stop
+        if t == 5:
+            events.put(ev.Press("power"))
+        return 100.0 + t
+
+    with pytest.raises(Stop):
+        run(app, events, Display(), clock=clock, power_off=lambda: log.append("power_off"))
+    # "Going to sleep" for a second, then dark, and nothing drawn while asleep
+    assert log == ["show", ("sleep", False), ("sleep", True), "wake", "show"]
+
+
+def test_holding_power_saves_the_place_stops_and_shows_turning_off(rig, monkeypatch):
+    app, send, clock, store, playback, storage, state_file = rig
+    linked(rig)
+    send(ev.Press("next"), advance=5.0)
+    send(ev.Press("power_long"))
     assert app.mode is Mode.OFF
     assert playback.status().state == "stop"
     saved = json.loads(state_file.read_text())
@@ -654,27 +795,27 @@ def test_power_key_saves_the_place_stops_and_shows_turning_off(rig, monkeypatch)
     assert app.mode is Mode.OFF and playback.status().state == "stop"
 
 
-def test_power_key_with_nothing_playing(rig):
+def test_holding_power_with_nothing_playing(rig):
     app, send, *_ = rig
-    send(ev.Press("power"))
+    send(ev.Press("power_long"))
     assert app.mode is Mode.OFF
 
 
-def test_power_key_waits_for_the_computer_to_eject_the_drive(rig):
+def test_holding_power_waits_for_the_computer_to_eject_the_drive(rig):
     app, send, clock, *_ = rig
     send(ev.UsbHost(True), ev.Press("knob"))
     assert app.mode is Mode.TRANSFER
-    send(ev.Press("power"))
+    send(ev.Press("power_long"))
     assert app.mode is Mode.TRANSFER and app._error_until > clock.t
 
 
-def test_power_key_waits_for_a_web_upload(rig):
+def test_holding_power_waits_for_a_web_upload(rig):
     app, send, *_ = rig
     app.is_uploading = lambda: True
-    send(ev.Press("power"))
+    send(ev.Press("power_long"))
     assert app.mode is Mode.IDLE
     app.is_uploading = lambda: False
-    send(ev.Press("power"))
+    send(ev.Press("power_long"))
     assert app.mode is Mode.OFF
 
 
@@ -685,7 +826,7 @@ def test_run_loop_shuts_down_once_after_drawing_the_off_screen(rig):
 
     app, *_ = rig
     events = queue.Queue()
-    events.put(ev.Press("power"))
+    events.put(ev.Press("power_long"))
     log = []
 
     class Display:
@@ -717,7 +858,7 @@ def test_shutdown_waits_until_the_off_screen_gets_through(rig):
 
     app, *_ = rig
     events = queue.Queue()
-    events.put(ev.Press("power"))
+    events.put(ev.Press("power_long"))
     log = []
     held = iter([True, True, True])  # the first three frames fail, as with the key still down
 
@@ -751,7 +892,7 @@ def test_shutdown_goes_ahead_if_the_screen_never_answers(rig):
 
     app, *_ = rig
     events = queue.Queue()
-    events.put(ev.Press("power"))
+    events.put(ev.Press("power_long"))
     log = []
 
     class Display:

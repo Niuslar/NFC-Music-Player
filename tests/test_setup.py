@@ -100,6 +100,22 @@ def test_oled_sends_each_frame_once_and_survives_a_bus_error():
     assert bus.writes[-1][0] == 0x40  # sent once the bus works again
 
 
+def test_oled_sleeps_retries_through_a_held_key_and_wakes_with_the_whole_picture():
+    bus = FakeBus()
+    oled = SSD1306(bus)
+    frame = tiny.message("Place a card", "to start playing")
+    oled.show(frame)
+    bus.fail = True  # the power key holding the clock line low
+    assert oled.sleep() is False
+    bus.fail = False
+    assert oled.sleep() is True and bus.writes[-1] == bytes([0x00, 0xAE])
+    oled.wake()
+    count = len(bus.writes)
+    oled.show(frame)
+    assert [len(w) for w in bus.writes[count:] if w[0] == 0x40] == [129] * 4  # all of it again
+    assert bus.writes[-1] == bytes([0x00, 0xAF])  # then lit
+
+
 def test_oled_upside_down_flips_both_axes():
     bus = FakeBus()
     SSD1306(bus, rotate180=True)

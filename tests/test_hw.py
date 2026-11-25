@@ -196,6 +196,21 @@ def test_display_sends_frames_once_and_lights_up():
     assert len(spi.log) == before + 2
 
 
+def test_display_sleeps_dark_and_wakes_without_flashing_the_old_picture():
+    spi, dc, rst, bl = FakeSpi(), Pin(), Pin(), Pin()
+    spi.dc = dc
+    lcd = ST7789(spi, dc, rst, bl, sleep=lambda s: None)
+    frame = Image.new("RGB", (320, 240), (0, 0, 255))
+    lcd.show(frame)
+    assert lcd.sleep() is True
+    assert bl.state == 0 and spi.log[-1] == (0, bytes([0x10]))  # backlight off, panel asleep
+    lcd.wake()
+    assert spi.log[-1] == (0, bytes([0x11])) and bl.state == 0  # awake, still dark
+    before = len(spi.log)
+    lcd.show(frame)  # the same picture is sent again, then the backlight comes on
+    assert spi.log[before] == (0, bytes([0x2C])) and bl.state == 1
+
+
 # ---- USB monitor -----------------------------------------------------------
 
 
@@ -302,7 +317,10 @@ def test_prev_and_next_scan_while_held_and_skip_on_a_short_press():
     b.released("knob")
     b.held("back")
     b.released("back")
-    assert [q.get_nowait().button for _ in range(q.qsize())] == ["next", "next_hold", "next_hold", "knob_long", "back_long"]
+    b.released("power")  # a press: standby
+    b.held("power")  # held: turns the Pi off
+    b.released("power")
+    assert [q.get_nowait().button for _ in range(q.qsize())] == ["next", "next_hold", "next_hold", "knob_long", "back_long", "power", "power_long"]
     assert _to_event({"type": "press", "button": "back_long"}) == ev.Press("back_long")
     assert _to_event({"type": "press", "button": "prev_hold"}) == ev.Press("prev_hold")
 
@@ -311,6 +329,20 @@ def test_simulator_power_key():
     from player.hw.sim.server import _to_event
 
     assert _to_event({"type": "press", "button": "power"}) == ev.Press("power")
+    assert _to_event({"type": "press", "button": "power_long"}) == ev.Press("power_long")
+
+
+def test_simulator_screen_goes_dark_in_standby():
+    from player.hw.sim import server
+
+    display = server.SimDisplay()
+    frame = Image.new("RGB", (320, 240), (0, 0, 255))
+    display.show(frame)
+    assert display.sleep() is True
+    assert Image.open(io.BytesIO(display.png())).getextrema() == ((0, 0), (0, 0), (0, 0))
+    display.wake()
+    display.show(frame)  # the same picture as before standby is drawn again
+    assert Image.open(io.BytesIO(display.png())).getpixel((0, 0)) == (0, 0, 255)
 
 
 def test_simulator_power_cycle_goes_dark_and_waits_for_the_power_key(monkeypatch):

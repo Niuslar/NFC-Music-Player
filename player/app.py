@@ -26,6 +26,7 @@ SCAN_GAP = 1.0
 SCAN_LABEL_SECONDS = 0.8
 MISSING = "The music linked to this card is missing."
 TEST_SCREEN_SECONDS = 5.0
+SLEEP_MESSAGE_SECONDS = 1.0  # "Going to sleep" stays up this long before the screen goes dark
 MENU_ITEMS = ("Link to something else", "Always start over", "Unlink this card", "Close")
 START_CHOICES = (  # the question after choosing what a card plays: index 1 means always from the beginning
     ("Carry on where it left off", "Picks up at the same song and place"),
@@ -51,7 +52,8 @@ class Mode(Enum):
     MENU = auto()
     TRACKS = auto()  # the tracks of what is playing, to jump to one
     TRANSFER = auto()  # music partition handed to the computer
-    OFF = auto()  # the power key was pressed: everything is saved and the Pi is shutting down
+    STANDBY = auto()  # the power key was pressed: everything is saved, the screen is dark and Linux keeps running
+    OFF = auto()  # the power key was held: everything is saved and the Pi is shutting down
     # Settings, from holding the knob with no card in the slot:
     SETTINGS = auto()
     WIFI = auto()  # the Wi-Fi page: what it is connected to, and joining a new network
@@ -116,6 +118,7 @@ class App:
         self._error = ""
         self._error_until = 0.0
         self._test_until = 0.0
+        self._sleep_at = 0.0  # when the screen goes dark, after a press of power
         self.restart_requested = False  # main restarts the player once this is set
         self._art_from = None  # which file the cover on screen came from
         self._art: bytes | None = None
@@ -131,12 +134,16 @@ class App:
         self._now = now
         if self.mode is Mode.OFF:
             return  # nothing more happens once the player is turning off
-        if self._installing() and not (isinstance(event, ev.Press) and event.button == "power"):
+        if self.mode is Mode.STANDBY and not self._in_standby(event):
+            return
+        if self._installing() and not (isinstance(event, ev.Press) and event.button in ("power", "power_long")):
             # An update is going in and the player restarts in a moment; a card in the slot plays then.
             if isinstance(event, (ev.CardInserted, ev.CardRemoved)):
                 self.card = event.uid if isinstance(event, ev.CardInserted) else None
             return
         if isinstance(event, ev.Press) and event.button == "power":
+            self._standby()
+        elif isinstance(event, ev.Press) and event.button == "power_long":
             self._power_off()
         elif isinstance(event, ev.WebCommand) and event.action == "test_screen":
             self._test_until = now + TEST_SCREEN_SECONDS
@@ -185,7 +192,7 @@ class App:
             self.updater.install()
         if self.mode is Mode.WIFI_SETUP and self.wifi.state in ("off", "closing"):
             self.mode = Mode.IDLE  # the setup network closed itself after nobody used it
-        if self.album is None or self.mode in (Mode.TRANSFER, Mode.OFF):
+        if self.album is None or self.mode in (Mode.TRANSFER, Mode.STANDBY, Mode.OFF):
             return
         was_active = self.status.state != "stop"
         self.status = self.playback.status()
@@ -860,22 +867,64 @@ class App:
         self.album, self.status = None, Status()
         self.mode, self.note = Mode.UNLINKED, "Card unlinked."
 
-    def _power_off(self) -> None:
-        """Saves the card's place and stops playback; main then shuts the Pi down."""
+    def _settle(self) -> bool:
+        """Saves the card's place and stops playback, for standby or turning off; False if it cannot yet."""
         if self.mode is Mode.TRANSFER:
             self.show_error("The music drive is connected to a computer. Eject it there first, then press power again.", self._now)
-            return
+            return False
         if self.is_uploading():
             self.show_error("An upload from the web page is still running. Try again when it finishes.", self._now)
-            return
+            return False
         self._end_wifi_setup()
         self._end_update()
         self._leave_card()  # remembers where the card stopped and saves the volume
-        self.playback.stop()
+        self.playback.stop()  # MPD closes the DAC
         self.store.save()
         self.usb_offer = False
         self._error_until = 0.0  # nothing may cover the last screen
-        self.mode = Mode.OFF
+        return True
+
+    def _standby(self) -> None:
+        """A press of power: like turning off, but Linux keeps running, so waking up is instant. main then darkens the screen."""
+        if self._settle():
+            self.mode = Mode.STANDBY
+            self._sleep_at = self._now + SLEEP_MESSAGE_SECONDS
+
+    def screen_off(self, now: float) -> bool:
+        """True once the player is on standby and "Going to sleep" has been up long enough: main darkens the screen."""
+        return self.mode is Mode.STANDBY and now >= self._sleep_at
+
+    def _power_off(self) -> None:
+        """Holding power: main then shuts the Pi down."""
+        if self._settle():
+            self.mode = Mode.OFF
+
+    def _in_standby(self, event) -> bool:
+        """Handles an event in standby. True when the player woke up and the event should also be handled as usual."""
+        if isinstance(event, ev.Press) and event.button == "power_long":
+            self._power_off()  # straight from standby to off
+        elif isinstance(event, ev.CardInserted):
+            self.card = event.uid
+            self._wake()  # and the card plays
+        elif isinstance(event, ev.CardRemoved):
+            self.card = None
+        elif isinstance(event, (ev.Press, ev.Rotate)):
+            self._wake()  # any key or the knob only wakes it: nothing is changed on a dark screen
+        elif isinstance(event, ev.UsbHost):
+            if event.connected:
+                self._wake()
+                return True  # offer to transfer music
+        elif isinstance(event, ev.WebCommand):
+            self._wake()
+            return True  # the web page asked for something: wake up and do it
+        elif isinstance(event, (ev.LibraryChanged, ev.ListsChanged)):
+            return True  # keep the library up to date without waking up
+        return False
+
+    def _wake(self) -> None:
+        self.mode = Mode.IDLE
+        if self.card is not None:
+            self._enter_card()  # carries on where it stopped, as if the card had just been put in
 
     def _restart(self) -> None:
         """Like turning off, but main starts the player again (to use new hardware settings)."""
@@ -974,6 +1023,8 @@ class App:
     def render(self, now: float):
         if self.mode is Mode.OFF:
             return self.ui.message("Turning off")  # stays up until the Pi is off; then the screen goes dark
+        if self.mode is Mode.STANDBY:
+            return self.ui.message("Going to sleep")  # for a moment; then main switches the screen off
         if self.restart_requested:
             return self.ui.message("Restarting")
         if now < self._test_until:

@@ -923,8 +923,9 @@ function showTime() {
 }
 
 function showState() {
-  const a = state.album, transfer = state.mode === "transfer", off = state.mode === "off";
-  $("banner").hidden = !transfer && !off;
+  const a = state.album, transfer = state.mode === "transfer", off = state.mode === "off", standby = state.mode === "standby";
+  $("banner").hidden = !transfer && !off && !standby;
+  if (standby) $("banner").textContent = "The player is on standby. Playing something here wakes it up.";
   if (transfer) $("banner").textContent = "The music drive is connected to a computer over USB. Playback and uploads are paused until it is ejected.";
   if (off) $("banner").textContent = "The player is turning off. Press its power key to turn it on again.";
 
