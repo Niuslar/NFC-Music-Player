@@ -55,7 +55,7 @@ LCD_Y = c.FRONT_T + c.LCD_GLASS
 LEAN = [(1, 0, 0, 0), (0, 1, c.TAN, -c.TAN * c.H), (0, 0, 1, 0)]
 READER_Y = c.READER_Y
 BOARD_BACK = c.BOARD_Y + c.BOARD_T  # the back of the front board
-J1_Z = 46.0  # centre of the board's 40-pin header
+J1_Z = c.J1_Z  # centre of the board's 40-pin header
 J1_X = c.PI_HEADER_X  # straight in front of the Pi's header
 B = c.box
 
@@ -380,7 +380,7 @@ SHOTS = {
             ("Key carrier: all four caps on one frame. With the panel face down, lay it on, caps into their holes", (c.BOARD_X[1], c.FRONT_T + c.CARRIER_T, c.BOARD_Z[1] - 4), "keys"),
             ("Bridges: each cap hangs from one above it and one below", (c.KEYS_X[1] + 5, c.FRONT_T + c.CARRIER_T, c.CTRL_Z + c.KEY_CAP / 2 + c.BRIDGE_GAP + c.BRIDGE_W / 2), "keys"),
             ("Two pegs drop into holes in the panel and line it up", (c.PEGS[1][0], c.FRONT_T - c.PEG_L, c.PEGS[1][1]), "keys"),
-            ("Three screw pilots for the board", (c.BOARD_SCREWS[0][0], c.FRONT_T, c.BOARD_SCREWS[0][1]), "front"),
+            ("Four screw pilots for the board", (c.BOARD_SCREWS[0][0], c.FRONT_T, c.BOARD_SCREWS[0][1]), "front"),
             ("Encoder goes in from behind; its body sits in the pocket", (c.KNOB_X + 6.25, 9, c.CTRL_Z + 6.7), "encoder"),
             ("Power key nut, tightened from behind", (c.POWER_X, c.FRONT_T + 3, c.CTRL_Z + 8), "power nut"),
         ],
@@ -398,7 +398,7 @@ SHOTS = {
             ("Spacer: lay it on the key carrier first", (c.BOARD_X[1], c.FRONT_T + c.CARRIER_T + c.SPACER_T / 2, c.BOARD_Z[0] + 2), "board"),
             ("Ribbon plug: press it onto the 40-pin header before fitting the board", (J1_X - 29.2, BOARD_BACK + 18, J1_Z + 4.5), "board"),
             ("Pin headers for the screen, reader, knob, power key and OLED", (45, BOARD_BACK + 8.5, 16), "board"),
-            ("Three M2 × 6 screws, through the spacer and the carrier into the panel", (c.BOARD_SCREWS[2][0], BOARD_BACK + 1.6, c.BOARD_SCREWS[2][1]), "board"),
+            ("Four M2 × 6 screws, through the board's corner holes, the spacer and the carrier into the panel", (c.BOARD_SCREWS[2][0], BOARD_BACK + 1.6, c.BOARD_SCREWS[2][1]), "board"),
             ("Openings in the spacer and the carrier take the solder joints on the board's front", (c.BOARD_POCKETS[0][0] + 2, c.BOARD_Y, c.BOARD_POCKETS[0][3] - 2), "board"),
         ],
     },

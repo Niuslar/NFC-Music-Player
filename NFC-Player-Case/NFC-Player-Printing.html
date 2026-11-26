@@ -67,9 +67,10 @@ figcaption{font-size:.9rem;color:var(--muted);margin:.5em .2em}
 <tr><td><code>LCD_OFF_X</code>, <code>LCD_OFF_Z</code></td><td>-2, 0</td><td>Where the lit area's centre sits relative to the centre of the 58 × 35 mm screen board, seen from the front. Set from Waveshare's outline drawing of the 2inch LCD Module: the picture sits about 2 mm right of centre with the pin pads on the left, so 2 mm left of centre as fitted here, with the pin pads on the right and the socket on the left, facing the front board. Fit the board that way round, or change the sign. The bracket's screw slots let the screen move 2 mm either way sideways; to move it further, or up or down, change these and reprint the bracket.</td></tr>
 <tr><td><code>LCD_HOLES</code>, <code>LCD_STANDOFF</code></td><td>52 × 30 mm, 6 mm</td><td>The centres of the screen board's four corner holes, and how far its brass standoffs stand out behind the board. They set where the bracket's holes and upright are.</td></tr>
 <tr><td><code>LCD_GLASS</code></td><td>3 mm</td><td>How far the glass stands in front of the board. With the standoffs, it sets how far back the bracket's upright stands; the base slides 4 mm back and 2.5 mm forward from there.</td></tr>
-<tr><td><code>DAC_JACKS</code></td><td>RCA left x 53.5, z 28.7, Ø11.5; RCA right x 39.5, z 28.7, Ø11.5; headphones x 24.5, z 25.2, Ø9</td><td>Assemble the Pi and DAC on 5 mm standoffs and measure the centre of each socket: across from the case's left side and up from its underside. Check the holes pass your plugs' metal shells, not just the sockets' barrels. See the <a href="NFC-Player-Assembly.html#drawings">board stack drawing</a> for the heights assumed.</td></tr>
+<tr><td><code>DAC_JACKS</code></td><td>RCA left x 64.92, z 28.7, Ø11.5; RCA right x 50.92, z 28.7, Ø11.5; headphones x 35.92, z 25.2, Ø9</td><td>Assemble the Pi and DAC on 5 mm standoffs and measure the centre of each socket: across from the case's left side and up from its underside. Check the holes pass your plugs' metal shells, not just the sockets' barrels. See the <a href="NFC-Player-Assembly.html#drawings">board stack drawing</a> for the heights assumed.</td></tr>
 <tr><td><code>POWER_HOLE</code>, <code>POWER_BODY</code></td><td>12.2 mm; 16 × 30 mm</td><td>Your power key's thread, the size across its nut, and how far it reaches into the case including its solder tags.</td></tr>
 <tr><td><code>USB_SLOT</code>, <code>USB_SCREW_PITCH</code></td><td>12.5 × 6.5 mm, 17 mm</td><td>The body opening and screw spacing of your panel-mount USB-C socket.</td></tr>
+<tr><td><code>PERF_MOUNT</code></td><td>1.5, 1.7 mm; Ø2 mm</td><td>Only for a perfboard front board: where its four corner holes are, from the board's ends and from its long edges, with the long pads at the left and right, and how big they are. The case's screw holes follow them. If they are under 2 mm, open them with a 2 mm drill so the M2 screws pass. <code>PERF_SIZE</code> and <code>PERF_HOLES</code> beside it give the board's size and holes, for a board other than 70 × 50 mm with 24 × 18 holes.</td></tr>
 <tr><td><code>TACT_H</code></td><td>5 mm</td><td>Your key switches, from the base of the body to the top of the button. It sets the board spacer's thickness, so the keys neither rattle nor sit pressed in.</td></tr>
 </table>
 </section>
@@ -156,13 +157,14 @@ figcaption{font-size:.9rem;color:var(--muted);margin:.5em .2em}
 <ol>
 <li><code>blender -b -P build.py</code></li>
 <li>In the <code>front-board</code> folder, with KiCad's Python: <code>python board.py</code></li>
+<li>In the <code>front-board</code> folder, with your own Python: <code>python perfboard.py</code></li>
 <li><code>blender -b -P wood.py</code> (only for the wood-grain version)</li>
 <li><code>python drawings.py</code></li>
 <li><code>blender -b -P pictures.py</code></li>
 <li><code>blender -b NFC-Player-Render.blend -P render.py</code></li>
 <li><code>python guide.py</code></li>
 </ol>
-<p>The second step redraws and reroutes the front board, runs KiCad's electrical and design rules checks, and rewrites its Gerber files. Run it whenever you move the keys, the screws or the board's outline. The last step writes this guide, the assembly guide and the front board's section of the electronics guide. The model checks that parts fit each other and the stand-ins. It cannot check print tolerances, your exact boards, heat, or how well the NFC reader works next to stored cards: those need a bench test.</p>
+<p>The second step redraws and reroutes the front board, runs KiCad's electrical and design rules checks, and rewrites its Gerber files; the third redraws the perfboard version and checks its wiring. Run both whenever you move the keys, the screws or the headers. The last step writes this guide, the assembly guide and the front board's section of the electronics guide. The model checks that parts fit each other and the stand-ins. It cannot check print tolerances, your exact boards, heat, or how well the NFC reader works next to stored cards: those need a bench test.</p>
 </section>
 </main><script>
 for (const fig of document.querySelectorAll('.pic')) {

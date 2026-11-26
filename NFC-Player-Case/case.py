@@ -49,7 +49,9 @@ LCD_HOLES = (52.0, 30.0)  # MEASURE: centres of the board's four corner holes, a
 LCD_STANDOFF = 6.0  # MEASURE: how far the standoffs stand out behind the board
 CLEAR_M25 = 2.9
 CRADLE_TRAVEL = (2.5, 4.0)  # how far the bracket slides forward and back from where the glass meets the panel
-KEYS_X = (37.0, 55.0, 73.0, 91.0)  # previous, play, next, back, 18 mm apart. Left, so the board behind them sits in front of the DAC
+PITCH = 2.54  # the front board's hole grid
+KEY_PITCH = 7 * PITCH  # between two keys, so all four switches sit in the board's holes
+KEYS_X = tuple(round(64.0 + (k - 1.5) * KEY_PITCH, 3) for k in range(4))  # previous, play, next, back, 17.78 mm apart. Left, so the board behind them sits in front of the DAC
 # Keys: the four printed caps are one part, the key carrier, with a thin frame that lies on the
 # inside of the panel. Each cap slides in a square hole through the panel, flush with its face,
 # and hangs from two thin bridges, one above it and one below, by a short tab in the
@@ -77,7 +79,7 @@ KEY_LENGTH = KEY_PROUD + FRONT_T + CARRIER_T  # the cap, from its face to its ba
 KEY_HOLLOW = TACT + 1.0  # the hollow in the cap's back, round the switch body
 KEY_WIN_X = KEY_CAP / 2 + BRIDGE_GAP  # from a key's centre to the frame beside it, in the carrier and the spacer
 KEY_WIN_Z = KEY_CAP / 2 + 2 * BRIDGE_GAP + BRIDGE_W  # and to the frame above and below, past its bridges
-PEGS = ((26.0, CTRL_Z), (88.0, 45.0))  # x, z of the carrier's two locating pegs, in blind holes in the panel
+PEGS = ((26.0, CTRL_Z), (98.5, 45.0))  # x, z of the carrier's two locating pegs, in blind holes in the panel
 PEG_D, PEG_L = 2.0, 1.8  # the pegs, standing on the carrier's front
 PEG_HOLE, PEG_DEPTH = 2.3, 2.2  # their holes in the inside of the panel
 KNOB_X = 178.5
@@ -118,42 +120,79 @@ READER_Y = CARD_Y + READER_GAP  # antenna face of the reader in the middle groov
 TRAY = (15.0, 20.0, 104.0, 77.0)  # x0, y0, x1, y1 of the card tray in the lid
 TRAY_DEPTH = 5.0
 TRAY_FLOOR = 2.0
+TRAY_NOTCH = 9.0  # radius of the finger notch in the tray's front edge; its wall clears the front board's top edge
 
 # ---- front board ------------------------------------------------------------
-# A printed circuit board lies flat behind the front panel, behind the keys, on a printed spacer
-# that lies on the key carrier.
+# The front board lies flat behind the front panel, behind the keys, on a printed spacer that lies
+# on the key carrier. It is a bought 70 x 50 mm perfboard wired by hand (front-board/perfboard.py
+# draws it), or a printed circuit board of the same size (front-board/board.py). Both put the key
+# switches, the headers and the screws in the same holes, so either fits the case.
 # The four key switches are soldered to its front, and a 40-pin ribbon runs from it to the
-# pins on top of the DAC. front-board/board.py draws it from these numbers.
+# pins on top of the DAC.
 # The spacer sets the board just far back that a switch's button sits KEY_FREE behind its cap.
 SPACER_T = -KEY_PROUD + KEY_FACE_T + KEY_FREE + TACT_H - FRONT_T - CARRIER_T
 BOARD_Y = FRONT_T + CARRIER_T + SPACER_T  # the board's front face, in the case
-# Its 40-pin header sits straight in front of the Pi's, the same way round, so the ribbon runs
-# back and down onto the DAC's pins with one bend and no twist (see front-board/board.py).
-PI_HEADER_X = None  # set below, from PI_X
-BOARD_OUTLINE = ((23.0, 4.0), (101.5, 4.0), (101.5, 51.5), (17.5, 51.5), (17.5, 40.0), (23.0, 40.0))  # x, z; the top clears the card tray under the lid; the step at the
-# top left lets the 40-pin header reach over the power key's nut
-BOARD_X = (min(x for x, z in BOARD_OUTLINE), max(x for x, z in BOARD_OUTLINE))
-BOARD_Z = (min(z for x, z in BOARD_OUTLINE), max(z for x, z in BOARD_OUTLINE))
-BOARD_T = 1.6
-BOARD_SCREWS = ((27.0, 8.0), (97.5, 8.0), (97.5, 47.0))  # M2 x 6, through pilots in the spacer and the carrier and into the panel
+BOARD_T = 1.6  # MEASURE: the perfboard's thickness
+# The perfboard is double-sided with plated holes, PITCH apart: the common "5 x 7 cm" board, used
+# whole, held by M2 screws through its own four corner holes. Everything on the front board sits on its grid. hole(col, row) is a hole's x, z in the case:
+# columns count from the left seen from the front, from 0, and rows from the bottom. The switches'
+# legs sit in columns 0-2, 7-9, 14-16 and 21-23, rows 7 and 10, which sets where the grid is.
+PERF_SIZE = (70.0, 50.0)  # MEASURE: the board as bought
+PERF_HOLES = (24, 18)  # MEASURE: columns and rows of holes
+GRID_X0 = KEYS_X[0] - PITCH  # column 0
+GRID_Z0 = CTRL_Z - 8.5 * PITCH  # row 0
+BOARD_ROWS = PERF_HOLES[1]  # rows 0 to 17
+
+
+def hole(col, row):
+    """x, z of one of the front board's holes."""
+    return round(GRID_X0 + col * PITCH, 3), round(GRID_Z0 + row * PITCH, 3)
+
+
+_EDGE_X = (PERF_SIZE[0] - (PERF_HOLES[0] - 1) * PITCH) / 2  # from the board's edge to the outer holes
+_EDGE_Z = (PERF_SIZE[1] - (PERF_HOLES[1] - 1) * PITCH) / 2
+BOARD_X = (round(GRID_X0 - _EDGE_X, 3), round(GRID_X0 - _EDGE_X + PERF_SIZE[0], 3))
+BOARD_Z = (round(GRID_Z0 - _EDGE_Z, 3), round(GRID_Z0 - _EDGE_Z + PERF_SIZE[1], 3))
+BOARD_OUTLINE = ((BOARD_X[0], BOARD_Z[0]), (BOARD_X[1], BOARD_Z[0]), (BOARD_X[1], BOARD_Z[1]), (BOARD_X[0], BOARD_Z[1]))  # x, z
+# Its 40-pin header sits straight in front of the Pi's, the same way round, so the ribbon runs back
+# and down onto the DAC's pins with one bend and no twist: columns 0-19, odd pins in row 14 and
+# even pins in row 15, pin 1 on the right. The Pi is placed to suit it (PI_X).
+J1_COLS, J1_ROWS = (0, 19), (14, 15)
+J1_Z = round(GRID_Z0 + (J1_ROWS[0] + J1_ROWS[1]) / 2 * PITCH, 3)
+PI_HEADER_X = round(GRID_X0 + (J1_COLS[0] + J1_COLS[1]) / 2 * PITCH, 3)
+# The headers for the screen (J2), reader (J3), knob (J4), power key (J5) and OLED (J6), on the back:
+# the column and row of pin 1. Their pins run to smaller columns, so from behind they read 1, 2, 3.
+HEADER_HOLES = {"J2": (9, 0), "J3": (16, 0), "J4": (9, 3), "J5": (14, 3), "J6": (3, 3)}
+PERF_MOUNT = (1.5, 1.7, 2.0)  # MEASURE: the board's corner holes: their centres from its left and right edges, and from its top and bottom edges; their diameter
+BOARD_SCREWS = tuple((round(x, 3), round(z, 3)) for x in (BOARD_X[0] + PERF_MOUNT[0], BOARD_X[1] - PERF_MOUNT[0]) for z in (BOARD_Z[0] + PERF_MOUNT[1], BOARD_Z[1] - PERF_MOUNT[1]))  # M2 x 6 through the corner holes, pilots in the spacer and the carrier and into the panel
 PILOT_M2 = 1.6
 PILOT_M2_DEPTH = 2.8
-# The other through-hole parts sit on the back of the board and are soldered on its front, so
-# the spacer and the key carrier have openings under their solder joints: x0, z0, x1, z1. board.py
-# checks that every through-hole pad lies inside one of these or inside a key's opening. The lower
-# two stop just short of the bridges under the keys.
+# The key carrier and the spacer: a little bigger than the board, clear of the power key's nut and under the lid.
+CARRIER_TOP = round(BOARD_Z[1] + 1.0, 3)
+CARRIER_OUTLINE = ((23.0, 4.0), (101.5, 4.0), (101.5, CARRIER_TOP), (23.0, CARRIER_TOP))
+
+
+def hole_box(c0, r0, c1, r1, margin=1.5):
+    """x0, z0, x1, z1 round a block of holes."""
+    (x0, z0), (x1, z1) = hole(c0, r0), hole(c1, r1)
+    return round(x0 - margin, 3), round(z0 - margin, 3), round(x1 + margin, 3), round(z1 + margin, 3)
+
+
+# The parts sit on the back of the board and are soldered on its front, where the perfboard's
+# wiring runs too, so the spacer and the key carrier are open behind the board's top and bottom
+# strips: x0, z0, x1, z1. Only the switches go in between, in the keys' windows. The openings
+# leave solid plastic round the four screws. board.py checks that every through-hole pad lies
+# inside one of these or inside a key's window, and perfboard.py does the same for every joint.
 BOARD_POCKETS = (
-    (21.5, 42.5, 73.5, 49.5),  # the 40-pin header
-    (31.0, 5.5, 75.5, 18.0),  # the headers for the screen, reader, knob, power key and OLED
-    (78.5, 5.5, 95.5, 20.6),  # diodes, transistor and resistors
+    hole_box(0, 13, 21, BOARD_ROWS - 1)[:3] + (CARRIER_OUTLINE[2][1] + 1,),  # the 40-pin header and the wiring from it, open to the top edge
+    hole_box(0, 0, 23, 4),  # the headers for the leads, the small parts and their wiring
 )
 
 # ---- electronics ------------------------------------------------------------
 # The Pi and the DAC Pro form one stack. It stands on four M2.5 standoffs screwed up through
 # two slots in the floor, so it can slide front to back. It goes right back, until the DAC's
 # rear edge meets the rear panel, so its sockets sit in round holes in the panel.
-PI_X = 15.0  # left edge of the Pi; its mounting holes are 58 x 23 mm apart
-PI_HEADER_X = PI_X + 32.5  # centre of its 40-pin header, which the front board's header lines up with
+PI_X = round(PI_HEADER_X - 32.5, 3)  # left edge of the Pi, so its 40-pin header is straight behind the front board's; its mounting holes are 58 x 23 mm apart
 STANDOFF_H = 5.0
 DAC_LEN = 56.5  # front to back
 DAC_GAP = 0.5  # between the DAC's rear edge and the inside of the rear panel
@@ -161,14 +200,14 @@ DAC_Y1 = D - REAR_T - DAC_GAP  # the DAC's rear edge, where its sockets are
 PI_Y = DAC_Y1 - DAC_LEN  # the front edge of the Pi and the DAC
 DAC_Z = FLOOR + STANDOFF_H + 1.6 + 11  # underside of the DAC board, straight on the Pi
 PI_SLOT_Y = (40.0, 97.0)  # the standoffs sit at PI_Y + 3.5 and PI_Y + 26.5; room to slide either way
-# MEASURE: x, z of each socket's centre, and the hole for it. The barrels end about 1 mm inside
-# the panel's outer face, so each hole clears the plug's metal shell, not just the barrel.
+# MEASURE: x, z of each socket's centre (x from the Pi's left edge), and the hole for it. The barrels
+# end about 1 mm inside the panel's outer face, so each hole clears the plug's metal shell, not just the barrel.
 # The header's pin 1 is on the right seen from the front, so seen from behind the case the
 # sockets read as on the board: red RCA (left), white RCA (right), then the 3.5 mm socket.
 DAC_JACKS = (
-    ("RCA left", 53.5, DAC_Z + 1.6 + 6.5, 11.5),
-    ("RCA right", 39.5, DAC_Z + 1.6 + 6.5, 11.5),
-    ("headphones", 24.5, DAC_Z + 4.6, 9.0),
+    ("RCA left", PI_X + 38.5, DAC_Z + 1.6 + 6.5, 11.5),
+    ("RCA right", PI_X + 24.5, DAC_Z + 1.6 + 6.5, 11.5),
+    ("headphones", PI_X + 9.5, DAC_Z + 4.6, 9.0),
 )
 USB_X, USB_Z = 130.0, 16.0  # panel-mount USB-C socket
 USB_SLOT = (12.5, 6.5)  # MEASURE: its body opening
@@ -184,7 +223,15 @@ assert FRONT_T + CARRIER_T + TACT_TRAVEL + 0.3 <= BOARD_Y, "a pressed cap's back
 assert SPACER_T >= 0.8, "the spacer would be too thin to print"
 assert BOARD_Y - TACT_BODY_H >= -KEY_PROUD + KEY_FACE_T, "the switch body must fit in the hollow behind the cap's face"
 assert KEYS_X[1] - KEYS_X[0] - 2 * KEY_WIN_X >= 2.0, "the frame between two keys would be too thin"
-assert all(z1 <= CTRL_Z - KEY_WIN_Z + BRIDGE_GAP + 0.01 for x0, z0, x1, z1 in BOARD_POCKETS[1:]), "a pocket would cut into the bridges under the keys"
+assert all(z1 <= CTRL_Z - KEY_WIN_Z + BRIDGE_GAP + 0.01 or z0 >= CTRL_Z + KEY_WIN_Z - BRIDGE_GAP - 0.01 for x0, z0, x1, z1 in BOARD_POCKETS), "a pocket would cut into the bridges of the keys"
+assert CARRIER_TOP <= BODY_H - 0.3 and BOARD_Z[1] <= BODY_H - 0.8, "the front board, the spacer and the key carrier must fit under the lid"
+assert BOARD_Z[1] <= BODY_H - (TRAY_DEPTH - LID_T) - TRAY_FLOOR - 0.4 or TRAY[1] - TRAY_NOTCH - 2.0 >= BOARD_Y + BOARD_T + 0.5, "the front board's top edge must clear the card tray's finger notch under the lid"
+assert BOARD_Z[0] >= FLOOR + 1.0, "the front board must clear the floor"
+assert BOARD_X[0] >= POWER_X + POWER_BODY[0] / 2 + 3.0, "the front board must clear the power key's nut"
+assert CARRIER_OUTLINE[0][0] <= BOARD_X[0] and BOARD_X[1] <= CARRIER_OUTLINE[1][0] and CARRIER_OUTLINE[0][1] <= BOARD_Z[0] and BOARD_Z[1] <= CARRIER_OUTLINE[2][1], "the spacer must cover the board"
+assert all(abs(hole(7 * i + 1, 0)[0] - k) < 0.01 for i, k in enumerate(KEYS_X)) and abs(hole(0, 8.5)[1] - CTRL_Z) < 0.01, "each key must sit in the middle of its switch's holes"
+for _x, _z in BOARD_SCREWS:
+    assert not any(x0 - 2.0 < _x < x1 + 2.0 and z0 - 2.0 < _z < z1 + 2.0 for x0, z0, x1, z1 in BOARD_POCKETS), "a screw needs solid plastic round it, clear of the openings"
 assert CRADLE_Y - CRADLE_TRAVEL[1] - WASHER_M3 / 2 >= CRADLE_PLATE_Y + CRADLE_PLATE_T, "with the bracket slid right back, the washers must clear its upright"
 assert CRADLE_Y + CRADLE_TRAVEL[0] + CLEAR_M3 / 2 + 1.5 + CRADLE_TRAVEL[1] + 0.5 <= GUIDE_Y - 8, "with the bracket slid right back, its tabs must clear the card guide's foot"
 assert PI_SLOT_Y[0] <= PI_Y + 3.5 and PI_Y + 26.5 <= PI_SLOT_Y[1], "the standoffs must reach their place in the floor slots"
@@ -312,7 +359,7 @@ def chassis():
 
 def tray_outline(grow, r):
     x0, y0, x1, y1 = TRAY
-    return [rrect(x0 - grow, y0 - grow, x1 + grow, y1 + grow, r + grow), circle((x0 + x1) / 2, y0, 10 + grow)]
+    return [rrect(x0 - grow, y0 - grow, x1 + grow, y1 + grow, r + grow), circle((x0 + x1) / 2, y0, TRAY_NOTCH + grow)]
 
 
 def lid():
@@ -332,7 +379,7 @@ def lid():
             box(CARD_X - CHANNEL_W / 2 - 1, CARD_X + CHANNEL_W / 2 + 1, CARD_Y - 2.05, CARD_Y + 2.05, 2.95, 3.2),
         )
     )
-    cuts += [box(x, x + 3, y, y + 11, -1, LID_T + 1) for x in range(22, 79, 8) for y in (86, 101)]  # above the DAC
+    cuts += [box(x, x + 3, y, y + 11, -1, LID_T + 1) for x in range(round(PI_X) + 7, round(PI_X) + 64, 8) for y in (86, 101)]  # above the DAC
     return inter(diff(solid, *cuts), move(0, 0, -BODY_H, envelope()))
 
 
@@ -365,7 +412,7 @@ def spacer():
     cuts = [prism(key_window(k), -1, SPACER_T + 1) for k in KEYS_X]
     cuts += [box(x0, x1, z0, z1, -1, SPACER_T + 1) for x0, z0, x1, z1 in BOARD_POCKETS]
     cuts += [cylz(x, z, -1, SPACER_T + 1, PILOT_M2) for x, z in BOARD_SCREWS]
-    return diff(prism(BOARD_OUTLINE, 0, SPACER_T), *cuts)
+    return diff(prism(CARRIER_OUTLINE, 0, SPACER_T), *cuts)
 
 
 def key_carrier():

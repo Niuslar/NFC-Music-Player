@@ -1,6 +1,6 @@
 # NFC Player Case
 
-The 3D-printed case for the NFC Album Player, and the small circuit board behind its keys. To print and build it, read the [3D printing guide](https://niuslar.github.io/NFC-Music-Player/NFC-Player-Case/NFC-Player-Printing.html) and the [assembly guide](https://niuslar.github.io/NFC-Music-Player/NFC-Player-Case/NFC-Player-Assembly.html). This page is for changing the design.
+The 3D-printed case for the NFC Album Player, and the small board behind its keys: a perfboard you wire yourself, or a printed circuit board. To print and build it, read the [3D printing guide](https://niuslar.github.io/NFC-Music-Player/NFC-Player-Case/NFC-Player-Printing.html) and the [assembly guide](https://niuslar.github.io/NFC-Music-Player/NFC-Player-Case/NFC-Player-Assembly.html). This page is for changing the design.
 
 Every dimension is in [`case.py`](case.py). The other scripts read it, and everything else in this folder is generated from them, so a change always starts in `case.py`. Do not edit the outputs by hand: the next rebuild overwrites them.
 
@@ -20,6 +20,7 @@ Every dimension is in [`case.py`](case.py). The other scripts read it, and every
 | [`guide.py`](guide.py) | Writes the printing and assembly guides, and the front board's section of the [electronics guide](../docs/index.html). |
 | [`NFC-Player-Render.blend`](NFC-Player-Render.blend) | The render scene: camera, lights, materials and stand-ins for the bought parts. |
 | [`front-board/board.py`](front-board/board.py) | Draws, routes and checks the front board in KiCad, and writes the files to order it. |
+| [`front-board/perfboard.py`](front-board/perfboard.py) | Lays out the same board on a 70 x 50 mm perfboard, checks its wiring against `board.py`'s schematic and the spacer's openings, and draws it. Plain Python. |
 
 **Generated, and kept in the repository**
 
@@ -31,6 +32,7 @@ Every dimension is in [`case.py`](case.py). The other scripts read it, and every
 | [`NFC-Player-Render.png`](NFC-Player-Render.png) | `render.py` |
 | [`NFC-Player-Printing.html`](NFC-Player-Printing.html), [`NFC-Player-Assembly.html`](NFC-Player-Assembly.html) | `guide.py`. These pages are part of the project site. |
 | `front-board/nfc-front-board.*` and [`front-board/fab/`](front-board/fab) | `board.py`. The KiCad project, the checks, and the Gerbers, BOM and placement files to order the board. |
+| `front-board/fab/perfboard-back.svg`, `perfboard-front.svg` | `perfboard.py` |
 
 **Generated, only on your computer** (listed in `.gitignore`): `parts.blend`, `pictures/` and the `*-wood.stl` files.
 
@@ -60,7 +62,15 @@ python board.py
 cd ..
 ```
 
-Do this with KiCad's Python, whenever you move the keys, the screws or the board's outline. It redraws and reroutes the board, runs KiCad's electrical and design rules checks, and rewrites the files in `fab/`.
+Do this with KiCad's Python, whenever you move the keys, the screws or the headers. It redraws and reroutes the board, runs KiCad's electrical and design rules checks, and rewrites the files in `fab/`.
+
+```sh
+cd front-board
+python perfboard.py
+cd ..
+```
+
+This redraws the perfboard version and checks its wiring. Any Python 3 will do.
 
 ```sh
 blender -b -P wood.py

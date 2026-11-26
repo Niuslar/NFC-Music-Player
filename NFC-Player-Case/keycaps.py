@@ -121,7 +121,7 @@ def carrier():
     frame_cuts = [prism(case.key_window(k), -1, case.CARRIER_T + 1) for k in case.KEYS_X]
     frame_cuts += [box(x0, x1, z0, z1, -1, case.CARRIER_T + 1) for x0, z0, x1, z1 in case.BOARD_POCKETS]
     frame_cuts += [cylz(x, z, -1, case.CARRIER_T + 1, case.PILOT_M2) for x, z in case.BOARD_SCREWS]
-    frame = diff(prism(case.BOARD_OUTLINE, 0, case.CARRIER_T), *frame_cuts)
+    frame = diff(prism(case.CARRIER_OUTLINE, 0, case.CARRIER_T), *frame_cuts)
     pegs = [cylz(x, z, case.CARRIER_T - 0.01, case.CARRIER_T + case.PEG_L, case.PEG_D) for x, z in case.PEGS]
     caps = [move(k, case.CTRL_Z, 0, hung_cap(n)) for k, n in zip(case.KEYS_X, SYMBOLS)]
     return union(frame, *pegs, *[b for k in case.KEYS_X for b in bridges(k)], *caps)

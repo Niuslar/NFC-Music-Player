@@ -454,7 +454,7 @@ def key_closeup():
     steps = [
         "1  With the panel face down, lay the key carrier on it, caps into their holes and pegs into theirs.",
         "2  Lay the spacer on the carrier.",
-        "3  Fit the board, switches towards the panel, with three M2 × 6 screws.",
+        "3  Fit the board, switches towards the panel, with four M2 × 6 screws.",
     ]
     for i, t in enumerate(steps):
         s.text(8, s.h - 22 + 5.2 * i, t, 3.5, "start", INK)
@@ -474,7 +474,7 @@ def key_closeup():
         (1.75, c.BOARD_Y - c.TACT_H, f"{n(c.KEY_FREE)} mm to the button"),
         (c.TACT / 2, body + 1.5, "Switch inside the cap's hollow"),
         (W, (back + c.BOARD_Y) / 2, f"Spacer, {n(c.SPACER_T)} mm"),
-        (W, c.BOARD_Y + c.BOARD_T / 2, "Board, held by three M2 screws"),
+        (W, c.BOARD_Y + c.BOARD_T / 2, "Board, held by four M2 screws"),
     ], s.X(W + 4), 1)
     hold = [
         "What holds what:",

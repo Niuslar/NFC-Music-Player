@@ -1,0 +1,595 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="281.6mm" height="284.8mm" viewBox="0 0 281.6 284.8">
+<title>NFC Player front board on perfboard, seen from the front: Key switches, on the front</title>
+<rect width="281.6" height="284.8" fill="#ffffff"/>
+<defs><g id="hole"><circle r="2.56" fill="#c9a66b"/><circle r="1.34" fill="#f3f1ea"/></g></defs>
+<rect x="28.8" y="48" width="224" height="160" rx="1.92" fill="#2e6b45"/>
+<rect x="42.53" y="48" width="180.29" height="48.22" fill="#3f8a5b"/>
+<rect x="42.53" y="159.78" width="196.54" height="42.11" fill="#3f8a5b"/>
+<rect x="31.46" y="99.84" width="48" height="56.32" rx="3.2" fill="none" stroke="#8fd1a6" stroke-width="0.48" stroke-dasharray="2.56 1.6"/>
+<rect x="88.35" y="99.84" width="48" height="56.32" rx="3.2" fill="none" stroke="#8fd1a6" stroke-width="0.48" stroke-dasharray="2.56 1.6"/>
+<rect x="145.25" y="99.84" width="48" height="56.32" rx="3.2" fill="none" stroke="#8fd1a6" stroke-width="0.48" stroke-dasharray="2.56 1.6"/>
+<rect x="202.14" y="99.84" width="48" height="56.32" rx="3.2" fill="none" stroke="#8fd1a6" stroke-width="0.48" stroke-dasharray="2.56 1.6"/>
+<use href="#hole" x="47.33" y="197.09"/>
+<use href="#hole" x="47.33" y="188.96"/>
+<use href="#hole" x="47.33" y="180.83"/>
+<use href="#hole" x="47.33" y="172.7"/>
+<use href="#hole" x="47.33" y="164.58"/>
+<use href="#hole" x="47.33" y="156.45"/>
+<use href="#hole" x="47.33" y="148.32"/>
+<use href="#hole" x="47.33" y="140.19"/>
+<use href="#hole" x="47.33" y="132.06"/>
+<use href="#hole" x="47.33" y="123.94"/>
+<use href="#hole" x="47.33" y="115.81"/>
+<use href="#hole" x="47.33" y="107.68"/>
+<use href="#hole" x="47.33" y="99.55"/>
+<use href="#hole" x="47.33" y="91.42"/>
+<use href="#hole" x="47.33" y="83.3"/>
+<use href="#hole" x="47.33" y="75.17"/>
+<use href="#hole" x="47.33" y="67.04"/>
+<use href="#hole" x="47.33" y="58.91"/>
+<use href="#hole" x="55.46" y="197.09"/>
+<use href="#hole" x="55.46" y="188.96"/>
+<use href="#hole" x="55.46" y="180.83"/>
+<use href="#hole" x="55.46" y="172.7"/>
+<use href="#hole" x="55.46" y="164.58"/>
+<use href="#hole" x="55.46" y="156.45"/>
+<use href="#hole" x="55.46" y="148.32"/>
+<use href="#hole" x="55.46" y="140.19"/>
+<use href="#hole" x="55.46" y="132.06"/>
+<use href="#hole" x="55.46" y="123.94"/>
+<use href="#hole" x="55.46" y="115.81"/>
+<use href="#hole" x="55.46" y="107.68"/>
+<use href="#hole" x="55.46" y="99.55"/>
+<use href="#hole" x="55.46" y="91.42"/>
+<use href="#hole" x="55.46" y="83.3"/>
+<use href="#hole" x="55.46" y="75.17"/>
+<use href="#hole" x="55.46" y="67.04"/>
+<use href="#hole" x="55.46" y="58.91"/>
+<use href="#hole" x="63.58" y="197.09"/>
+<use href="#hole" x="63.58" y="188.96"/>
+<use href="#hole" x="63.58" y="180.83"/>
+<use href="#hole" x="63.58" y="172.7"/>
+<use href="#hole" x="63.58" y="164.58"/>
+<use href="#hole" x="63.58" y="156.45"/>
+<use href="#hole" x="63.58" y="148.32"/>
+<use href="#hole" x="63.58" y="140.19"/>
+<use href="#hole" x="63.58" y="132.06"/>
+<use href="#hole" x="63.58" y="123.94"/>
+<use href="#hole" x="63.58" y="115.81"/>
+<use href="#hole" x="63.58" y="107.68"/>
+<use href="#hole" x="63.58" y="99.55"/>
+<use href="#hole" x="63.58" y="91.42"/>
+<use href="#hole" x="63.58" y="83.3"/>
+<use href="#hole" x="63.58" y="75.17"/>
+<use href="#hole" x="63.58" y="67.04"/>
+<use href="#hole" x="63.58" y="58.91"/>
+<use href="#hole" x="71.71" y="197.09"/>
+<use href="#hole" x="71.71" y="188.96"/>
+<use href="#hole" x="71.71" y="180.83"/>
+<use href="#hole" x="71.71" y="172.7"/>
+<use href="#hole" x="71.71" y="164.58"/>
+<use href="#hole" x="71.71" y="156.45"/>
+<use href="#hole" x="71.71" y="148.32"/>
+<use href="#hole" x="71.71" y="140.19"/>
+<use href="#hole" x="71.71" y="132.06"/>
+<use href="#hole" x="71.71" y="123.94"/>
+<use href="#hole" x="71.71" y="115.81"/>
+<use href="#hole" x="71.71" y="107.68"/>
+<use href="#hole" x="71.71" y="99.55"/>
+<use href="#hole" x="71.71" y="91.42"/>
+<use href="#hole" x="71.71" y="83.3"/>
+<use href="#hole" x="71.71" y="75.17"/>
+<use href="#hole" x="71.71" y="67.04"/>
+<use href="#hole" x="71.71" y="58.91"/>
+<use href="#hole" x="79.84" y="197.09"/>
+<use href="#hole" x="79.84" y="188.96"/>
+<use href="#hole" x="79.84" y="180.83"/>
+<use href="#hole" x="79.84" y="172.7"/>
+<use href="#hole" x="79.84" y="164.58"/>
+<use href="#hole" x="79.84" y="156.45"/>
+<use href="#hole" x="79.84" y="148.32"/>
+<use href="#hole" x="79.84" y="140.19"/>
+<use href="#hole" x="79.84" y="132.06"/>
+<use href="#hole" x="79.84" y="123.94"/>
+<use href="#hole" x="79.84" y="115.81"/>
+<use href="#hole" x="79.84" y="107.68"/>
+<use href="#hole" x="79.84" y="99.55"/>
+<use href="#hole" x="79.84" y="91.42"/>
+<use href="#hole" x="79.84" y="83.3"/>
+<use href="#hole" x="79.84" y="75.17"/>
+<use href="#hole" x="79.84" y="67.04"/>
+<use href="#hole" x="79.84" y="58.91"/>
+<use href="#hole" x="87.97" y="197.09"/>
+<use href="#hole" x="87.97" y="188.96"/>
+<use href="#hole" x="87.97" y="180.83"/>
+<use href="#hole" x="87.97" y="172.7"/>
+<use href="#hole" x="87.97" y="164.58"/>
+<use href="#hole" x="87.97" y="156.45"/>
+<use href="#hole" x="87.97" y="148.32"/>
+<use href="#hole" x="87.97" y="140.19"/>
+<use href="#hole" x="87.97" y="132.06"/>
+<use href="#hole" x="87.97" y="123.94"/>
+<use href="#hole" x="87.97" y="115.81"/>
+<use href="#hole" x="87.97" y="107.68"/>
+<use href="#hole" x="87.97" y="99.55"/>
+<use href="#hole" x="87.97" y="91.42"/>
+<use href="#hole" x="87.97" y="83.3"/>
+<use href="#hole" x="87.97" y="75.17"/>
+<use href="#hole" x="87.97" y="67.04"/>
+<use href="#hole" x="87.97" y="58.91"/>
+<use href="#hole" x="96.1" y="197.09"/>
+<use href="#hole" x="96.1" y="188.96"/>
+<use href="#hole" x="96.1" y="180.83"/>
+<use href="#hole" x="96.1" y="172.7"/>
+<use href="#hole" x="96.1" y="164.58"/>
+<use href="#hole" x="96.1" y="156.45"/>
+<use href="#hole" x="96.1" y="148.32"/>
+<use href="#hole" x="96.1" y="140.19"/>
+<use href="#hole" x="96.1" y="132.06"/>
+<use href="#hole" x="96.1" y="123.94"/>
+<use href="#hole" x="96.1" y="115.81"/>
+<use href="#hole" x="96.1" y="107.68"/>
+<use href="#hole" x="96.1" y="99.55"/>
+<use href="#hole" x="96.1" y="91.42"/>
+<use href="#hole" x="96.1" y="83.3"/>
+<use href="#hole" x="96.1" y="75.17"/>
+<use href="#hole" x="96.1" y="67.04"/>
+<use href="#hole" x="96.1" y="58.91"/>
+<use href="#hole" x="104.22" y="197.09"/>
+<use href="#hole" x="104.22" y="188.96"/>
+<use href="#hole" x="104.22" y="180.83"/>
+<use href="#hole" x="104.22" y="172.7"/>
+<use href="#hole" x="104.22" y="164.58"/>
+<use href="#hole" x="104.22" y="156.45"/>
+<use href="#hole" x="104.22" y="148.32"/>
+<use href="#hole" x="104.22" y="140.19"/>
+<use href="#hole" x="104.22" y="132.06"/>
+<use href="#hole" x="104.22" y="123.94"/>
+<use href="#hole" x="104.22" y="115.81"/>
+<use href="#hole" x="104.22" y="107.68"/>
+<use href="#hole" x="104.22" y="99.55"/>
+<use href="#hole" x="104.22" y="91.42"/>
+<use href="#hole" x="104.22" y="83.3"/>
+<use href="#hole" x="104.22" y="75.17"/>
+<use href="#hole" x="104.22" y="67.04"/>
+<use href="#hole" x="104.22" y="58.91"/>
+<use href="#hole" x="112.35" y="197.09"/>
+<use href="#hole" x="112.35" y="188.96"/>
+<use href="#hole" x="112.35" y="180.83"/>
+<use href="#hole" x="112.35" y="172.7"/>
+<use href="#hole" x="112.35" y="164.58"/>
+<use href="#hole" x="112.35" y="156.45"/>
+<use href="#hole" x="112.35" y="148.32"/>
+<use href="#hole" x="112.35" y="140.19"/>
+<use href="#hole" x="112.35" y="132.06"/>
+<use href="#hole" x="112.35" y="123.94"/>
+<use href="#hole" x="112.35" y="115.81"/>
+<use href="#hole" x="112.35" y="107.68"/>
+<use href="#hole" x="112.35" y="99.55"/>
+<use href="#hole" x="112.35" y="91.42"/>
+<use href="#hole" x="112.35" y="83.3"/>
+<use href="#hole" x="112.35" y="75.17"/>
+<use href="#hole" x="112.35" y="67.04"/>
+<use href="#hole" x="112.35" y="58.91"/>
+<use href="#hole" x="120.48" y="197.09"/>
+<use href="#hole" x="120.48" y="188.96"/>
+<use href="#hole" x="120.48" y="180.83"/>
+<use href="#hole" x="120.48" y="172.7"/>
+<use href="#hole" x="120.48" y="164.58"/>
+<use href="#hole" x="120.48" y="156.45"/>
+<use href="#hole" x="120.48" y="148.32"/>
+<use href="#hole" x="120.48" y="140.19"/>
+<use href="#hole" x="120.48" y="132.06"/>
+<use href="#hole" x="120.48" y="123.94"/>
+<use href="#hole" x="120.48" y="115.81"/>
+<use href="#hole" x="120.48" y="107.68"/>
+<use href="#hole" x="120.48" y="99.55"/>
+<use href="#hole" x="120.48" y="91.42"/>
+<use href="#hole" x="120.48" y="83.3"/>
+<use href="#hole" x="120.48" y="75.17"/>
+<use href="#hole" x="120.48" y="67.04"/>
+<use href="#hole" x="120.48" y="58.91"/>
+<use href="#hole" x="128.61" y="197.09"/>
+<use href="#hole" x="128.61" y="188.96"/>
+<use href="#hole" x="128.61" y="180.83"/>
+<use href="#hole" x="128.61" y="172.7"/>
+<use href="#hole" x="128.61" y="164.58"/>
+<use href="#hole" x="128.61" y="156.45"/>
+<use href="#hole" x="128.61" y="148.32"/>
+<use href="#hole" x="128.61" y="140.19"/>
+<use href="#hole" x="128.61" y="132.06"/>
+<use href="#hole" x="128.61" y="123.94"/>
+<use href="#hole" x="128.61" y="115.81"/>
+<use href="#hole" x="128.61" y="107.68"/>
+<use href="#hole" x="128.61" y="99.55"/>
+<use href="#hole" x="128.61" y="91.42"/>
+<use href="#hole" x="128.61" y="83.3"/>
+<use href="#hole" x="128.61" y="75.17"/>
+<use href="#hole" x="128.61" y="67.04"/>
+<use href="#hole" x="128.61" y="58.91"/>
+<use href="#hole" x="136.74" y="197.09"/>
+<use href="#hole" x="136.74" y="188.96"/>
+<use href="#hole" x="136.74" y="180.83"/>
+<use href="#hole" x="136.74" y="172.7"/>
+<use href="#hole" x="136.74" y="164.58"/>
+<use href="#hole" x="136.74" y="156.45"/>
+<use href="#hole" x="136.74" y="148.32"/>
+<use href="#hole" x="136.74" y="140.19"/>
+<use href="#hole" x="136.74" y="132.06"/>
+<use href="#hole" x="136.74" y="123.94"/>
+<use href="#hole" x="136.74" y="115.81"/>
+<use href="#hole" x="136.74" y="107.68"/>
+<use href="#hole" x="136.74" y="99.55"/>
+<use href="#hole" x="136.74" y="91.42"/>
+<use href="#hole" x="136.74" y="83.3"/>
+<use href="#hole" x="136.74" y="75.17"/>
+<use href="#hole" x="136.74" y="67.04"/>
+<use href="#hole" x="136.74" y="58.91"/>
+<use href="#hole" x="144.86" y="197.09"/>
+<use href="#hole" x="144.86" y="188.96"/>
+<use href="#hole" x="144.86" y="180.83"/>
+<use href="#hole" x="144.86" y="172.7"/>
+<use href="#hole" x="144.86" y="164.58"/>
+<use href="#hole" x="144.86" y="156.45"/>
+<use href="#hole" x="144.86" y="148.32"/>
+<use href="#hole" x="144.86" y="140.19"/>
+<use href="#hole" x="144.86" y="132.06"/>
+<use href="#hole" x="144.86" y="123.94"/>
+<use href="#hole" x="144.86" y="115.81"/>
+<use href="#hole" x="144.86" y="107.68"/>
+<use href="#hole" x="144.86" y="99.55"/>
+<use href="#hole" x="144.86" y="91.42"/>
+<use href="#hole" x="144.86" y="83.3"/>
+<use href="#hole" x="144.86" y="75.17"/>
+<use href="#hole" x="144.86" y="67.04"/>
+<use href="#hole" x="144.86" y="58.91"/>
+<use href="#hole" x="152.99" y="197.09"/>
+<use href="#hole" x="152.99" y="188.96"/>
+<use href="#hole" x="152.99" y="180.83"/>
+<use href="#hole" x="152.99" y="172.7"/>
+<use href="#hole" x="152.99" y="164.58"/>
+<use href="#hole" x="152.99" y="156.45"/>
+<use href="#hole" x="152.99" y="148.32"/>
+<use href="#hole" x="152.99" y="140.19"/>
+<use href="#hole" x="152.99" y="132.06"/>
+<use href="#hole" x="152.99" y="123.94"/>
+<use href="#hole" x="152.99" y="115.81"/>
+<use href="#hole" x="152.99" y="107.68"/>
+<use href="#hole" x="152.99" y="99.55"/>
+<use href="#hole" x="152.99" y="91.42"/>
+<use href="#hole" x="152.99" y="83.3"/>
+<use href="#hole" x="152.99" y="75.17"/>
+<use href="#hole" x="152.99" y="67.04"/>
+<use href="#hole" x="152.99" y="58.91"/>
+<use href="#hole" x="161.12" y="197.09"/>
+<use href="#hole" x="161.12" y="188.96"/>
+<use href="#hole" x="161.12" y="180.83"/>
+<use href="#hole" x="161.12" y="172.7"/>
+<use href="#hole" x="161.12" y="164.58"/>
+<use href="#hole" x="161.12" y="156.45"/>
+<use href="#hole" x="161.12" y="148.32"/>
+<use href="#hole" x="161.12" y="140.19"/>
+<use href="#hole" x="161.12" y="132.06"/>
+<use href="#hole" x="161.12" y="123.94"/>
+<use href="#hole" x="161.12" y="115.81"/>
+<use href="#hole" x="161.12" y="107.68"/>
+<use href="#hole" x="161.12" y="99.55"/>
+<use href="#hole" x="161.12" y="91.42"/>
+<use href="#hole" x="161.12" y="83.3"/>
+<use href="#hole" x="161.12" y="75.17"/>
+<use href="#hole" x="161.12" y="67.04"/>
+<use href="#hole" x="161.12" y="58.91"/>
+<use href="#hole" x="169.25" y="197.09"/>
+<use href="#hole" x="169.25" y="188.96"/>
+<use href="#hole" x="169.25" y="180.83"/>
+<use href="#hole" x="169.25" y="172.7"/>
+<use href="#hole" x="169.25" y="164.58"/>
+<use href="#hole" x="169.25" y="156.45"/>
+<use href="#hole" x="169.25" y="148.32"/>
+<use href="#hole" x="169.25" y="140.19"/>
+<use href="#hole" x="169.25" y="132.06"/>
+<use href="#hole" x="169.25" y="123.94"/>
+<use href="#hole" x="169.25" y="115.81"/>
+<use href="#hole" x="169.25" y="107.68"/>
+<use href="#hole" x="169.25" y="99.55"/>
+<use href="#hole" x="169.25" y="91.42"/>
+<use href="#hole" x="169.25" y="83.3"/>
+<use href="#hole" x="169.25" y="75.17"/>
+<use href="#hole" x="169.25" y="67.04"/>
+<use href="#hole" x="169.25" y="58.91"/>
+<use href="#hole" x="177.38" y="197.09"/>
+<use href="#hole" x="177.38" y="188.96"/>
+<use href="#hole" x="177.38" y="180.83"/>
+<use href="#hole" x="177.38" y="172.7"/>
+<use href="#hole" x="177.38" y="164.58"/>
+<use href="#hole" x="177.38" y="156.45"/>
+<use href="#hole" x="177.38" y="148.32"/>
+<use href="#hole" x="177.38" y="140.19"/>
+<use href="#hole" x="177.38" y="132.06"/>
+<use href="#hole" x="177.38" y="123.94"/>
+<use href="#hole" x="177.38" y="115.81"/>
+<use href="#hole" x="177.38" y="107.68"/>
+<use href="#hole" x="177.38" y="99.55"/>
+<use href="#hole" x="177.38" y="91.42"/>
+<use href="#hole" x="177.38" y="83.3"/>
+<use href="#hole" x="177.38" y="75.17"/>
+<use href="#hole" x="177.38" y="67.04"/>
+<use href="#hole" x="177.38" y="58.91"/>
+<use href="#hole" x="185.5" y="197.09"/>
+<use href="#hole" x="185.5" y="188.96"/>
+<use href="#hole" x="185.5" y="180.83"/>
+<use href="#hole" x="185.5" y="172.7"/>
+<use href="#hole" x="185.5" y="164.58"/>
+<use href="#hole" x="185.5" y="156.45"/>
+<use href="#hole" x="185.5" y="148.32"/>
+<use href="#hole" x="185.5" y="140.19"/>
+<use href="#hole" x="185.5" y="132.06"/>
+<use href="#hole" x="185.5" y="123.94"/>
+<use href="#hole" x="185.5" y="115.81"/>
+<use href="#hole" x="185.5" y="107.68"/>
+<use href="#hole" x="185.5" y="99.55"/>
+<use href="#hole" x="185.5" y="91.42"/>
+<use href="#hole" x="185.5" y="83.3"/>
+<use href="#hole" x="185.5" y="75.17"/>
+<use href="#hole" x="185.5" y="67.04"/>
+<use href="#hole" x="185.5" y="58.91"/>
+<use href="#hole" x="193.63" y="197.09"/>
+<use href="#hole" x="193.63" y="188.96"/>
+<use href="#hole" x="193.63" y="180.83"/>
+<use href="#hole" x="193.63" y="172.7"/>
+<use href="#hole" x="193.63" y="164.58"/>
+<use href="#hole" x="193.63" y="156.45"/>
+<use href="#hole" x="193.63" y="148.32"/>
+<use href="#hole" x="193.63" y="140.19"/>
+<use href="#hole" x="193.63" y="132.06"/>
+<use href="#hole" x="193.63" y="123.94"/>
+<use href="#hole" x="193.63" y="115.81"/>
+<use href="#hole" x="193.63" y="107.68"/>
+<use href="#hole" x="193.63" y="99.55"/>
+<use href="#hole" x="193.63" y="91.42"/>
+<use href="#hole" x="193.63" y="83.3"/>
+<use href="#hole" x="193.63" y="75.17"/>
+<use href="#hole" x="193.63" y="67.04"/>
+<use href="#hole" x="193.63" y="58.91"/>
+<use href="#hole" x="201.76" y="197.09"/>
+<use href="#hole" x="201.76" y="188.96"/>
+<use href="#hole" x="201.76" y="180.83"/>
+<use href="#hole" x="201.76" y="172.7"/>
+<use href="#hole" x="201.76" y="164.58"/>
+<use href="#hole" x="201.76" y="156.45"/>
+<use href="#hole" x="201.76" y="148.32"/>
+<use href="#hole" x="201.76" y="140.19"/>
+<use href="#hole" x="201.76" y="132.06"/>
+<use href="#hole" x="201.76" y="123.94"/>
+<use href="#hole" x="201.76" y="115.81"/>
+<use href="#hole" x="201.76" y="107.68"/>
+<use href="#hole" x="201.76" y="99.55"/>
+<use href="#hole" x="201.76" y="91.42"/>
+<use href="#hole" x="201.76" y="83.3"/>
+<use href="#hole" x="201.76" y="75.17"/>
+<use href="#hole" x="201.76" y="67.04"/>
+<use href="#hole" x="201.76" y="58.91"/>
+<use href="#hole" x="209.89" y="197.09"/>
+<use href="#hole" x="209.89" y="188.96"/>
+<use href="#hole" x="209.89" y="180.83"/>
+<use href="#hole" x="209.89" y="172.7"/>
+<use href="#hole" x="209.89" y="164.58"/>
+<use href="#hole" x="209.89" y="156.45"/>
+<use href="#hole" x="209.89" y="148.32"/>
+<use href="#hole" x="209.89" y="140.19"/>
+<use href="#hole" x="209.89" y="132.06"/>
+<use href="#hole" x="209.89" y="123.94"/>
+<use href="#hole" x="209.89" y="115.81"/>
+<use href="#hole" x="209.89" y="107.68"/>
+<use href="#hole" x="209.89" y="99.55"/>
+<use href="#hole" x="209.89" y="91.42"/>
+<use href="#hole" x="209.89" y="83.3"/>
+<use href="#hole" x="209.89" y="75.17"/>
+<use href="#hole" x="209.89" y="67.04"/>
+<use href="#hole" x="209.89" y="58.91"/>
+<use href="#hole" x="218.02" y="197.09"/>
+<use href="#hole" x="218.02" y="188.96"/>
+<use href="#hole" x="218.02" y="180.83"/>
+<use href="#hole" x="218.02" y="172.7"/>
+<use href="#hole" x="218.02" y="164.58"/>
+<use href="#hole" x="218.02" y="156.45"/>
+<use href="#hole" x="218.02" y="148.32"/>
+<use href="#hole" x="218.02" y="140.19"/>
+<use href="#hole" x="218.02" y="132.06"/>
+<use href="#hole" x="218.02" y="123.94"/>
+<use href="#hole" x="218.02" y="115.81"/>
+<use href="#hole" x="218.02" y="107.68"/>
+<use href="#hole" x="218.02" y="99.55"/>
+<use href="#hole" x="218.02" y="91.42"/>
+<use href="#hole" x="218.02" y="83.3"/>
+<use href="#hole" x="218.02" y="75.17"/>
+<use href="#hole" x="218.02" y="67.04"/>
+<use href="#hole" x="218.02" y="58.91"/>
+<use href="#hole" x="226.14" y="197.09"/>
+<use href="#hole" x="226.14" y="188.96"/>
+<use href="#hole" x="226.14" y="180.83"/>
+<use href="#hole" x="226.14" y="172.7"/>
+<use href="#hole" x="226.14" y="164.58"/>
+<use href="#hole" x="226.14" y="156.45"/>
+<use href="#hole" x="226.14" y="148.32"/>
+<use href="#hole" x="226.14" y="140.19"/>
+<use href="#hole" x="226.14" y="132.06"/>
+<use href="#hole" x="226.14" y="123.94"/>
+<use href="#hole" x="226.14" y="115.81"/>
+<use href="#hole" x="226.14" y="107.68"/>
+<use href="#hole" x="226.14" y="99.55"/>
+<use href="#hole" x="226.14" y="91.42"/>
+<use href="#hole" x="226.14" y="83.3"/>
+<use href="#hole" x="226.14" y="75.17"/>
+<use href="#hole" x="226.14" y="67.04"/>
+<use href="#hole" x="226.14" y="58.91"/>
+<use href="#hole" x="234.27" y="197.09"/>
+<use href="#hole" x="234.27" y="188.96"/>
+<use href="#hole" x="234.27" y="180.83"/>
+<use href="#hole" x="234.27" y="172.7"/>
+<use href="#hole" x="234.27" y="164.58"/>
+<use href="#hole" x="234.27" y="156.45"/>
+<use href="#hole" x="234.27" y="148.32"/>
+<use href="#hole" x="234.27" y="140.19"/>
+<use href="#hole" x="234.27" y="132.06"/>
+<use href="#hole" x="234.27" y="123.94"/>
+<use href="#hole" x="234.27" y="115.81"/>
+<use href="#hole" x="234.27" y="107.68"/>
+<use href="#hole" x="234.27" y="99.55"/>
+<use href="#hole" x="234.27" y="91.42"/>
+<use href="#hole" x="234.27" y="83.3"/>
+<use href="#hole" x="234.27" y="75.17"/>
+<use href="#hole" x="234.27" y="67.04"/>
+<use href="#hole" x="234.27" y="58.91"/>
+<rect x="30.72" y="186.56" width="5.76" height="4.8" rx="1.92" fill="#c9a66b" opacity="0.55"/>
+<rect x="30.72" y="178.43" width="5.76" height="4.8" rx="1.92" fill="#c9a66b" opacity="0.55"/>
+<rect x="30.72" y="170.3" width="5.76" height="4.8" rx="1.92" fill="#c9a66b" opacity="0.55"/>
+<rect x="30.72" y="162.18" width="5.76" height="4.8" rx="1.92" fill="#c9a66b" opacity="0.55"/>
+<rect x="30.72" y="154.05" width="5.76" height="4.8" rx="1.92" fill="#c9a66b" opacity="0.55"/>
+<rect x="30.72" y="145.92" width="5.76" height="4.8" rx="1.92" fill="#c9a66b" opacity="0.55"/>
+<rect x="30.72" y="137.79" width="5.76" height="4.8" rx="1.92" fill="#c9a66b" opacity="0.55"/>
+<rect x="30.72" y="129.66" width="5.76" height="4.8" rx="1.92" fill="#c9a66b" opacity="0.55"/>
+<rect x="30.72" y="121.54" width="5.76" height="4.8" rx="1.92" fill="#c9a66b" opacity="0.55"/>
+<rect x="30.72" y="113.41" width="5.76" height="4.8" rx="1.92" fill="#c9a66b" opacity="0.55"/>
+<rect x="30.72" y="105.28" width="5.76" height="4.8" rx="1.92" fill="#c9a66b" opacity="0.55"/>
+<rect x="30.72" y="97.15" width="5.76" height="4.8" rx="1.92" fill="#c9a66b" opacity="0.55"/>
+<rect x="30.72" y="89.02" width="5.76" height="4.8" rx="1.92" fill="#c9a66b" opacity="0.55"/>
+<rect x="30.72" y="80.9" width="5.76" height="4.8" rx="1.92" fill="#c9a66b" opacity="0.55"/>
+<rect x="30.72" y="72.77" width="5.76" height="4.8" rx="1.92" fill="#c9a66b" opacity="0.55"/>
+<rect x="30.72" y="64.64" width="5.76" height="4.8" rx="1.92" fill="#c9a66b" opacity="0.55"/>
+<rect x="245.12" y="186.56" width="5.76" height="4.8" rx="1.92" fill="#c9a66b" opacity="0.55"/>
+<rect x="245.12" y="178.43" width="5.76" height="4.8" rx="1.92" fill="#c9a66b" opacity="0.55"/>
+<rect x="245.12" y="170.3" width="5.76" height="4.8" rx="1.92" fill="#c9a66b" opacity="0.55"/>
+<rect x="245.12" y="162.18" width="5.76" height="4.8" rx="1.92" fill="#c9a66b" opacity="0.55"/>
+<rect x="245.12" y="154.05" width="5.76" height="4.8" rx="1.92" fill="#c9a66b" opacity="0.55"/>
+<rect x="245.12" y="145.92" width="5.76" height="4.8" rx="1.92" fill="#c9a66b" opacity="0.55"/>
+<rect x="245.12" y="137.79" width="5.76" height="4.8" rx="1.92" fill="#c9a66b" opacity="0.55"/>
+<rect x="245.12" y="129.66" width="5.76" height="4.8" rx="1.92" fill="#c9a66b" opacity="0.55"/>
+<rect x="245.12" y="121.54" width="5.76" height="4.8" rx="1.92" fill="#c9a66b" opacity="0.55"/>
+<rect x="245.12" y="113.41" width="5.76" height="4.8" rx="1.92" fill="#c9a66b" opacity="0.55"/>
+<rect x="245.12" y="105.28" width="5.76" height="4.8" rx="1.92" fill="#c9a66b" opacity="0.55"/>
+<rect x="245.12" y="97.15" width="5.76" height="4.8" rx="1.92" fill="#c9a66b" opacity="0.55"/>
+<rect x="245.12" y="89.02" width="5.76" height="4.8" rx="1.92" fill="#c9a66b" opacity="0.55"/>
+<rect x="245.12" y="80.9" width="5.76" height="4.8" rx="1.92" fill="#c9a66b" opacity="0.55"/>
+<rect x="245.12" y="72.77" width="5.76" height="4.8" rx="1.92" fill="#c9a66b" opacity="0.55"/>
+<rect x="245.12" y="64.64" width="5.76" height="4.8" rx="1.92" fill="#c9a66b" opacity="0.55"/>
+<circle cx="33.6" cy="202.56" r="3.2" fill="#ffffff" stroke="#222826" stroke-width="0.38"/>
+<circle cx="33.6" cy="53.44" r="3.2" fill="#ffffff" stroke="#222826" stroke-width="0.38"/>
+<circle cx="248" cy="202.56" r="3.2" fill="#ffffff" stroke="#222826" stroke-width="0.38"/>
+<circle cx="248" cy="53.44" r="3.2" fill="#ffffff" stroke="#222826" stroke-width="0.38"/>
+<text x="17.6" y="199.01" font-size="5.44" text-anchor="middle" fill="#5f6b66" font-weight="600" style="font-family:system-ui,-apple-system,'Segoe UI',sans-serif">A</text>
+<text x="264" y="199.01" font-size="5.44" text-anchor="middle" fill="#5f6b66" font-weight="600" style="font-family:system-ui,-apple-system,'Segoe UI',sans-serif">A</text>
+<text x="17.6" y="190.88" font-size="5.44" text-anchor="middle" fill="#5f6b66" font-weight="600" style="font-family:system-ui,-apple-system,'Segoe UI',sans-serif">B</text>
+<text x="264" y="190.88" font-size="5.44" text-anchor="middle" fill="#5f6b66" font-weight="600" style="font-family:system-ui,-apple-system,'Segoe UI',sans-serif">B</text>
+<text x="17.6" y="182.75" font-size="5.44" text-anchor="middle" fill="#5f6b66" font-weight="600" style="font-family:system-ui,-apple-system,'Segoe UI',sans-serif">C</text>
+<text x="264" y="182.75" font-size="5.44" text-anchor="middle" fill="#5f6b66" font-weight="600" style="font-family:system-ui,-apple-system,'Segoe UI',sans-serif">C</text>
+<text x="17.6" y="174.62" font-size="5.44" text-anchor="middle" fill="#5f6b66" font-weight="600" style="font-family:system-ui,-apple-system,'Segoe UI',sans-serif">D</text>
+<text x="264" y="174.62" font-size="5.44" text-anchor="middle" fill="#5f6b66" font-weight="600" style="font-family:system-ui,-apple-system,'Segoe UI',sans-serif">D</text>
+<text x="17.6" y="166.5" font-size="5.44" text-anchor="middle" fill="#5f6b66" font-weight="600" style="font-family:system-ui,-apple-system,'Segoe UI',sans-serif">E</text>
+<text x="264" y="166.5" font-size="5.44" text-anchor="middle" fill="#5f6b66" font-weight="600" style="font-family:system-ui,-apple-system,'Segoe UI',sans-serif">E</text>
+<text x="17.6" y="158.37" font-size="5.44" text-anchor="middle" fill="#5f6b66" font-weight="600" style="font-family:system-ui,-apple-system,'Segoe UI',sans-serif">F</text>
+<text x="264" y="158.37" font-size="5.44" text-anchor="middle" fill="#5f6b66" font-weight="600" style="font-family:system-ui,-apple-system,'Segoe UI',sans-serif">F</text>
+<text x="17.6" y="150.24" font-size="5.44" text-anchor="middle" fill="#5f6b66" font-weight="600" style="font-family:system-ui,-apple-system,'Segoe UI',sans-serif">G</text>
+<text x="264" y="150.24" font-size="5.44" text-anchor="middle" fill="#5f6b66" font-weight="600" style="font-family:system-ui,-apple-system,'Segoe UI',sans-serif">G</text>
+<text x="17.6" y="142.11" font-size="5.44" text-anchor="middle" fill="#5f6b66" font-weight="600" style="font-family:system-ui,-apple-system,'Segoe UI',sans-serif">H</text>
+<text x="264" y="142.11" font-size="5.44" text-anchor="middle" fill="#5f6b66" font-weight="600" style="font-family:system-ui,-apple-system,'Segoe UI',sans-serif">H</text>
+<text x="17.6" y="133.98" font-size="5.44" text-anchor="middle" fill="#5f6b66" font-weight="600" style="font-family:system-ui,-apple-system,'Segoe UI',sans-serif">J</text>
+<text x="264" y="133.98" font-size="5.44" text-anchor="middle" fill="#5f6b66" font-weight="600" style="font-family:system-ui,-apple-system,'Segoe UI',sans-serif">J</text>
+<text x="17.6" y="125.86" font-size="5.44" text-anchor="middle" fill="#5f6b66" font-weight="600" style="font-family:system-ui,-apple-system,'Segoe UI',sans-serif">K</text>
+<text x="264" y="125.86" font-size="5.44" text-anchor="middle" fill="#5f6b66" font-weight="600" style="font-family:system-ui,-apple-system,'Segoe UI',sans-serif">K</text>
+<text x="17.6" y="117.73" font-size="5.44" text-anchor="middle" fill="#5f6b66" font-weight="600" style="font-family:system-ui,-apple-system,'Segoe UI',sans-serif">L</text>
+<text x="264" y="117.73" font-size="5.44" text-anchor="middle" fill="#5f6b66" font-weight="600" style="font-family:system-ui,-apple-system,'Segoe UI',sans-serif">L</text>
+<text x="17.6" y="109.6" font-size="5.44" text-anchor="middle" fill="#5f6b66" font-weight="600" style="font-family:system-ui,-apple-system,'Segoe UI',sans-serif">M</text>
+<text x="264" y="109.6" font-size="5.44" text-anchor="middle" fill="#5f6b66" font-weight="600" style="font-family:system-ui,-apple-system,'Segoe UI',sans-serif">M</text>
+<text x="17.6" y="101.47" font-size="5.44" text-anchor="middle" fill="#5f6b66" font-weight="600" style="font-family:system-ui,-apple-system,'Segoe UI',sans-serif">N</text>
+<text x="264" y="101.47" font-size="5.44" text-anchor="middle" fill="#5f6b66" font-weight="600" style="font-family:system-ui,-apple-system,'Segoe UI',sans-serif">N</text>
+<text x="17.6" y="93.34" font-size="5.44" text-anchor="middle" fill="#5f6b66" font-weight="600" style="font-family:system-ui,-apple-system,'Segoe UI',sans-serif">P</text>
+<text x="264" y="93.34" font-size="5.44" text-anchor="middle" fill="#5f6b66" font-weight="600" style="font-family:system-ui,-apple-system,'Segoe UI',sans-serif">P</text>
+<text x="17.6" y="85.22" font-size="5.44" text-anchor="middle" fill="#5f6b66" font-weight="600" style="font-family:system-ui,-apple-system,'Segoe UI',sans-serif">Q</text>
+<text x="264" y="85.22" font-size="5.44" text-anchor="middle" fill="#5f6b66" font-weight="600" style="font-family:system-ui,-apple-system,'Segoe UI',sans-serif">Q</text>
+<text x="17.6" y="77.09" font-size="5.44" text-anchor="middle" fill="#5f6b66" font-weight="600" style="font-family:system-ui,-apple-system,'Segoe UI',sans-serif">R</text>
+<text x="264" y="77.09" font-size="5.44" text-anchor="middle" fill="#5f6b66" font-weight="600" style="font-family:system-ui,-apple-system,'Segoe UI',sans-serif">R</text>
+<text x="17.6" y="68.96" font-size="5.44" text-anchor="middle" fill="#5f6b66" font-weight="600" style="font-family:system-ui,-apple-system,'Segoe UI',sans-serif">S</text>
+<text x="264" y="68.96" font-size="5.44" text-anchor="middle" fill="#5f6b66" font-weight="600" style="font-family:system-ui,-apple-system,'Segoe UI',sans-serif">S</text>
+<text x="17.6" y="60.83" font-size="5.44" text-anchor="middle" fill="#5f6b66" font-weight="600" style="font-family:system-ui,-apple-system,'Segoe UI',sans-serif">T</text>
+<text x="264" y="60.83" font-size="5.44" text-anchor="middle" fill="#5f6b66" font-weight="600" style="font-family:system-ui,-apple-system,'Segoe UI',sans-serif">T</text>
+<text x="47.33" y="215.68" font-size="4.64" text-anchor="middle" fill="#5f6b66" font-weight="600" style="font-family:system-ui,-apple-system,'Segoe UI',sans-serif">24</text>
+<text x="47.33" y="42.88" font-size="4.64" text-anchor="middle" fill="#5f6b66" font-weight="600" style="font-family:system-ui,-apple-system,'Segoe UI',sans-serif">24</text>
+<text x="55.46" y="215.68" font-size="4.64" text-anchor="middle" fill="#5f6b66" font-weight="600" style="font-family:system-ui,-apple-system,'Segoe UI',sans-serif">23</text>
+<text x="55.46" y="42.88" font-size="4.64" text-anchor="middle" fill="#5f6b66" font-weight="600" style="font-family:system-ui,-apple-system,'Segoe UI',sans-serif">23</text>
+<text x="63.58" y="215.68" font-size="4.64" text-anchor="middle" fill="#5f6b66" font-weight="600" style="font-family:system-ui,-apple-system,'Segoe UI',sans-serif">22</text>
+<text x="63.58" y="42.88" font-size="4.64" text-anchor="middle" fill="#5f6b66" font-weight="600" style="font-family:system-ui,-apple-system,'Segoe UI',sans-serif">22</text>
+<text x="71.71" y="215.68" font-size="4.64" text-anchor="middle" fill="#5f6b66" font-weight="600" style="font-family:system-ui,-apple-system,'Segoe UI',sans-serif">21</text>
+<text x="71.71" y="42.88" font-size="4.64" text-anchor="middle" fill="#5f6b66" font-weight="600" style="font-family:system-ui,-apple-system,'Segoe UI',sans-serif">21</text>
+<text x="79.84" y="215.68" font-size="4.64" text-anchor="middle" fill="#5f6b66" font-weight="600" style="font-family:system-ui,-apple-system,'Segoe UI',sans-serif">20</text>
+<text x="79.84" y="42.88" font-size="4.64" text-anchor="middle" fill="#5f6b66" font-weight="600" style="font-family:system-ui,-apple-system,'Segoe UI',sans-serif">20</text>
+<text x="87.97" y="215.68" font-size="4.64" text-anchor="middle" fill="#5f6b66" font-weight="600" style="font-family:system-ui,-apple-system,'Segoe UI',sans-serif">19</text>
+<text x="87.97" y="42.88" font-size="4.64" text-anchor="middle" fill="#5f6b66" font-weight="600" style="font-family:system-ui,-apple-system,'Segoe UI',sans-serif">19</text>
+<text x="96.1" y="215.68" font-size="4.64" text-anchor="middle" fill="#5f6b66" font-weight="600" style="font-family:system-ui,-apple-system,'Segoe UI',sans-serif">18</text>
+<text x="96.1" y="42.88" font-size="4.64" text-anchor="middle" fill="#5f6b66" font-weight="600" style="font-family:system-ui,-apple-system,'Segoe UI',sans-serif">18</text>
+<text x="104.22" y="215.68" font-size="4.64" text-anchor="middle" fill="#5f6b66" font-weight="600" style="font-family:system-ui,-apple-system,'Segoe UI',sans-serif">17</text>
+<text x="104.22" y="42.88" font-size="4.64" text-anchor="middle" fill="#5f6b66" font-weight="600" style="font-family:system-ui,-apple-system,'Segoe UI',sans-serif">17</text>
+<text x="112.35" y="215.68" font-size="4.64" text-anchor="middle" fill="#5f6b66" font-weight="600" style="font-family:system-ui,-apple-system,'Segoe UI',sans-serif">16</text>
+<text x="112.35" y="42.88" font-size="4.64" text-anchor="middle" fill="#5f6b66" font-weight="600" style="font-family:system-ui,-apple-system,'Segoe UI',sans-serif">16</text>
+<text x="120.48" y="215.68" font-size="4.64" text-anchor="middle" fill="#5f6b66" font-weight="600" style="font-family:system-ui,-apple-system,'Segoe UI',sans-serif">15</text>
+<text x="120.48" y="42.88" font-size="4.64" text-anchor="middle" fill="#5f6b66" font-weight="600" style="font-family:system-ui,-apple-system,'Segoe UI',sans-serif">15</text>
+<text x="128.61" y="215.68" font-size="4.64" text-anchor="middle" fill="#5f6b66" font-weight="600" style="font-family:system-ui,-apple-system,'Segoe UI',sans-serif">14</text>
+<text x="128.61" y="42.88" font-size="4.64" text-anchor="middle" fill="#5f6b66" font-weight="600" style="font-family:system-ui,-apple-system,'Segoe UI',sans-serif">14</text>
+<text x="136.74" y="215.68" font-size="4.64" text-anchor="middle" fill="#5f6b66" font-weight="600" style="font-family:system-ui,-apple-system,'Segoe UI',sans-serif">13</text>
+<text x="136.74" y="42.88" font-size="4.64" text-anchor="middle" fill="#5f6b66" font-weight="600" style="font-family:system-ui,-apple-system,'Segoe UI',sans-serif">13</text>
+<text x="144.86" y="215.68" font-size="4.64" text-anchor="middle" fill="#5f6b66" font-weight="600" style="font-family:system-ui,-apple-system,'Segoe UI',sans-serif">12</text>
+<text x="144.86" y="42.88" font-size="4.64" text-anchor="middle" fill="#5f6b66" font-weight="600" style="font-family:system-ui,-apple-system,'Segoe UI',sans-serif">12</text>
+<text x="152.99" y="215.68" font-size="4.64" text-anchor="middle" fill="#5f6b66" font-weight="600" style="font-family:system-ui,-apple-system,'Segoe UI',sans-serif">11</text>
+<text x="152.99" y="42.88" font-size="4.64" text-anchor="middle" fill="#5f6b66" font-weight="600" style="font-family:system-ui,-apple-system,'Segoe UI',sans-serif">11</text>
+<text x="161.12" y="215.68" font-size="4.64" text-anchor="middle" fill="#5f6b66" font-weight="600" style="font-family:system-ui,-apple-system,'Segoe UI',sans-serif">10</text>
+<text x="161.12" y="42.88" font-size="4.64" text-anchor="middle" fill="#5f6b66" font-weight="600" style="font-family:system-ui,-apple-system,'Segoe UI',sans-serif">10</text>
+<text x="169.25" y="215.68" font-size="4.64" text-anchor="middle" fill="#5f6b66" font-weight="600" style="font-family:system-ui,-apple-system,'Segoe UI',sans-serif">9</text>
+<text x="169.25" y="42.88" font-size="4.64" text-anchor="middle" fill="#5f6b66" font-weight="600" style="font-family:system-ui,-apple-system,'Segoe UI',sans-serif">9</text>
+<text x="177.38" y="215.68" font-size="4.64" text-anchor="middle" fill="#5f6b66" font-weight="600" style="font-family:system-ui,-apple-system,'Segoe UI',sans-serif">8</text>
+<text x="177.38" y="42.88" font-size="4.64" text-anchor="middle" fill="#5f6b66" font-weight="600" style="font-family:system-ui,-apple-system,'Segoe UI',sans-serif">8</text>
+<text x="185.5" y="215.68" font-size="4.64" text-anchor="middle" fill="#5f6b66" font-weight="600" style="font-family:system-ui,-apple-system,'Segoe UI',sans-serif">7</text>
+<text x="185.5" y="42.88" font-size="4.64" text-anchor="middle" fill="#5f6b66" font-weight="600" style="font-family:system-ui,-apple-system,'Segoe UI',sans-serif">7</text>
+<text x="193.63" y="215.68" font-size="4.64" text-anchor="middle" fill="#5f6b66" font-weight="600" style="font-family:system-ui,-apple-system,'Segoe UI',sans-serif">6</text>
+<text x="193.63" y="42.88" font-size="4.64" text-anchor="middle" fill="#5f6b66" font-weight="600" style="font-family:system-ui,-apple-system,'Segoe UI',sans-serif">6</text>
+<text x="201.76" y="215.68" font-size="4.64" text-anchor="middle" fill="#5f6b66" font-weight="600" style="font-family:system-ui,-apple-system,'Segoe UI',sans-serif">5</text>
+<text x="201.76" y="42.88" font-size="4.64" text-anchor="middle" fill="#5f6b66" font-weight="600" style="font-family:system-ui,-apple-system,'Segoe UI',sans-serif">5</text>
+<text x="209.89" y="215.68" font-size="4.64" text-anchor="middle" fill="#5f6b66" font-weight="600" style="font-family:system-ui,-apple-system,'Segoe UI',sans-serif">4</text>
+<text x="209.89" y="42.88" font-size="4.64" text-anchor="middle" fill="#5f6b66" font-weight="600" style="font-family:system-ui,-apple-system,'Segoe UI',sans-serif">4</text>
+<text x="218.02" y="215.68" font-size="4.64" text-anchor="middle" fill="#5f6b66" font-weight="600" style="font-family:system-ui,-apple-system,'Segoe UI',sans-serif">3</text>
+<text x="218.02" y="42.88" font-size="4.64" text-anchor="middle" fill="#5f6b66" font-weight="600" style="font-family:system-ui,-apple-system,'Segoe UI',sans-serif">3</text>
+<text x="226.14" y="215.68" font-size="4.64" text-anchor="middle" fill="#5f6b66" font-weight="600" style="font-family:system-ui,-apple-system,'Segoe UI',sans-serif">2</text>
+<text x="226.14" y="42.88" font-size="4.64" text-anchor="middle" fill="#5f6b66" font-weight="600" style="font-family:system-ui,-apple-system,'Segoe UI',sans-serif">2</text>
+<text x="234.27" y="215.68" font-size="4.64" text-anchor="middle" fill="#5f6b66" font-weight="600" style="font-family:system-ui,-apple-system,'Segoe UI',sans-serif">1</text>
+<text x="234.27" y="42.88" font-size="4.64" text-anchor="middle" fill="#5f6b66" font-weight="600" style="font-family:system-ui,-apple-system,'Segoe UI',sans-serif">1</text>
+<text x="28.8" y="20.8" font-size="7.04" text-anchor="start" fill="#222826" font-weight="700" style="font-family:system-ui,-apple-system,'Segoe UI',sans-serif">Step 1: Key switches, on the front</text>
+<rect x="45.86" y="118.4" width="19.2" height="19.2" rx="1.28" fill="#1f2221"/><circle cx="55.46" cy="128" r="5.6" fill="#8e3b2e"/>
+<rect x="44.34" y="100.1" width="22.24" height="5.4" rx="1.8" fill="#1f2221" opacity="0.85"/>
+<text x="55.46" y="104.24" font-size="4" text-anchor="middle" fill="#ffffff" font-weight="700" style="font-family:system-ui,-apple-system,'Segoe UI',sans-serif">SW1 prev</text>
+<circle cx="63.58" cy="115.81" r="2.4" fill="none" stroke="#ffd43b" stroke-width="0.96"/>
+<circle cx="47.33" cy="140.19" r="2.4" fill="none" stroke="#ffd43b" stroke-width="0.96"/>
+<circle cx="63.58" cy="140.19" r="2.4" fill="none" stroke="#ffd43b" stroke-width="0.96"/>
+<circle cx="47.33" cy="115.81" r="2.4" fill="none" stroke="#ffd43b" stroke-width="0.96"/>
+<rect x="102.75" y="118.4" width="19.2" height="19.2" rx="1.28" fill="#1f2221"/><circle cx="112.35" cy="128" r="5.6" fill="#8e3b2e"/>
+<rect x="101.23" y="100.1" width="22.24" height="5.4" rx="1.8" fill="#1f2221" opacity="0.85"/>
+<text x="112.35" y="104.24" font-size="4" text-anchor="middle" fill="#ffffff" font-weight="700" style="font-family:system-ui,-apple-system,'Segoe UI',sans-serif">SW2 play</text>
+<circle cx="120.48" cy="115.81" r="2.4" fill="none" stroke="#ffd43b" stroke-width="0.96"/>
+<circle cx="104.22" cy="140.19" r="2.4" fill="none" stroke="#ffd43b" stroke-width="0.96"/>
+<circle cx="120.48" cy="140.19" r="2.4" fill="none" stroke="#ffd43b" stroke-width="0.96"/>
+<circle cx="104.22" cy="115.81" r="2.4" fill="none" stroke="#ffd43b" stroke-width="0.96"/>
+<rect x="159.65" y="118.4" width="19.2" height="19.2" rx="1.28" fill="#1f2221"/><circle cx="169.25" cy="128" r="5.6" fill="#8e3b2e"/>
+<rect x="158.13" y="100.1" width="22.24" height="5.4" rx="1.8" fill="#1f2221" opacity="0.85"/>
+<text x="169.25" y="104.24" font-size="4" text-anchor="middle" fill="#ffffff" font-weight="700" style="font-family:system-ui,-apple-system,'Segoe UI',sans-serif">SW3 next</text>
+<circle cx="177.38" cy="115.81" r="2.4" fill="none" stroke="#ffd43b" stroke-width="0.96"/>
+<circle cx="161.12" cy="140.19" r="2.4" fill="none" stroke="#ffd43b" stroke-width="0.96"/>
+<circle cx="177.38" cy="140.19" r="2.4" fill="none" stroke="#ffd43b" stroke-width="0.96"/>
+<circle cx="161.12" cy="115.81" r="2.4" fill="none" stroke="#ffd43b" stroke-width="0.96"/>
+<rect x="216.54" y="118.4" width="19.2" height="19.2" rx="1.28" fill="#1f2221"/><circle cx="226.14" cy="128" r="5.6" fill="#8e3b2e"/>
+<rect x="215.02" y="100.1" width="22.24" height="5.4" rx="1.8" fill="#1f2221" opacity="0.85"/>
+<text x="226.14" y="104.24" font-size="4" text-anchor="middle" fill="#ffffff" font-weight="700" style="font-family:system-ui,-apple-system,'Segoe UI',sans-serif">SW4 back</text>
+<circle cx="234.27" cy="115.81" r="2.4" fill="none" stroke="#ffd43b" stroke-width="0.96"/>
+<circle cx="218.02" cy="140.19" r="2.4" fill="none" stroke="#ffd43b" stroke-width="0.96"/>
+<circle cx="234.27" cy="140.19" r="2.4" fill="none" stroke="#ffd43b" stroke-width="0.96"/>
+<circle cx="218.02" cy="115.81" r="2.4" fill="none" stroke="#ffd43b" stroke-width="0.96"/>
+<text x="140.8" y="250.24" font-size="4.16" text-anchor="middle" fill="#5f6b66" font-weight="400" style="font-family:system-ui,-apple-system,'Segoe UI',sans-serif">Yellow rings: the holes for each switch's four legs, in rows H and L. Solder them on the back.</text>
+</svg>

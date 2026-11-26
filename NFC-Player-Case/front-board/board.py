@@ -42,7 +42,7 @@ import case as c  # noqa: E402
 import sexpr  # noqa: E402
 
 NAME = "nfc-front-board"
-REVISION = "3"
+REVISION = "4"
 def kicad_paths():
     """kicad-cli and KiCad's shared folder (footprints, symbols, template), on any system.
 
@@ -89,14 +89,14 @@ PI_PINS = {
 }
 POWER_NETS = ("GND", "3V3", "5V")
 
-# Headers on the back of the board, pin 1 first. Pin names are printed beside the pins.
+# Headers on the back of the board, pin 1 first, in the holes case.HEADER_HOLES gives. Pin names are printed beside the pins.
 HEADERS = {
     # ref: (title, pin names, nets, pin 1 x, z, value)
-    "J2": ("LCD", ("VCC", "GND", "DIN", "CLK", "CS", "DC", "RST", "BL"), ("3V3", "GND", "MOSI", "SCLK", "LCD_CS", "LCD_DC", "LCD_RST", "LCD_BL"), 50.78, 9.5, "Screen"),
-    "J3": ("NFC", ("SCK", "MISO", "MOSI", "SS", "VCC", "GND"), ("SCLK", "MISO", "MOSI", "NFC_CS", "3V3", "GND"), 72.7, 9.5, "NFC reader"),
-    "J5": ("PWR", ("KEY", "GND", "LED+", "LED-"), ("KEY", "GND", "LED_A", "LED_K"), 40.62, 16.0, "Power key"),
-    "J6": ("OLED", ("GND", "VCC", "SCL", "SDA"), ("GND", "3V3", "SCL", "SDA"), 55.62, 16.0, "OLED"),
-    "J4": ("ENC", ("A", "C", "B", "SW", "SW"), ("ENC_A", "GND", "ENC_B", "ENC_SW", "GND"), 73.16, 16.0, "Knob"),
+    "J2": ("LCD", ("VCC", "GND", "DIN", "CLK", "CS", "DC", "RST", "BL"), ("3V3", "GND", "MOSI", "SCLK", "LCD_CS", "LCD_DC", "LCD_RST", "LCD_BL"), *c.hole(*c.HEADER_HOLES["J2"]), "Screen"),
+    "J3": ("NFC", ("SCK", "MISO", "MOSI", "SS", "VCC", "GND"), ("SCLK", "MISO", "MOSI", "NFC_CS", "3V3", "GND"), *c.hole(*c.HEADER_HOLES["J3"]), "NFC reader"),
+    "J5": ("PWR", ("KEY", "GND", "LED+", "LED-"), ("KEY", "GND", "LED_A", "LED_K"), *c.hole(*c.HEADER_HOLES["J5"]), "Power key"),
+    "J6": ("OLED", ("GND", "VCC", "SCL", "SDA"), ("GND", "3V3", "SCL", "SDA"), *c.hole(*c.HEADER_HOLES["J6"]), "OLED"),
+    "J4": ("ENC", ("A", "C", "B", "SW", "SW"), ("ENC_A", "GND", "ENC_B", "ENC_SW", "GND"), *c.hole(*c.HEADER_HOLES["J4"]), "Knob"),
 }
 KEY_NAMES = ("PREV", "PLAY", "NEXT", "BACK")
 KEY_NETS = ("PREV", "PLAY", "NEXT", "BACK")
@@ -118,7 +118,7 @@ def part(ref, value, symbol, footprint, nets, at, side="back", rot=0.0, desc="",
 
 
 part("J1", "Pi GPIO, ribbon from the DAC", ("Connector_Generic", "Conn_02x20_Odd_Even"), ("Connector_IDC", "IDC-Header_2x20_P2.54mm_Vertical"),
-     {str(k): v for k, v in PI_PINS.items()}, (c.PI_HEADER_X, Y(46.0)), rot=90, desc="Shrouded 2x20 box header, 2.54 mm")
+     {str(k): v for k, v in PI_PINS.items()}, (c.PI_HEADER_X, Y(c.J1_Z)), rot=90, desc="Shrouded 2x20 box header, 2.54 mm")
 for i, (k, name, net) in enumerate(zip(c.KEYS_X, KEY_NAMES, KEY_NETS)):
     part(f"SW{i + 1}", f"{name.title()} key", ("Switch", "SW_Push"), ("Button_Switch_THT", "SW_PUSH_6mm_H5mm"), {"1": net, "2": "GND"}, (k, Y(c.CTRL_Z)), side="front",
          desc="6 x 6 mm through-hole tactile switch, 5 mm tall, on the side facing the panel")
@@ -643,22 +643,24 @@ def build_board(used_nets):
     # labels on the back, for the person plugging things in: header names, pin names, keys
     for ref, (title, names, netl, x1p, z, value) in HEADERS.items():
         y = Y(z)
-        text(title, x1p + 1.6, y, just=pcbnew.GR_TEXT_H_ALIGN_RIGHT, bold=True)
         for k, name in enumerate(names):
-            # narrow letters, so the longest names still end clear of the header below; each starts just past its pin's outline
-            t = text(name, x1p - 2.54 * k, y + 3.0, angle=90, width=0.8)
-            t.Move(pcbnew.VECTOR2I(0, mm(y + 1.65) - t.GetBoundingBox().GetTop()))
+            # narrow letters, standing up from just past each pin's outline, so the longest names end clear of the header above
+            t = text(name, x1p - 2.54 * k, y - 3.0, angle=90, width=0.8)
+            t.Move(pcbnew.VECTOR2I(0, mm(y - 1.65) - t.GetBoundingBox().GetBottom()))
+        # the header's name: below the lower row, which has the board's edge under it, and above the names of the upper row
+        centre = x1p - 2.54 * (len(names) - 1) / 2
+        text(title, centre, y + 2.4 if z < c.CTRL_Z - 10 and c.HEADER_HOLES[ref][1] == 0 else y - 5.7, bold=True)
     for k, name in zip(c.KEYS_X, KEY_NAMES):
         text(name, k, Y(c.CTRL_Z) - 6.0, bold=True)
     for p in PARTS:
         if p["label"]:
             text(LABELS.get(p["ref"], p["ref"]), *p["label"], bold=p["ref"] in LABELS)
-    mid = (c.BOARD_X[0] + 6 + c.BOARD_X[1]) / 2
-    text(f"NFC PLAYER FRONT BOARD  REV {REVISION}", mid, 21.4)
-    text("HEADERS ON THIS SIDE. KEY SWITCHES GO ON THE OTHER SIDE", mid, 35.8)
-    text("TRIM LEADS ON THE OTHER SIDE TO 1.5 MM", mid, 37.6)
-    text("THIS SIDE TOWARDS THE PANEL", mid, 21.4, layer=pcbnew.F_SilkS)
-    text("ONLY THE FOUR KEY SWITCHES ON THIS SIDE", mid, 41.0, layer=pcbnew.F_SilkS)
+    mid = (c.BOARD_X[0] + c.BOARD_X[1]) / 2
+    text(f"NFC PLAYER FRONT BOARD  REV {REVISION}", mid, Y(38.8))
+    text("HEADERS ON THIS SIDE. KEY SWITCHES GO ON THE OTHER SIDE", mid, Y(24.6))
+    text("TRIM LEADS ON THE OTHER SIDE TO 1.5 MM", mid, Y(22.8))
+    text("THIS SIDE TOWARDS THE PANEL", mid, Y(38.8), layer=pcbnew.F_SilkS)
+    text("ONLY THE FOUR KEY SWITCHES ON THIS SIDE", mid, Y(19.0), layer=pcbnew.F_SilkS)
 
     j1 = {pad.GetNumber(): pad.GetPosition() for pad in board.FindFootprintByReference("J1").Pads()}
     centre = (pcbnew.ToMM(j1["1"].x) + pcbnew.ToMM(j1["40"].x)) / 2
@@ -850,7 +852,7 @@ def main():
     run("sch", "export", "bom", "--output", FAB / f"{NAME}-bom.csv", "--fields", "Reference,Value,Footprint,Description,${QUANTITY}", "--labels", "Refs,Value,Footprint,Description,Qty", "--group-by", "Value,Footprint", f"{NAME}.kicad_sch")
     for side in ("front", "back"):
         run("pcb", "export", "svg", "--output", FAB / f"{NAME}-{side}.svg", "--layers", ("F.Cu,F.SilkS,Edge.Cuts" if side == "front" else "B.Cu,B.SilkS,Edge.Cuts"), "--mode-single", "--page-size-mode", "2", "--exclude-drawing-sheet", *(["--mirror"] if side == "back" else []), f"{NAME}.kicad_pcb")
-        code, out = run("pcb", "render", "--output", FAB / f"{NAME}-{side}.png", "--side", "top" if side == "front" else "bottom", "--width", "1600", "--height", "1000", "--zoom", "1.55", "--quality", "high", "--background", "opaque", f"{NAME}.kicad_pcb")
+        code, out = run("pcb", "render", "--output", FAB / f"{NAME}-{side}.png", "--side", "top" if side == "front" else "bottom", "--width", "1600", "--height", "1000", "--zoom", "1.3", "--quality", "high", "--background", "opaque", f"{NAME}.kicad_pcb")
         if code:
             print("   render failed:", out[-200:])
     print("== result ==")

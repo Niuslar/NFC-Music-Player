@@ -25,6 +25,9 @@ import case as c  # noqa: E402
 
 sys.path.insert(0, str(HERE / "front-board"))
 import board as fb  # noqa: E402
+import perfboard as pb  # noqa: E402
+
+J1_PIN1 = pb.name(pb.PARTS["J1"]["pins"]["1"])  # the perfboard's hole for the 40-pin header's pin 1
 
 PICS = HERE / "pictures"
 REVISION = "4.3"
@@ -251,7 +254,7 @@ def assembly_page():
 <section id="hardware"><h2>Hardware</h2><ul>
 <li>M3 screws that thread straight into the print (try one in the <a href="{PRINTING}#gauge">fit gauge</a> first, and drive by hand): four M3 × 10 for the front, four M3 × 8 for the rear, four low-profile M3 × 6 for the lid (head at most 6 mm across and 1.5 mm tall), two M3 × 6 for the card guide and two for the screen bracket, each with a washer.</li><li>Four M2.5 × 5 screws to hold the screen's standoffs to its bracket (check the thread of the standoffs on your screen).</li>
 <li>Four M2.5 standoffs 5 mm tall, four M2.5 × 6 screws from below, and four more on top for the Pi.</li>
-<li>Three M2 × 6 pan-head screws for the front board, threaded through the spacer and the key carrier and into the panel.</li>
+<li>Four M2 × 6 pan-head screws for the front board, through its corner holes, the spacer and the key carrier and into the panel.</li>
 <li>A 40-way IDC ribbon cable for the Raspberry Pi, female at both ends with both plugs on the same side of the cable (the usual kind), as short as you can find: about 10 cm. The run is about 6 cm, and a longer cable just bows upward under the lid.</li>
 <li>Keys, knob and power key: four tactile switches (they go on the board), an encoder, a knob and a lit push button, all bought; the key caps are printed, all four on one key carrier. See <a href="#controls">Keys, knob and power key</a> for exactly what to get. The front board and its parts are in the <a href="{ELECTRONICS}#board">electronics guide</a>.</li>
 <li>A panel-mount USB-C socket on a short lead ending in micro-USB.</li>
@@ -292,8 +295,8 @@ def assembly_page():
 {step(1, "Fit the power key, the key carrier and the encoder", "step-1-front", "Keys, knob and power key from the front left. The washer, nut, knob and power key are pulled forward; the encoder and the power key's nut are pulled back.", "Front of the panel with the key caps flush in it, and the power key, washer, nut and knob pulled out in the order they go on",
 f"<p>Solder four wires to the power key and five to the encoder first, each ending in a female jumper end (see <a href=\"{ELECTRONICS}#board-leads\">What plugs in where</a> in the electronics guide). It is easier before they are in the panel. Then:</p><ol><li>Push the power key in from the front and tighten its nut from behind, with its tags pointing down or sideways.</li><li>Lay the panel face down. Lay the key carrier on it, caps down, so each cap drops into its hole and the two pegs into their holes. The frame then lies flat on the panel. From the front, left to right, the keys read previous, play/pause, next, back. Press each cap from the front: it should move in a little and spring back, without catching on the sides of its hole.</li><li>Nip off the encoder's locating lug if it has one. From behind, put the bushing through its hole so the body drops into the rectangular pocket.</li><li>On the front: washer, then nut. Tighten the nut firmly with a spanner, holding the body square in its pocket.</li><li>Slide the knob on, leaving about 1 mm clear of the nut, and tighten its set screw onto the flat of the shaft.</li></ol>",
 more=[("step-1-controls", "The same panel from behind (the inside), so the knob end is on the left. The key carrier and the encoder are pulled back.", "Inside of the front panel with the power key, the key carrier held behind it with its four caps lined up with their holes, and the encoder about to go into its pocket")])}
-{step(2, "Fit the spacer and the front board", "step-2-board", "The inside of the front panel from behind on the power key side, with the key carrier in place and the spacer and board pulled back together.", "Front board and spacer held behind the panel and the key carrier, the switches on the board's front lined up with the key caps, with the ribbon plug on its box header",
-f"<ol><li>Build the board first: see <a href=\"{ELECTRONICS}#board\">Front board for the case</a> in the electronics guide.</li><li>Press the ribbon's plug onto the board's box header now, red stripe at the triangle. It is hard to reach once the board is on.</li><li>With the panel still face down and the carrier in place, lay the spacer on the carrier, its screw holes over the carrier's.</li><li>Lay the board on the spacer, switches down towards the caps (see the <a href=\"#held\">close-up of one key</a>).</li><li>Fit its three M2 × 6 screws, snug only: they thread into the spacer and the panel.</li><li>Turn it over and press each key: it should click, and spring back flush. A key that is already pressed in or rattles means a switch of a different height; see <code>TACT_H</code> under <a href=\"{PRINTING}#measure\">Measure first</a>.</li></ol>")}
+{step(2, "Fit the spacer and the front board", "step-2-board", "The inside of the front panel from behind on the power key side, with the key carrier in place and the spacer and board pulled back together.", "Front board and spacer held behind the panel and the key carrier, the switches on the board's front lined up with the key caps, with the ribbon plug on its 40-pin header",
+f"<ol><li>Build the board first: see <a href=\"{ELECTRONICS}#board\">Front board for the case</a> in the electronics guide.</li><li>Press the ribbon's plug onto the board's 40-pin header now, red stripe at pin 1: the triangle on a printed board, or hole {J1_PIN1} on a perfboard. It is hard to reach once the board is on.</li><li>With the panel still face down and the carrier in place, lay the spacer on the carrier, its screw holes over the carrier's.</li><li>Lay the board on the spacer, switches down towards the caps (see the <a href=\"#held\">close-up of one key</a>).</li><li>Fit its four M2 × 6 screws, snug only: they thread into the spacer and the panel.</li><li>Turn it over and press each key: it should click, and spring back flush. A key that is already pressed in or rattles means a switch of a different height; see <code>TACT_H</code> under <a href=\"{PRINTING}#measure\">Measure first</a>.</li></ol>")}
 {step(3, "Fit the front panel and the screen", "step-3-screen", "Front left corner of the chassis from behind, with the front panel fitted and the screen on its bracket, pulled back from the window.", "Screen screwed to an upright bracket on the chassis floor behind the window, its base slid back over two floor screws, with an arrow showing it pushed forward",
 "<ol><li>Screw the front panel to the chassis with four M3 × 10 screws. The power key's body passes the front left corner tower through its notch.</li><li>Leave the four brass standoffs on the screen board. Screw the board to the bracket from behind with four M2.5 screws through the standoffs, glass facing away from the bracket, pin pads on its solid side and the socket on its open side. Leave them a little loose.</li><li>Stand the bracket behind the window, socket on the left facing the front board, and put its two M3 × 6 screws and washers through the slots in the tabs behind the upright into the floor bosses, loosely.</li><li>Push the bracket forward until the glass touches the panel, then tighten its two floor screws.</li><li>Look through the window and slide the screen sideways in its slots until the lit area is centred, then tighten its four screws.</li><li>Push the lead's plug into the socket from the left, then run the wires back and across to the front board's LCD header. With the screen this way round the picture may be upside down: if it is, choose <em>Upside down</em> under Screen orientation on the Setup page. A foam pad between the bracket and the lid stops it rattling.</li></ol>")}
 {step(4, "Mount the Pi and the DAC", "step-4-stack", "Chassis from the front left with the front panel off for clarity, and the two boards lifted apart.", "Chassis floor with four standoffs in two slots, and the Pi and DAC above them",
@@ -323,6 +326,53 @@ ELECTRONICS_FILE = HERE.parent / "docs" / "index.html"
 BOARD_MARKS = ("<!-- front-board: written by NFC-Player-Case/guide.py from board.py and case.py -->", "<!-- /front-board -->")
 
 
+def perfboard_steps():
+    """The perfboard's build, one step per picture, from perfboard.py."""
+    fab = "../NFC-Player-Case/front-board/fab/"
+
+    def table(head, rows):
+        return '<div class="table-wrap"><table><tr>' + "".join(f"<th>{h}</th>" for h in head) + "</tr>" + "".join("<tr>" + "".join(f"<td>{html.escape(str(v))}</td>" for v in r) + "</tr>" for r in rows) + "</table></div>"
+
+    def figure(file, alt):
+        return f'<figure><img src="{fab}{file}" alt="{html.escape(alt)}" style="display:block;width:100%;height:auto"></figure>'
+
+    pins = pb.PARTS["J1"]["pins"]
+    text = {
+        "switches": "Fit the four key switches on the front, legs in rows H and L, and solder them on the back. Their legs need opening out a little to reach the holes. Press each switch fully home, flat and square, since a tilted switch tilts its cap. Their legs are wired corner to corner, so it does not matter which way round a switch goes in.",
+        "parts": "Fit the small parts from the back and solder them on the front. The resistors and diodes stand upright, and the transistor's three legs go in a column. Mind the ones that only work one way round: each diode's band at the bottom, the transistor's flat face towards R1, and each LED's long leg (the anode) in the lower hole. R3, D3, R4 and D4 are the two optional supply lights; leave them out if you like.",
+        "headers": "Fit the headers from the back and solder them on the front: the five single-row headers along the bottom, and the plain 40-pin header along the top. Solder one pin, check the header sits flat and square, then do the rest. Then, on the front, trim every lead to 1.5 mm or less, so the joints fit in the openings in the spacer and the key carrier.",
+        "links": f"Make the bare links on the front, the grey lines in the picture. The ground bus is one bare wire along row C, from C-1 to C-23: solder it at both ends and wherever a link meets it. Then, with the multimeter on its beep setting, check there is no short between 3.3 V, 5 V and ground: J1 pins 1, 2 and 39, in holes {pb.name(pins['1'])}, {pb.name(pins['2'])} and {pb.name(pins['39'])}.",
+        "ground": "The ground wires join J1's ground pins, the ground leg of each key switch and the ground bus. Solder the wires to the switches' legs where they come through on the back.",
+        "3v3": "3.3 V runs from J1 pins 17 and 1 to the screen, the NFC reader and the OLED. The dashed wire is for the optional orange light only.",
+        "5v": "5 V runs from J1 pin 2 to R2, for the power key's light, and to the optional red light (dashed).",
+        "keys": "Each key's wire runs from J1 to the other leg of its switch, diagonally across from its ground leg.",
+        "nfc": "The NFC reader's four signals, from J1 to J3.",
+        "screen": "The screen's six. Its clock (CLK) and data (DIN) carry on from the NFC reader's SCK and MOSI pins, since the two share them; the other four come from J1.",
+        "knob": "The knob's three signals, from J1 to J4.",
+        "power": "The power key: its wake line through D2, its off line through D1, and its light through R1, Q1 and R2.",
+        "oled": "The OLED's two signals. Its SCL carries on from D2's pad, where the power key's wire from J1 pin 5 already ends.",
+    }
+    parts_for = {"switches": ("switch",), "parts": ("diode", "resistor", "to92", "led"), "headers": ("header", "j1")}
+    layers = {key: (title, colour, rows, checks) for key, title, colour, rows, checks in pb.layer_steps()}
+    out = []
+    for n, (stage, side, file) in enumerate(pb.step_files(), 1):
+        out.append(f'<h4 id="perfboard-step-{n}">Step {n}: {html.escape(pb.STAGE_TITLES[stage])}</h4>')
+        key = stage.removeprefix("wires-")
+        out.append(f"<p>{html.escape(text[key])}</p>")
+        out.append(figure(file, f"Step {n}: {pb.STAGE_TITLES[stage]}"))
+        if stage in parts_for:
+            out.append(table(("On the board", "Part", "Holes", "Note"), pb.parts_rows(parts_for[stage])))
+        elif stage == "links":
+            out.append(table(("Holes", "Joins"), pb.link_rows()))
+        else:
+            title, colour, rows, checks = layers[key]
+            out.append(table(("No.", "Signal", "From hole", "Beside", "To hole", "Beside"), [r[:6] if not r[6] else (r[0], r[1] + " (optional)", *r[2:6]) for r in rows]))
+            out.append("<p><strong>Beep test.</strong> " + html.escape("; ".join(pb.and_list(t) for t in checks)) + ".</p>")
+    out.append(f'<h4 id="perfboard-step-{len(pb.STAGES) + 1}">Step {len(pb.STAGES) + 1}: Check it</h4>')
+    out.append('<p>Check it as for the printed board, in <a href="#board-check">the last two steps below</a>.</p>')
+    return "\n".join(out)
+
+
 def board_section():
     """The front board's section of the electronics guide, which is hand-written apart from this."""
     case = "../NFC-Player-Case/"
@@ -331,33 +381,57 @@ def board_section():
     def pic(file, caption, alt):
         return f'<figure><img src="{fab}{file}" alt="{html.escape(alt)}" style="display:block;width:100%;height:auto"><figcaption>{caption}</figcaption></figure>'
 
+    def table(head, rows):
+        return '<div class="table-wrap"><table><tr>' + "".join(f"<th>{h}</th>" for h in head) + "</tr>" + "".join("<tr>" + "".join(f"<td>{html.escape(str(v))}</td>" for v in r) + "</tr>" for r in rows) + "</table></div>"
+
+    size = f"{n(c.BOARD_X[1] - c.BOARD_X[0])} × {n(c.BOARD_Z[1] - c.BOARD_Z[0])} mm"
+    pin1 = J1_PIN1
     return f"""
 <h2 id="board">Front board for the case</h2>
-<p>On the bench, the parts are wired straight to the DAC's pins as in step 5. In the case, a small printed circuit board, {n(c.BOARD_X[1] - c.BOARD_X[0])} × {n(c.BOARD_Z[1] - c.BOARD_Z[0])} mm, takes the place of those jumper wires. It lies flat behind the front panel, behind the four keys, on a {n(c.SPACER_T)} mm printed spacer (see <a href="{case}{ASSEMBLY}#held">how the keys are held</a>). The keys' tactile switches are soldered to its front. A 40-way ribbon joins its box header to the pins on top of the DAC, so it reaches every pin of the Pi. The screen, NFC reader, knob and power key each plug into a labelled pin header on it. It also carries the two diodes the power key needs, a transistor that lights the power key from 5 V, and two small LEDs that light while the board is getting each supply from the Pi: orange for 3V3 and red for 5V. The small parts are surface-mount and come fitted by the board maker; you solder only the headers and the key switches.</p>
+<p>On the bench, the parts are wired straight to the DAC's pins as in step 5. In the case, a small board, {size}, takes the place of those jumper wires. It lies flat behind the front panel, behind the four keys, on a {n(c.SPACER_T)} mm printed spacer (see <a href="{case}{ASSEMBLY}#held">how the keys are held</a>). The keys' tactile switches are soldered to its front. A 40-way ribbon joins its 40-pin header to the pins on top of the DAC, so it reaches every pin of the Pi. The screen, NFC reader, knob and power key each plug into a labelled pin header on it. It also carries the two diodes the power key needs, a transistor that lights the power key from 5 V, and, if you like, two small LEDs that light while the board is getting each supply from the Pi: orange for 3V3 and red for 5V. The board works without them.</p>
+<p>There are two ways to make it, with the same headers, switches and screw holes in the same places, so either fits the case the same way: <a href="#perfboard">wire it yourself on a bought perfboard</a>, or <a href="#pcb">order it as a printed circuit board</a>.</p>
+
+<h3 id="perfboard">Build it on perfboard</h3>
+<p>Everything here is through-hole and soldered by hand. Each wire runs on the back between two holes, and each joint has room around it.</p>
+<h4>What you need</h4>
+<ul>
+<li>A double-sided 70 × 50 mm perfboard with plated holes, the size sold as 5 × 7 cm: {c.PERF_HOLES[0]} × {c.PERF_HOLES[1]} holes 2.54 mm apart, a row of long pads across each end and a mounting hole in each corner. It is used whole. Its corner holes take the four M2 screws; they differ a little from maker to maker, so see <code>PERF_MOUNT</code> under <a href="{case}{PRINTING}#measure">Measure first</a>.</li>
+<li>The parts in the table below. The 40-pin header must be a plain one, without the plastic shroud of a box header, which would cover the holes its wires need.</li>
+<li>Solid-core hookup wire, 26 or 28 AWG (about 0.4 mm copper), in a few colours. Solid wire stays where you bend it. 30 AWG wire-wrap wire works too.</li>
+<li>Bare tinned wire for the ground bus and the links, or the legs you trim off the resistors.</li>
+<li>A soldering iron with a fine tip, 0.5–0.8 mm solder, flush cutters, a wire stripper, and a multimeter with a continuity beep. Something to hold the board, and a little tape or Blu Tack to hold parts while you turn it over.</li>
+</ul>
+<h4>Reading the drawings</h4>
+<p>The holes are named by row and column, as D-3: rows A at the bottom to {pb.ROW_LETTERS[c.BOARD_ROWS - 1]} at the top (there is no I or O), and columns 1 to 24 counted from the left as you look at the back, the side the parts go on. Seen from the front, column 1 is on the right, so the front drawing is numbered the other way. Hold the board with the long pads at the left and right.</p>
+{pic("perfboard-back.svg", "The back: the parts, the headers and the wires. Each wire runs between two dots. The real wire can take any path that goes round the headers' plastic, not over it, since the leads' plugs sit there.", "Back of the perfboard: the 40-pin header along the top, the key switches' legs across the middle, the headers for the leads and the small parts along the bottom, and coloured wires between them")}
+{pic("perfboard-front.svg", "The front, which faces the panel: the switches, every solder joint, the bare links in grey, and each wire's own end in its colour, bent from its hole onto the pin beside it. The lighter green shows the openings in the spacer: on this side, joints and links go only there.", "Front of the perfboard: four key switches across the middle, solder joints in two strips at the top and bottom, a ground bus along row C, and short coloured wire ends beside the pins")}
+<h4>How each wire is joined</h4>
+<p>Every wire ends in a free hole right next to the pin it belongs to, never on the pin itself. Strip 4 mm from the end, push the bare end through that hole from the back, and on the front bend it over so it lies against the pin. Then solder the pin and the wire together: one joint holds both. Where two wires meet at a pin, both ends go through the same hole. Keep the insulation right up to the board on the back, so no bare wire can touch a neighbouring pad. The wires to the key switches are the exception: they are soldered straight to the switch's leg on the back, where it comes through.</p>
+<h4>Step by step</h4>
+<p>Each step has its own picture. The wires go on in layers, one job and one colour at a time, each picture showing that layer bright on top of the faint ones already fitted. After each layer, a beep test with the multimeter checks it before you go on: in each group, every pin named should beep to every other, and to nothing else nearby.</p>
+{perfboard_steps()}
+<p><code>front-board/perfboard.py</code> draws all this from the same numbers as the printed board and checks it: every signal joins exactly the pins it should, every wire ends beside its pin, every joint on the front sits over an opening in the spacer, and nothing touches the screws or stands in another part's way.</p>
+
+<h3 id="pcb">Or order it as a printed circuit board</h3>
+<p>The printed board's small parts are surface-mount, fitted by the board maker; you solder only the headers and the key switches. Its 40-pin header is a box header, whose notch only lets the ribbon's plug in one way.</p>
 {pic("nfc-front-board-back.png", "The back of the board, where every part but the key switches goes. Seen from behind, so the keys read back, next, play, previous from left to right. The small parts at the lower left come fitted.", "Back of the front board: a 40-pin box header along the top, labelled pin headers for LCD, NFC, PWR, OLED and ENC, and small surface-mount diodes, resistors, a transistor and two LEDs marked 3V3 and 5V")}
 {pic("nfc-front-board-front.png", "The front of the board, which faces the panel. Only the four key switches go on this side.", "Front of the front board, marked This side towards the panel, with the four tactile switches")}
-
-<h3>Order it</h3>
 <p>The board is drawn in KiCad by <code>NFC-Player-Case/front-board/board.py</code> from the numbers in <code>case.py</code>, so it always matches the panel. Upload <a href="{fab}nfc-front-board-gerbers.zip">nfc-front-board-gerbers.zip</a> to any board maker (JLCPCB, PCBWay, Aisler and others). Choose 2 layers, 1.6 mm FR-4, any colour and any finish.</p>
-<p>To have the small parts fitted, turn on the maker's assembly service and choose assembly on the <strong>bottom</strong> side: the board's back, where the parts go, is KiCad's bottom. For JLCPCB, upload <a href="{fab}nfc-front-board-jlc-bom.csv">nfc-front-board-jlc-bom.csv</a> as the BOM and <a href="{fab}nfc-front-board-jlc-cpl.csv">nfc-front-board-jlc-cpl.csv</a> as the placement (CPL) file. The BOM gives an LCSC part number for each part, all from JLCPCB's basic range when this was written except the orange LED and the two diodes, extended parts that add a small one-off fee for each kind; if one is out of stock, pick another of the same value and package. In the placement preview, check each part sits on its pads and matches its outline on the board, above all the diodes, the LEDs and the transistor, which only work one way round. Boards drawn in KiCad often show a part turned 90° or 180° there, most often on the bottom side; turn any that are wrong in the preview before you order. Assembly is only worth it for at least two boards; with set-up and postage, expect a total of roughly £20–30. The <a href="{fab}nfc-front-board-schematic.pdf">schematic</a> is a PDF, and the KiCad project in <code>NFC-Player-Case/front-board/</code> opens in KiCad 10 if you want to change anything.</p>
-
-<h3>Parts on the board</h3>
+<p>To have the small parts fitted, turn on the maker's assembly service and choose assembly on the <strong>bottom</strong> side: the board's back, where the parts go, is KiCad's bottom. For JLCPCB, upload <a href="{fab}nfc-front-board-jlc-bom.csv">nfc-front-board-jlc-bom.csv</a> as the BOM and <a href="{fab}nfc-front-board-jlc-cpl.csv">nfc-front-board-jlc-cpl.csv</a> as the placement (CPL) file. The BOM gives an LCSC part number for each part, all from JLCPCB's basic range when this was written except the orange LED and the two diodes, extended parts that add a small one-off fee for each kind; if one is out of stock, pick another of the same value and package. In the placement preview, check each part sits on its pads and matches its outline on the board, above all the diodes, the LEDs and the transistor, which only work one way round. Boards drawn in KiCad often show a part turned 90° or 180° there, most often on the bottom side; turn any that are wrong in the preview before you order. Set-up fees make up most of the price, so assembly is only worth it for at least two boards: at the end of 2026, five boards with all their small parts fitted came to about US$50 before postage. The <a href="{fab}nfc-front-board-schematic.pdf">schematic</a> is a PDF, and the KiCad project in <code>NFC-Player-Case/front-board/</code> opens in KiCad 10 if you want to change anything.</p>
 <div class="table-wrap">{board_parts_table()}</div>
-
-<h3>Build it</h3>
 <ol>
 <li>The diodes, resistors, transistor and LEDs come fitted on the back. If the power key's LED has its own resistor (one rated 5 V or 6 V), R2 can stay, and the key lights a little dimmer; bridge R2's two pads with solder for full brightness.</li>
 <li>The pin headers and the 40-pin box header go on the back too: the side with the part labels. The front is marked <em>This side towards the panel</em>. Fit the box header with its notch where the board shows it, and hold each header square while you solder its first pin.</li>
 <li>On the front, trim every lead to 1.5 mm or less, so the joints fit in the openings in the spacer and the key carrier.</li>
 <li>Last, the four key switches on the front, in the squares marked for them. Push each fully home so it sits flat and square; a tilted switch tilts its cap. Solder them from the back, and trim their legs too.</li>
-<li>With a multimeter, check there is no short between 3.3 V, 5 V and ground: pins 1, 2 and 6 of the box header.</li>
-<li>Plug the ribbon onto the DAC and power the Pi: both LEDs should light, orange for 3V3 and red for 5V. If one stays dark, unplug and look for a bad joint or a reversed ribbon before plugging anything else in.</li>
+<li id="board-check">With a multimeter, check there is no short between 3.3 V, 5 V and ground: pins 1, 2 and 6 of the 40-pin header.</li>
+<li>Plug the ribbon onto the DAC and power the Pi. If you fitted the two LEDs, both should light, orange for 3V3 and red for 5V. If one stays dark, unplug and look for a bad joint or a reversed ribbon before plugging anything else in.</li>
 </ol>
 
 <h3 id="board-leads">What plugs in where</h3>
 <div class="table-wrap">{header_table()}</div>
 <p>The keys need no leads: their switches are on the board. The keys and the knob only pull a pin to ground, and the Pi's own pull-ups hold them high. The power key reaches GPIO 24 and GPIO 3 through D1 and D2, exactly as in <a href="#w-buttons">step 5</a>. GPIO 22 still switches the light, through Q1, so nothing changes in the software or in <code>config.txt</code>.</p>
-<div class="note"><p>The box header sits straight in front of the Pi's header, the same way round: pin 1 on the right seen from the front, on the lower row. So the ribbon leaves the board, bends once and comes down onto the DAC's pins, with no twist or fold. The ribbon's red stripe marks pin 1 at both ends. On the board, pin 1 is at the triangle beside the box header, and its notch only lets the plug in one way. On the DAC there is no notch, so check before you push it on: pin 1 is the corner pin with a square pad on the Pi, at the right-hand end seen from the front of the case, and with the Pi running it reads 3.3 V, while its neighbour across the header (pin 2) reads 5 V.</p></div>
+<div class="note"><p>The 40-pin header sits straight in front of the Pi's header, the same way round: pin 1 on the right seen from the front, on the lower row. So the ribbon leaves the board, bends once and comes down onto the DAC's pins, with no twist or fold. The ribbon's red stripe marks pin 1 at both ends. On the printed board, pin 1 is at the triangle beside the box header, and its notch only lets the plug in one way. On the perfboard, pin 1 is hole {pin1}, and the plain header has no notch, so check the plug sits on all 40 pins, stripe at {pin1}. On the DAC there is no notch either, so check before you push it on: pin 1 is the corner pin with a square pad on the Pi, at the right-hand end seen from the front of the case, and with the Pi running it reads 3.3 V, while its neighbour across the header (pin 2) reads 5 V.</p></div>
 <p>Fitting the board in the case, and running the ribbon and leads, is in the <a href="{case}{ASSEMBLY}#assembly">assembly guide</a>.</p>
 """
 
@@ -424,6 +498,7 @@ def printing_page():
 <tr><td><code>DAC_JACKS</code></td><td>{"; ".join(f"{name} x {n(x)}, z {n(z)}, Ø{n(d)}" for name, x, z, d in jacks)}</td><td>Assemble the Pi and DAC on 5 mm standoffs and measure the centre of each socket: across from the case's left side and up from its underside. Check the holes pass your plugs' metal shells, not just the sockets' barrels. See the <a href="{ASSEMBLY}#drawings">board stack drawing</a> for the heights assumed.</td></tr>
 <tr><td><code>POWER_HOLE</code>, <code>POWER_BODY</code></td><td>{n(c.POWER_HOLE)} mm; {n(c.POWER_BODY[0])} × {n(c.POWER_BODY[1])} mm</td><td>Your power key's thread, the size across its nut, and how far it reaches into the case including its solder tags.</td></tr>
 <tr><td><code>USB_SLOT</code>, <code>USB_SCREW_PITCH</code></td><td>{n(c.USB_SLOT[0])} × {n(c.USB_SLOT[1])} mm, {n(c.USB_SCREW_PITCH)} mm</td><td>The body opening and screw spacing of your panel-mount USB-C socket.</td></tr>
+<tr><td><code>PERF_MOUNT</code></td><td>{n(c.PERF_MOUNT[0])}, {n(c.PERF_MOUNT[1])} mm; Ø{n(c.PERF_MOUNT[2])} mm</td><td>Only for a perfboard front board: where its four corner holes are, from the board's ends and from its long edges, with the long pads at the left and right, and how big they are. The case's screw holes follow them. If they are under 2 mm, open them with a 2 mm drill so the M2 screws pass. <code>PERF_SIZE</code> and <code>PERF_HOLES</code> beside it give the board's size and holes, for a board other than 70 × 50 mm with 24 × 18 holes.</td></tr>
 <tr><td><code>TACT_H</code></td><td>{n(c.TACT_H)} mm</td><td>Your key switches, from the base of the body to the top of the button. It sets the board spacer's thickness, so the keys neither rattle nor sit pressed in.</td></tr>
 </table>
 </section>
@@ -510,13 +585,14 @@ def printing_page():
 <ol>
 <li><code>blender -b -P build.py</code></li>
 <li>In the <code>front-board</code> folder, with KiCad's Python: <code>python board.py</code></li>
+<li>In the <code>front-board</code> folder, with your own Python: <code>python perfboard.py</code></li>
 <li><code>blender -b -P wood.py</code> (only for the wood-grain version)</li>
 <li><code>python drawings.py</code></li>
 <li><code>blender -b -P pictures.py</code></li>
 <li><code>blender -b NFC-Player-Render.blend -P render.py</code></li>
 <li><code>python guide.py</code></li>
 </ol>
-<p>The second step redraws and reroutes the front board, runs KiCad's electrical and design rules checks, and rewrites its Gerber files. Run it whenever you move the keys, the screws or the board's outline. The last step writes this guide, the assembly guide and the front board's section of the electronics guide. The model checks that parts fit each other and the stand-ins. It cannot check print tolerances, your exact boards, heat, or how well the NFC reader works next to stored cards: those need a bench test.</p>
+<p>The second step redraws and reroutes the front board, runs KiCad's electrical and design rules checks, and rewrites its Gerber files; the third redraws the perfboard version and checks its wiring. Run both whenever you move the keys, the screws or the headers. The last step writes this guide, the assembly guide and the front board's section of the electronics guide. The model checks that parts fit each other and the stand-ins. It cannot check print tolerances, your exact boards, heat, or how well the NFC reader works next to stored cards: those need a bench test.</p>
 </section>
 </main>"""
     return wrap("NFC Player Case Printing", body)

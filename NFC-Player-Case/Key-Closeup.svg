@@ -53,7 +53,7 @@
 <text x="50" y="137.4" font-size="3.5" text-anchor="end" fill="#222826" font-weight="400" style="font-family:system-ui,-apple-system,'Segoe UI',sans-serif">Soldered from behind</text>
 <text x="8" y="192" font-size="3.5" text-anchor="start" fill="#222826" font-weight="400" style="font-family:system-ui,-apple-system,'Segoe UI',sans-serif">1  With the panel face down, lay the key carrier on it, caps into their holes and pegs into theirs.</text>
 <text x="8" y="197.2" font-size="3.5" text-anchor="start" fill="#222826" font-weight="400" style="font-family:system-ui,-apple-system,'Segoe UI',sans-serif">2  Lay the spacer on the carrier.</text>
-<text x="8" y="202.4" font-size="3.5" text-anchor="start" fill="#222826" font-weight="400" style="font-family:system-ui,-apple-system,'Segoe UI',sans-serif">3  Fit the board, switches towards the panel, with three M2 × 6 screws.</text>
+<text x="8" y="202.4" font-size="3.5" text-anchor="start" fill="#222826" font-weight="400" style="font-family:system-ui,-apple-system,'Segoe UI',sans-serif">3  Fit the board, switches towards the panel, with four M2 × 6 screws.</text>
 <text x="190" y="8" font-size="4.6" text-anchor="start" fill="#222826" font-weight="650" style="font-family:system-ui,-apple-system,'Segoe UI',sans-serif">Put together</text>
 <rect x="190" y="60" width="13.2" height="16.8" rx="0" fill="#c9ccc8" stroke="#5f6b66" stroke-width="0.2" />
 <rect x="260.8" y="60" width="13.2" height="16.8" rx="0" fill="#c9ccc8" stroke="#5f6b66" stroke-width="0.2" />
@@ -89,7 +89,7 @@
 <text x="290" y="95" font-size="3.5" text-anchor="start" fill="#222826" font-weight="400" style="font-family:system-ui,-apple-system,'Segoe UI',sans-serif">Spacer, 1.3 mm</text>
 <line x1="274" y1="90" x2="289.2" y2="99.4" stroke="#a9b1ad" stroke-width="0.18" />
 <circle cx="274" cy="90" r="0.45" fill="#5f6b66" stroke="none" stroke-width="0.3"/>
-<text x="290" y="100.4" font-size="3.5" text-anchor="start" fill="#222826" font-weight="400" style="font-family:system-ui,-apple-system,'Segoe UI',sans-serif">Board, held by three M2 screws</text>
+<text x="290" y="100.4" font-size="3.5" text-anchor="start" fill="#222826" font-weight="400" style="font-family:system-ui,-apple-system,'Segoe UI',sans-serif">Board, held by four M2 screws</text>
 <text x="190" y="113.2" font-size="3.5" text-anchor="start" fill="#222826" font-weight="650" style="font-family:system-ui,-apple-system,'Segoe UI',sans-serif">What holds what:</text>
 <text x="190" y="118.4" font-size="3.5" text-anchor="start" fill="#222826" font-weight="400" style="font-family:system-ui,-apple-system,'Segoe UI',sans-serif">• The bridges hold the cap centred in the panel's hole.</text>
 <text x="190" y="123.6" font-size="3.5" text-anchor="start" fill="#222826" font-weight="400" style="font-family:system-ui,-apple-system,'Segoe UI',sans-serif">• The switch clicks and pushes it back out.</text>
